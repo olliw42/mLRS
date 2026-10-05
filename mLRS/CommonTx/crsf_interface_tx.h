@@ -103,6 +103,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 
     uint8_t crc8(const uint8_t* const buf);
     bool fill_rcdata(tRcData* const rc);
+    bool fill_rcdata_0x17(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
@@ -354,9 +355,16 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 
 bool tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-tCrsfRcChannel* buf = (tCrsfRcChannel*)frame.payload;
+tCrsfRcChannelV2* buf = (tCrsfRcChannelV2*)frame.payload;
+bool is_32channels;
 
-    if (frame.len >= 1 + 22 + 1 && frame.len <= 1 + 23 + 1) { // we only accept frames with 16 channels
+    // TODO: variable size frames ??
+
+    if (frame.len >= 1 + 22 + 1 && frame.len <= 1 + 23 + 1) { // V1 frame, we only accept frames with 16 channels
+        is_32channels = false;
+    } else if (frame.len == 1 + 22 + 1 + 22 + 1) { // V2 frame, we only accept frames with 32 channels
+        rc->do_32channels = true;
+        is_32channels = true;
     } else {
         return false;
     }
@@ -377,6 +385,56 @@ tCrsfRcChannel* buf = (tCrsfRcChannel*)frame.payload;
     rc->ch[13] = rc_from_crsf(buf->ch13);
     rc->ch[14] = rc_from_crsf(buf->ch14);
     rc->ch[15] = rc_from_crsf(buf->ch15);
+
+    if (is_32channels) {
+        rc->ch[16] = rc_from_crsf(buf->ch16);
+        rc->ch[17] = rc_from_crsf(buf->ch17);
+        rc->ch[18] = rc_from_crsf(buf->ch18);
+        rc->ch[19] = rc_from_crsf(buf->ch19);
+        rc->ch[20] = rc_from_crsf(buf->ch20);
+        rc->ch[21] = rc_from_crsf(buf->ch21);
+        rc->ch[22] = rc_from_crsf(buf->ch22);
+        rc->ch[23] = rc_from_crsf(buf->ch23);
+        rc->ch[24] = rc_from_crsf(buf->ch24);
+        rc->ch[25] = rc_from_crsf(buf->ch25);
+        rc->ch[26] = rc_from_crsf(buf->ch26);
+        rc->ch[27] = rc_from_crsf(buf->ch27);
+        rc->ch[28] = rc_from_crsf(buf->ch28);
+        rc->ch[29] = rc_from_crsf(buf->ch29);
+        rc->ch[30] = rc_from_crsf(buf->ch30);
+        rc->ch[31] = rc_from_crsf(buf->ch31);
+    }
+
+    return true;
+}
+
+
+bool tTxCrsf::fill_rcdata_0x17(tRcData* const rc)
+{
+tCrsfSubsetRcChannelsPacked_16x11bit* buf = (tCrsfSubsetRcChannelsPacked_16x11bit*)frame.payload;
+
+    if (frame.len != 25 || frame.payload[0] != 0x30) { // we only accept 0x17 with 11 bit, 16 channels, ch 16 start
+        return false;
+    }
+
+    rc->do_32channels = true;
+
+    rc->ch[16] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch0);
+    rc->ch[17] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch1);
+    rc->ch[18] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch2);
+    rc->ch[19] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch3);
+    rc->ch[20] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch4);
+    rc->ch[21] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch5);
+    rc->ch[22] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch6);
+    rc->ch[23] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch7);
+    rc->ch[24] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch8);
+    rc->ch[25] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch9);
+    rc->ch[26] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch10);
+    rc->ch[27] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch11);
+    rc->ch[28] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch12);
+    rc->ch[29] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch13);
+    rc->ch[30] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch14);
+    rc->ch[31] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch15);
 
     return true;
 }
@@ -495,6 +553,9 @@ void tTxCrsf::Do(void)
         // EdgeTx sets frame[0] = MODULE_ADDRESS
         channels_received = true;
     } else
+    if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) { // len = 25
+        channels_received = true;
+    } else
     if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
         // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
         ping_device_received = true;
@@ -534,6 +595,10 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     // check crc before we accept it
     uint8_t crc = crc8(frame.c);
     if (crc != frame.c[frame.len + 1]) return false;
+
+    if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
+        return fill_rcdata_0x17(rc);
+    }
 
     startup_passed = true;
     autobaud.channels_received_cnt++;

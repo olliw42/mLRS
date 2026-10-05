@@ -150,6 +150,65 @@ Two boot-time button overrides exist:
   is already on uartC/usb for every option except "com", concerning the com port the override only
   affects the "com" destination, but it affects the serial ports settings in any case.
 
+
+
+============================================================
+  9-Position Switch
+============================================================
+
+rc:   our internal units, 1..172..1024..1876..2047
+pwm:  in us
+x:    value of 9 pos switch, x = 0..8
+
+We have the relation:
+
+    pwm = (rc - 1024) * 500 / 852 + 1500 ca= rc * 500 / 852 + 899
+
+Receiver side:
+--------------
+AP's 6-pos flight mode levels are described by the boundaries 1491 + (n-4)*130.
+see RC_Channel::read_6pos_switch()
+https://github.com/ArduPilot/ardupilot/blob/ArduPilot-4.7/libraries/RC_Channel/RC_Channel.cpp#L596-L623
+We try to account for this by aiming at
+
+    pwm = (x - 4) * 130 + 1500
+
+Because of centering around 1500 it falls into AP's respective trigger range by 8-162910 ticks.
+
+Combining yields
+
+    (x - 4) * 130 = (rc - 1024) * 500 / 852
+
+=>  rc = (x - 4) * 130 * 852 / 500 + 1024 = (x * 13 * 426 + 3448) / 25
+
+This can be well approximated by
+
+    rc = x * 443 / 2 + 138
+
+This gives values
+    x   =     0,    1,    2,    3,    4,    5,    6,    7,    8
+    rc  =   138,  359,  581,  802, 1024, 1245, 1467, 1688, 1910
+    pwm =   980, 1109, 1240, 1369, 1500, 1629, 1759, 1889, 2019
+
+Transmitter side:
+-----------------
+The boundaries between the rc levels are obtained as (level 1 + level 2)/2.
+This yields
+    248.5, 470, 691.5, 913, 1134.5, 1356, 1577.5, 1799
+or
+    x = (rc - 27) * 2 / 443
+
+
+Alternative:
+------------
+A simpler alternative is a regular spacing
+    rc  = ((uint32_t)x * 1023 + 2) / 4 + 1
+        = 1, 257, 513, 768, 1024, 1280, 1536, 1791, 2047
+    pwm = 899us, 1049us, 1200us, 1349us, 1500us, 1650us, 1800us, 1950us, 2100us
+
+
+
+
 */
 
 
