@@ -18,6 +18,7 @@
 // len is the length including type, payload, crc8, so it is len(frame)-2
 // crc8 includes type, payload
 // maximal frame length is 64 bytes
+// maximal len value is thus 62 bytes
 // maximal payload length is thus 60 bytes
 //
 // baudrate:

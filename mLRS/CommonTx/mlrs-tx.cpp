@@ -1125,7 +1125,7 @@ IF_CRSF(
             config_id.Change(crsf.GetCmdModelId());
             break;
         case TXCRSF_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
-        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_START); break;
+        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_STOP); break;
 
         case MBRIDGE_CMD_REQUEST_INFO:
             setup_reload();

@@ -10,7 +10,7 @@ local widgetName = "mLRS 32Ch Widget"
 
 
 local VERSION = {
-    script = '2026-10-05.00', -- add a '.01' if needed for the day
+    script = '2026-10-05.01', -- add a '.01' if needed for the day
 }
 
 
@@ -101,7 +101,8 @@ local function background(widget)
 
     if tnow_10ms - widget.tlast_10ms >= 20 then -- 5 Hz
         widget.tlast_10ms = tnow_10ms
-        sendChannels0x17(widget.options.TestMode)
+        local testmode = (widget.options.TestMode ~= 0)
+        sendChannels0x17(testmode)
     end
 end
 

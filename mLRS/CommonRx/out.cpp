@@ -113,6 +113,7 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
             // is done below
             break;
         case FAILSAFE_MODE_AS_CONFIGURED:
+            // note: in 32 channels mode, channels 17-32 will hold their last value (by design)
             for (uint8_t n = 0; n < 12; n++) {
               int32_t v = setup->FailsafeOutChannelValues_Ch1_Ch12[n]; // -120 ... +120
               rc.ch[n] = 1024 + (v * 1023) / 120;

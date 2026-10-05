@@ -56,7 +56,7 @@ typedef enum {
 
 
 typedef enum {
-    TXCRSF_CMD_MODELID_SET = 0,
+    TXCRSF_CMD_MODELID_SET = 100, // note: this must be larger than the largest MBRIDGE_CMD_xxx to avoid overlap
     TXCRSF_CMD_BIND_START,
     TXCRSF_CMD_BIND_STOP,
 } TXCRSF_CMD_ENUM;
@@ -338,7 +338,7 @@ void tTxCrsf::parse_nextchar(uint8_t c)
         break;
 
     case STATE_RECEIVE_CRSF_LEN:
-        if (c >= (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
+        if (c > (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
         rx_frame[rx_cnt++] = c;
         rx_len = c;
         state = STATE_RECEIVE_CRSF_PAYLOAD;
@@ -1530,6 +1530,11 @@ tCrsfMbStatistics lstats = {};
 
     send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, &lstats, sizeof(tCrsfMbStatistics));
 }
+
+
+//-- check some sizes
+
+STATIC_ASSERT((int)TXCRSF_CMD_MODELID_SET > (int)MBRIDGE_CMD_MAX, "TXCRSF_CMD_xxx and MBRIDGE_CMD_xxx overlapp")
 
 
 #else

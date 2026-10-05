@@ -188,6 +188,8 @@ bool tMBridge::CommandReceived(uint8_t* const cmd)
 
     *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
 
+    if (*cmd > MBRIDGE_CMD_MAX) return false; // something went wrong, reject it
+
     return true;
 }
 
@@ -241,7 +243,7 @@ bool tMBridge::CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len)
     if (!cmd_fifo.Available()) return false;
 
     uint32_t tnow_ms = millis32();
-    if (cmd_processed_tlast_ms - tnow_ms < 10) return false; // don't do too fast
+    if ((tnow_ms - cmd_processed_tlast_ms) < 10) return false; // don't do too fast
     cmd_processed_tlast_ms = tnow_ms;
 
     cmd_in_process = 0;

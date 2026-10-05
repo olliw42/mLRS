@@ -80,7 +80,7 @@ void rcdata_to_txframe(tTxFrame* const frame, tRcData* const rc)
         frame->rcV2.ch10_14 = rc->ch[10 + ofs] / 8;
         frame->rcV2.ch11_15 = rc->ch[11 + ofs] / 8;
 
-        #define RC_TO_9POS(rc_ch) ((rc_ch < 249) ? 0 : ((rc_ch >= 1799) ? 8 : (2*rc_ch - 54) / 433)) // was ((rc_ch + 2) / 228)
+        #define RC_TO_9POS(rc_ch) ((rc_ch < 249) ? 0 : ((rc_ch >= 1799) ? 8 : (2*rc_ch - 54) / 443)) // was ((rc_ch + 2) / 228)
         #define RC_TO_3POS(rc_ch) ((rc_ch >= 1536) ? 2 : ((rc_ch <= 512) ? 0 : 1))
 
         ofs = (frame->status.seq_no & 0x03); // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 1, 2, 3
