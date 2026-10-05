@@ -60,6 +60,8 @@
 #define SX_DIO                    IO_P37
 #define SX_BUSY                   IO_P36
 
+// SX_USE_RFSW_CTRL not needed, uses default {15, 0, 4, 8, 8, 2, 0, 1} selection
+
 #define SX_USE_REGULATOR_MODE_DCDC
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
