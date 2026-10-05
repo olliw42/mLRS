@@ -664,6 +664,10 @@ local function doParamLoop()
               -- request first parameter by index (is index = 0)
               cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
           end
+      else
+          if DEVICE_DOWNLOAD_is_running then
+              cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index}) -- retry
+          end
       end
     end
 
@@ -706,6 +710,7 @@ local function doParamLoop()
             deviceInfoRxIsAvailable = (DEVICE_INFO.rx_available == 1) -- to signal if reciever is available
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM then
             -- MBRIDGE_CMD.PARAM_ITEM
+            paramloop_t_last = t_10ms
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_expected_index and index ~= 255 then
                 paramsError()
@@ -743,6 +748,7 @@ local function doParamLoop()
             end
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM2 then
             -- MBRIDGE_CMD.PARAM_ITEM2
+            paramloop_t_last = t_10ms
             local index = cmd.payload[0]
             if index ~= DEVICE_PARAM_LIST_current_index then
                 paramsError()
@@ -776,6 +782,7 @@ local function doParamLoop()
             end
         elseif cmd.cmd == MBRIDGE_CMD.PARAM_ITEM3_4 then -- can be ITEM3 or ITEM4
             -- MBRIDGE_CMD.PARAM_ITEM3_4
+            paramloop_t_last = t_10ms
             local index = cmd.payload[0]
             local is_item4 = false
             if (index >= 128) then -- this is actually ITEM4
@@ -1199,7 +1206,6 @@ end
 ----------------------------------------------------------------------
 
 local isEdgeTx = false
-local isAX12 = false
 local isFirstParamDownload = true
 local FirstParamDownloadTmo_10ms = 0
 
@@ -1536,7 +1542,7 @@ local function Do(event)
 
     doParamLoop()
 
-    if DEVICE_DOWNLOAD_is_running then
+    if DEVICE_PARAM_LIST == nil then
         if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
             if getTime() > FirstParamDownloadTmo_10ms then
                 setPopupError("Please check if\nCRSF baudrate is 400k")                
@@ -1571,7 +1577,6 @@ end
 local function scriptInit()
     local ver, radio, maj, minor, rev, osname = getVersion()
     isEdgeTx = (osname == 'EdgeTX')
-    isAX12 = (osname == 'EdgeTXqw')
 
     setupScreen()
     setupColors()
@@ -1582,9 +1587,6 @@ local function scriptInit()
     DEVICE_DOWNLOAD_is_running = true -- we start the script with this
     isFirstParamDownload = true
     FirstParamDownloadTmo_10ms = tnow_10ms + 500 -- drop a warning after 5 secs
-    if isAX12 then
-        FirstParamDownloadTmo_10ms = FirstParamDownloadTmo_10ms + 300 -- for AX12, drop a warning after 8 secs
-    end
     if tnow_10ms < 300 then
         DEVICE_SAVE_t_last = 300 - tnow_10ms -- treat script start like a Save
     else
