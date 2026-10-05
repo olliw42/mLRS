@@ -27,7 +27,7 @@ You of course use the project fully at your own risk.
 
 There is still plenty of room for ideas and improvement, and in this sense the project is work in progress. It is however fair to call it stable and robust, and to perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hazzles. It also integrates well with the mTX<sup>e</sup> project.
+The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hassles. It also integrates well with the mTX<sup>e</sup> project.
 
 It supports the SX1280/1, SX1276, SX1262, LLCC68, LR1121 and LR2021 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
