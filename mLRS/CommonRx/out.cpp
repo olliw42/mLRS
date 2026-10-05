@@ -163,6 +163,8 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
+        // high frame must go first and back-to-back, INAV expects the normal frame right after it
+        if (rc.do_32channels) send_sbus_rcdata_ch17_ch32(frame_missed, failsafe);
         send_sbus_rcdata(frame_missed, failsafe);
         break;
     case OUT_CONFIG_CRSF:
@@ -254,6 +256,41 @@ tSBusFrame frame;
     if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
 
     frame.stx = SBUS_STX;
+
+    frame.flags = flags;
+    frame.end_stx = SBUS_END_STX;
+
+    putbuf((uint8_t*)&frame, SBUS_FRAME_SIZE);
+}
+
+
+// channels 17-32 in a second frame with start byte 0x2F, as understood by INAV
+void tOutBase::send_sbus_rcdata_ch17_ch32(bool frame_lost, bool failsafe)
+{
+tSBusFrame frame;
+
+    frame.ch.ch0 = rc_to_sbus(rc.ch[16]);
+    frame.ch.ch1 = rc_to_sbus(rc.ch[17]);
+    frame.ch.ch2 = rc_to_sbus(rc.ch[18]);
+    frame.ch.ch3 = rc_to_sbus(rc.ch[19]);
+    frame.ch.ch4 = rc_to_sbus(rc.ch[20]);
+    frame.ch.ch5 = rc_to_sbus(rc.ch[21]);
+    frame.ch.ch6 = rc_to_sbus(rc.ch[22]);
+    frame.ch.ch7 = rc_to_sbus(rc.ch[23]);
+    frame.ch.ch8 = rc_to_sbus(rc.ch[24]);
+    frame.ch.ch9 = rc_to_sbus(rc.ch[25]);
+    frame.ch.ch10 = rc_to_sbus(rc.ch[26]);
+    frame.ch.ch11 = rc_to_sbus(rc.ch[27]);
+    frame.ch.ch12 = rc_to_sbus(rc.ch[28]);
+    frame.ch.ch13 = rc_to_sbus(rc.ch[29]);
+    frame.ch.ch14 = rc_to_sbus(rc.ch[30]);
+    frame.ch.ch15 = rc_to_sbus(rc.ch[31]);
+
+    uint8_t flags = 0;
+    if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
+    if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
+
+    frame.stx = SBUS_STX_CH17_CH32;
 
     frame.flags = flags;
     frame.end_stx = SBUS_END_STX;

@@ -34,6 +34,7 @@
 
 typedef enum {
     SBUS_STX              = 0x0F,
+    SBUS_STX_CH17_CH32    = 0x2F, // second frame with channels 17-32, sent ahead of the normal frame
     SBUS_END_STX          = 0x00,
 } SBUS_STX_ENUM;
 
