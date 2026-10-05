@@ -66,8 +66,9 @@ typedef enum {
 // TODO: I guess we want a define to enable/disable autobauding
 #define CRSF_AUTOBAUD_CYCLES  40 // 40*3*50ms = 6 sec
 #define CRSF_AUTOBAUD_MS  50
-#define CRSF_AUTOBAUD_PROTOCOLS_LEN  3
-static const uint32_t txcrsf_baud[CRSF_AUTOBAUD_PROTOCOLS_LEN] = { 400000, 921600, 1870000};
+#define CRSF_AUTOBAUD_PROTOCOLS_LEN  4
+static const uint32_t crsf_baud[CRSF_AUTOBAUD_PROTOCOLS_LEN] = { 400000, 921600, 1870000, 416666};
+static const uint32_t crsf_inverted[CRSF_AUTOBAUD_PROTOCOLS_LEN] = { true, true, true, false};
 
 
 class tTxCrsf : public tPin5BridgeBase, public tSerialBase
@@ -479,8 +480,10 @@ void tTxCrsf::autobaud_do(void)
         autobaud.tlast_ms = tnow_ms;
         autobaud.cycles_cnt--;
 
-        INCc(autobaud.protocol_idx, CRSF_AUTOBAUD_PROTOCOLS_LEN); // try next protocol
-        pin5_set_protocol(txcrsf_baud[autobaud.protocol_idx]);
+        for (uint8_t n = 0; n < CRSF_AUTOBAUD_PROTOCOLS_LEN; n++) {
+            INCc(autobaud.protocol_idx, CRSF_AUTOBAUD_PROTOCOLS_LEN); // try next protocol
+            if (pin5_set_protocol(crsf_baud[autobaud.protocol_idx], crsf_inverted[autobaud.protocol_idx])) break;
+        }
         state = STATE_IDLE;
         autobaud.channels_received_cnt = 0;
     }
@@ -555,7 +558,7 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 
 #ifdef CRSF_AUTOBAUD
     autobaud.is_running = true; // start with doing autobaud
-    pin5_set_protocol(txcrsf_baud[autobaud.protocol_idx]);
+    pin5_set_protocol(crsf_baud[autobaud.protocol_idx], crsf_inverted[autobaud.protocol_idx]);
 #endif
 }
 

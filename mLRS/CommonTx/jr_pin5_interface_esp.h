@@ -189,7 +189,7 @@ void tPin5BridgeBase::pin5_init(void)
 }
 
 
-bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted = true)
+bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
 {
 #ifdef JR_PIN5_FULL_DUPLEX
     if (!inverted) return false; // non-inverted not supported for full duplex

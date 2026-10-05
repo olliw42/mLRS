@@ -251,7 +251,7 @@ void tPin5BridgeBase::pin5_init(void)
 
 
 #ifdef CRSF_AUTOBAUD
-bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted = true)
+bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
 {
 //    uart_rx_enableisr(DISABLE); // pin5_tx_enable(); // disables isr
     uart_setbaudrate(baudrate);
