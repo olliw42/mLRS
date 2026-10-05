@@ -80,8 +80,6 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
     bool CommandReceived(uint8_t* const cmd);
-    uint8_t* GetPayloadPtr(void);
-    uint8_t GetPayloadLen(void);
     uint8_t GetCmdModelId(void);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* const msg);
@@ -104,7 +102,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
     uint8_t crc8(const uint8_t* const buf);
-    void fill_rcdata(tRcData* const rc);
+    bool fill_rcdata(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
@@ -354,9 +352,14 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 // We assume that's not happening. Note, that len can also be larger, which is in fact
 // done by EdgeTx to provide an additional status byte carrying arming info for ELRS.
 
-void tTxCrsf::fill_rcdata(tRcData* const rc)
+bool tTxCrsf::fill_rcdata(tRcData* const rc)
 {
 tCrsfRcChannel* buf = (tCrsfRcChannel*)frame.payload;
+
+    if (frame.len >= 1 + 22 + 1 && frame.len <= 1 + 23 + 1) { // we only accept frames with 16 channels
+    } else {
+        return false;
+    }
 
     rc->ch[0] = rc_from_crsf(buf->ch0);
     rc->ch[1] = rc_from_crsf(buf->ch1);
@@ -374,6 +377,8 @@ tCrsfRcChannel* buf = (tCrsfRcChannel*)frame.payload;
     rc->ch[13] = rc_from_crsf(buf->ch13);
     rc->ch[14] = rc_from_crsf(buf->ch14);
     rc->ch[15] = rc_from_crsf(buf->ch15);
+
+    return true;
 }
 
 
@@ -533,8 +538,7 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
     startup_passed = true;
     autobaud.channels_received_cnt++;
 
-    fill_rcdata(rc);
-    return true;
+    return fill_rcdata(rc);
 }
 
 
@@ -626,23 +630,14 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
     if (mbridge_cmd_received) {
         mbridge_cmd_received = false;
         // TODO: we could check crc if we wanted to
-        *cmd = TXCRSF_CMD_MBRIDGE_IN;
+        mbridge.ParseCrsfFrame(frame.payload, frame.len - 2);
+        uint8_t mbcmd;
+        if (!mbridge.CommandReceived(&mbcmd)) return false; // this should not happen, right
+        *cmd = mbcmd;
         return true;
     }
 
     return false;
-}
-
-
-uint8_t* tTxCrsf::GetPayloadPtr(void)
-{
-    return frame.payload;
-}
-
-
-uint8_t tTxCrsf::GetPayloadLen(void)
-{
-    return frame.len - 2;
 }
 
 
