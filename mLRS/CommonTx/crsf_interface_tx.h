@@ -324,15 +324,8 @@ void tTxCrsf::parse_nextchar(uint8_t c)
             rx_frame[rx_cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
 #ifdef USE_DEBUG
-            if (discarded) {
-                if (discarded > 1) {
-                    dbg.puts(u16toBCD_s(discarded));
-                    dbg.puts(" bytes lost!\n");
-                }
-                discarded = 0;
-            }
         } else {
-            discarded++;
+            if (!autobaud.is_running) discarded++;
 #endif
         }
         break;
@@ -488,6 +481,7 @@ void tTxCrsf::autobaud_do(void)
 
         INCc(autobaud.protocol_idx, CRSF_AUTOBAUD_PROTOCOLS_LEN); // try next protocol
         pin5_set_protocol(txcrsf_baud[autobaud.protocol_idx]);
+        state = STATE_IDLE;
         autobaud.channels_received_cnt = 0;
     }
 
@@ -522,9 +516,6 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
     autobaud.cycles_cnt = CRSF_AUTOBAUD_CYCLES;
     autobaud.protocol_idx = 0;
     autobaud.channels_received_cnt = 0;
-#ifdef CRSF_AUTOBAUD
-    autobaud.is_running = true; // start with doing autobaud
-#endif
 
     channels_received = false;
     mbridge_cmd_received = false;
@@ -561,6 +552,11 @@ void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 
     // needs to come after tPin5BridgeBase::Init() since it calls txclock.Init()
 //    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
+
+#ifdef CRSF_AUTOBAUD
+    autobaud.is_running = true; // start with doing autobaud
+    pin5_set_protocol(txcrsf_baud[autobaud.protocol_idx]);
+#endif
 }
 
 
@@ -573,6 +569,18 @@ void tTxCrsf::Do(void)
 
     // hook into here for autobaud
     autobaud_do();
+
+#ifdef USE_DEBUG
+    static uint32_t tdiscarded_ms = 0;
+    uint32_t tnow_ms = millis32();
+    if (tnow_ms - tdiscarded_ms >= 1000 && discarded > 0) {
+        tdiscarded_ms = tnow_ms;
+        dbg.puts(u16toBCD_s(discarded));
+        dbg.puts(" bytes lost!\n");
+        discarded = 0;
+    }
+#endif
+
 
     if (!rx_frame_received) return;
     rx_frame_received = false;
