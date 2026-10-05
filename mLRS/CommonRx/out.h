@@ -61,11 +61,12 @@ class tOutBase
     tRcData* GetRcDataPtr(void) { return &rc; }
 
   private:
-    void send_sbus_rcdata(bool frame_lost, bool failsafe);
-    void send_sbus_rcdata_ch17_ch32(bool frame_lost, bool failsafe);
+    bool do_rc_channels32(void);
+    void send_sbus_rcdata(bool frame_lost, bool failsafe, bool do_ch17_ch32);
     void send_crsf_rcdata(void);
     void send_crsf_rcdata_0x17(void);
     void send_crsf_linkstatistics(tOutLinkStats* const lstats);
+    void do_sbus(void);
     void do_crsf(void);
 
     virtual void putbuf(uint8_t* const buf, uint16_t len) {}
@@ -85,6 +86,8 @@ class tOutBase
 
     tRcData rc;
     uint32_t rc_channels32_tlast_ms;
+    bool sbus_ch17_ch32_pending;
+    uint16_t sbus_ch17_ch32_tstart_us;
 };
 
 
