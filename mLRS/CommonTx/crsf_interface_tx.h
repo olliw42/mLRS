@@ -65,6 +65,7 @@ typedef enum {
 
 // NOTE: not all hardware supports more than 400k (e.g. those with diodes may not)
 // TODO: I guess we want a define to enable/disable autobauding
+#define CRSF_AUTOBAUD_CYCLES  40 // 40*3*50ms = 6 sec
 #define CRSF_AUTOBAUD_MS  50
 #define CRSF_AUTOBAUD_PROTOCOLS_LEN  3
 static const uint32_t txcrsf_baud[CRSF_AUTOBAUD_PROTOCOLS_LEN] = { 400000, 921600, 1870000};
@@ -439,7 +440,7 @@ void tTxCrsf::Init(bool enable_flag)
 
     autobaud.is_running = false;
     autobaud.tlast_ms = 0;
-    autobaud.cycles_cnt = 20;
+    autobaud.cycles_cnt = CRSF_AUTOBAUD_CYCLES;
     autobaud.protocol_idx = 0;
     autobaud.channels_received_cnt = 0;
 #ifdef CRSF_AUTOBAUD
