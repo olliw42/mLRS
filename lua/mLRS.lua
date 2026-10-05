@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-09-29', -- add a '.01' if needed for the day
+    script = '2026-10-05', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -664,10 +664,9 @@ local function doParamLoop()
               -- request first parameter by index (is index = 0)
               cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index})
           end
-      else
-          if DEVICE_DOWNLOAD_is_running then
-              cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index}) -- retry
-          end
+      elseif DEVICE_DOWNLOAD_is_running then
+          
+          cmdPush(MBRIDGE_CMD.REQUEST_CMD, {MBRIDGE_CMD.PARAM_ITEM, DEVICE_PARAM_LIST_expected_index}) -- retry
       end
     end
 
@@ -1542,7 +1541,7 @@ local function Do(event)
 
     doParamLoop()
 
-    if DEVICE_PARAM_LIST == nil then
+    if DEVICE_PARAM_LIST == nil then -- DEVICE_INFO not yet received
         if isFirstParamDownload and FirstParamDownloadTmo_10ms > 0 then
             if getTime() > FirstParamDownloadTmo_10ms then
                 setPopupError("Please check if\nCRSF baudrate is 400k")                
