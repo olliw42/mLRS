@@ -284,7 +284,7 @@ void init_hw(void)
     sx2.Init();
 
     mbridge.Init(Config.UseCrsf); // these affect peripherals, hence do here
-    crsf.Init(Config.UseCrsf);
+    crsf.Init(Config.UseCrsf, Config.UseCrsfBridge);
     in.Init(Config.UseIn);
 
     __enable_irq();

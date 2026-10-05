@@ -74,7 +74,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 {
   public:
     using tSerialBase::Init; // tTxCrsf redefines Init(), incompatible with tSerialBase's Init()
-    void Init(bool enable_flag);
+    void Init(bool enable_flag, bool crsfbridge_enable_flag);
     void Do(void);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
@@ -97,6 +97,13 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
 
+    // CRSF envelope handling
+    // provides serial interface to the main code
+    void putbuf(uint8_t* const buf, uint16_t len) override { if (crsfbridge_enabled) put_fifo.PutBuf(buf, len); }
+    bool available(void) override { return get_fifo.Available(); }
+    char getc(void) override { return get_fifo.Get(); }
+    void flush(void) override { get_fifo.Flush(); }
+
   private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
@@ -110,6 +117,7 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
+    bool crsfbridge_enabled;
 
     // parser, state is defined in tPin5BridgeBase
     // no need for volatile since used only in isr context
@@ -236,6 +244,19 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
     int32_t inav_baro_altitude; // needed to make INAV happy
     uint16_t msp_inav_status_sensor_status;
     uint32_t msp_inav_status_arming_flags;
+
+    // CRSF envelope
+
+    tFifo<char,TX_CRSFBRIDGE_TXBUFSIZE> put_fifo; // TODO: how large do they really need to be?
+    tFifo<char,TX_CRSFBRIDGE_RXBUFSIZE> get_fifo;
+
+    union {
+        tCrsfMbEnvelope mb;           // 0xEA, len, 0x82, 0x66
+        tCrsfMavlinkEnvelope mavlink; // 0xEA, len, 0xAA
+    } crsf_envelope_out;
+    uint8_t crsf_envelop_out_sequence;
+    bool crsf_envelop_use_mb;
+    uint32_t crsf_envelop_out_tlast_ms;
 
     // momentarily for debug, detect discarded bytes
 #ifdef USE_DEBUG
@@ -479,9 +500,10 @@ void tTxCrsf::autobaud_do(void)
 //-------------------------------------------------------
 // CRSF user interface
 
-void tTxCrsf::Init(bool enable_flag)
+void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 {
     enabled = enable_flag;
+    crsfbridge_enabled = (enabled) ? crsfbridge_enable_flag : false;
 
     if (!enabled) return;
 
@@ -525,6 +547,12 @@ void tTxCrsf::Init(bool enable_flag)
     msp_inav_status_sensor_status = 0;
     msp_inav_status_arming_flags = 0;
 
+    put_fifo.Init();
+    get_fifo.Init();
+    crsf_envelop_out_sequence = 0;
+    crsf_envelop_use_mb = true;
+    crsf_envelop_out_tlast_ms = 0;
+
     uart_rx_callback_ptr = &crsf_pin5_rx_callback;
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
@@ -555,6 +583,22 @@ void tTxCrsf::Do(void)
     } else
     if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) { // len = 25
         channels_received = true;
+    } else
+    if (crsfbridge_enabled &&
+        frame.address == CRSF_ADDRESS_TRANSMITTER_MODULE && frame.frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE &&
+        frame.payload[0] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
+        // since we don't do crc check, let's check consistency of len and data_size
+        if ((frame.len == frame.payload[2] + 5) && (frame.payload[2] <= CRSF_MB_ENVELOPE_DATA_LEN_MAX)) {
+            get_fifo.PutBuf(&frame.payload[3], frame.payload[2]);
+            crsf_envelop_use_mb = true;
+        }
+    } else
+    if (crsfbridge_enabled && frame.frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+        // since we don't do crc check, let's check consistency of len and data_size
+        if ((frame.len == frame.payload[1] + 4) && (frame.payload[1] <= CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX)) {
+            get_fifo.PutBuf(&frame.payload[2], frame.payload[1]);
+            crsf_envelop_use_mb = false;
+        }
     } else
     if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
         // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
@@ -758,6 +802,41 @@ uint8_t len;
     for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
         if (!crsf_status[i].send_tlast_ms) continue;
         if ((tnow_ms - crsf_status[i].send_tlast_ms) > CRSF_REFRESH_TIME_MS) { crsf_status[i].updated = true; }
+    }
+
+    // MAVLink envelope
+    uint16_t available = put_fifo.Available();
+    if (crsfbridge_enabled && available && (available > 20 || (tnow_ms - crsf_envelop_out_tlast_ms) > 9)) {
+        if (crsf_envelop_use_mb) {
+            crsf_envelope_out.mb.cmd = CRSF_MB_ENVELOPE_CMD;
+            crsf_envelope_out.mb.seq = crsf_envelop_out_sequence;
+            crsf_envelope_out.mb.data_size = 0;
+            for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) { // 57
+                if (!put_fifo.Available()) break;
+                crsf_envelope_out.mb.data[i] = put_fifo.Get();
+                crsf_envelope_out.mb.data_size++;
+            }
+            send_frame(
+                CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
+                &(crsf_envelope_out),
+                crsf_envelope_out.mb.data_size + 3);
+        } else {
+            crsf_envelope_out.mavlink.total_chunks = 0;
+            crsf_envelope_out.mavlink.current_chunk = crsf_envelop_out_sequence;
+            crsf_envelope_out.mavlink.data_size = 0;
+            for (uint8_t i = 0; i < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX; i++) { // 58
+                if (!put_fifo.Available()) break;
+                crsf_envelope_out.mavlink.data[i] = put_fifo.Get();
+                crsf_envelope_out.mavlink.data_size++;
+            }
+            send_frame(
+                CRSF_FRAME_ID_MAVLINK_ENVELOPE, // 0xEA, len, 0xAA
+                &(crsf_envelope_out),
+                crsf_envelope_out.mavlink.data_size + 2);
+        }
+        crsf_envelop_out_sequence++;
+        crsf_envelop_out_tlast_ms = tnow_ms;
+        return; // send only one per slot
     }
 
     // one by one, order by desired priority
@@ -1458,7 +1537,7 @@ tCrsfMbStatistics lstats = {};
 class tTxCrsf : public tSerialBase
 {
   public:
-    void Init(bool enable_flag) {}
+    void Init(bool enable_flag, bool crsfbridge_enable_flag) {}
     void Do(void) {}
     bool Update(tRcData* const rc) { return false; }
     void TelemetryStart(void) {}
