@@ -35,6 +35,8 @@ void tOutBase::Init(tRxSetup* const _setup)
 
     rc = {};
     rc_channels32_tlast_ms = 0;
+    sbus_ch17_ch32_pending = false;
+    sbus_ch17_ch32_tstart_us = 0;
 
     setup = _setup;
 }
@@ -82,7 +84,7 @@ void tOutBase::Do(void)
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
-        // nothing to do
+        do_sbus();
         break;
     case OUT_CONFIG_CRSF:
         do_crsf();
@@ -163,18 +165,29 @@ void tOutBase::SendRcData(tRcData* const rc_orig, bool frame_missed, bool failsa
     switch (config) {
     case OUT_CONFIG_SBUS:
     case OUT_CONFIG_SBUS_INVERTED:
-        send_sbus_rcdata(frame_missed, failsafe);
+        send_sbus_rcdata(frame_missed, failsafe, false);
+        if (do_rc_channels32()) { // ch17-32 frame is sent delayed, in do_sbus()
+            sbus_ch17_ch32_pending = true;
+            sbus_ch17_ch32_tstart_us = micros16();
+        }
         break;
     case OUT_CONFIG_CRSF:
         send_crsf_rcdata();
-        if (rc.do_32channels) {
-            uint32_t tnow_ms = millis32();
-            if ((tnow_ms - rc_channels32_tlast_ms) < 200) break; // send only at 5 Hz
-            rc_channels32_tlast_ms = tnow_ms;
-            send_crsf_rcdata_0x17();
-        }
+        if (do_rc_channels32()) send_crsf_rcdata_0x17();
         break;
     }
+}
+
+
+// returns true if it is time to send channels 17-32
+bool tOutBase::do_rc_channels32(void)
+{
+    if (!rc.do_32channels) return false;
+
+    uint32_t tnow_ms = millis32();
+    if ((tnow_ms - rc_channels32_tlast_ms) < 200) return false; // send only at 5 Hz
+    rc_channels32_tlast_ms = tnow_ms;
+    return true;
 }
 
 
@@ -225,40 +238,62 @@ void tOutBase::SendLinkStatisticsDisconnected(void)
 // SBus
 //-------------------------------------------------------
 
-void tOutBase::send_sbus_rcdata(bool frame_lost, bool failsafe)
+// do_ch17_ch32 = true: frame with start byte 0x2F holding channels 17-32, as understood by INAV
+void tOutBase::send_sbus_rcdata(bool frame_lost, bool failsafe, bool do_ch17_ch32)
 {
 tSBusFrame frame;
+uint8_t ofs = (do_ch17_ch32) ? 16 : 0;
 
     // chX = (((int32_t)(rc->ch[X]) - 1024) * 1920) / 2047 + 1000;
-    frame.ch.ch0 = rc_to_sbus(rc.ch[0]);
-    frame.ch.ch1 = rc_to_sbus(rc.ch[1]);
-    frame.ch.ch2 = rc_to_sbus(rc.ch[2]);
-    frame.ch.ch3 = rc_to_sbus(rc.ch[3]);
-    frame.ch.ch4 = rc_to_sbus(rc.ch[4]);
-    frame.ch.ch5 = rc_to_sbus(rc.ch[5]);
-    frame.ch.ch6 = rc_to_sbus(rc.ch[6]);
-    frame.ch.ch7 = rc_to_sbus(rc.ch[7]);
-    frame.ch.ch8 = rc_to_sbus(rc.ch[8]);
-    frame.ch.ch9 = rc_to_sbus(rc.ch[9]);
-    frame.ch.ch10 = rc_to_sbus(rc.ch[10]);
-    frame.ch.ch11 = rc_to_sbus(rc.ch[11]);
-    frame.ch.ch12 = rc_to_sbus(rc.ch[12]);
-    frame.ch.ch13 = rc_to_sbus(rc.ch[13]);
-    frame.ch.ch14 = rc_to_sbus(rc.ch[14]);
-    frame.ch.ch15 = rc_to_sbus(rc.ch[15]);
+    frame.ch.ch0 = rc_to_sbus(rc.ch[ofs + 0]);
+    frame.ch.ch1 = rc_to_sbus(rc.ch[ofs + 1]);
+    frame.ch.ch2 = rc_to_sbus(rc.ch[ofs + 2]);
+    frame.ch.ch3 = rc_to_sbus(rc.ch[ofs + 3]);
+    frame.ch.ch4 = rc_to_sbus(rc.ch[ofs + 4]);
+    frame.ch.ch5 = rc_to_sbus(rc.ch[ofs + 5]);
+    frame.ch.ch6 = rc_to_sbus(rc.ch[ofs + 6]);
+    frame.ch.ch7 = rc_to_sbus(rc.ch[ofs + 7]);
+    frame.ch.ch8 = rc_to_sbus(rc.ch[ofs + 8]);
+    frame.ch.ch9 = rc_to_sbus(rc.ch[ofs + 9]);
+    frame.ch.ch10 = rc_to_sbus(rc.ch[ofs + 10]);
+    frame.ch.ch11 = rc_to_sbus(rc.ch[ofs + 11]);
+    frame.ch.ch12 = rc_to_sbus(rc.ch[ofs + 12]);
+    frame.ch.ch13 = rc_to_sbus(rc.ch[ofs + 13]);
+    frame.ch.ch14 = rc_to_sbus(rc.ch[ofs + 14]);
+    frame.ch.ch15 = rc_to_sbus(rc.ch[ofs + 15]);
 
+    // no flags in the ch17-32 frame, INAV ors them into each following frame until the next one
     uint8_t flags = 0;
-    if (rc.ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
-    if (rc.ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
-    if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
-    if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
+    if (!do_ch17_ch32) {
+        // in 32 channels mode ch17,18 are in the ch17-32 frame, INAV would mirror the flags to ch33,34
+        if (!rc.do_32channels) {
+            if (rc.ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
+            if (rc.ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
+        }
+        if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
+        if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
+    }
 
-    frame.stx = SBUS_STX;
+    frame.stx = (do_ch17_ch32) ? SBUS_STX_CH17_CH32 : SBUS_STX;
 
     frame.flags = flags;
     frame.end_stx = SBUS_END_STX;
 
     putbuf((uint8_t*)&frame, SBUS_FRAME_SIZE);
+}
+
+
+// sends the ch17-32 frame in the idle time after the normal frame, which takes 3 ms
+// INAV needs 3 ms gap after the normal frame, ArduPilot needs 2 ms gap before the next normal frame
+void tOutBase::do_sbus(void)
+{
+    if (!sbus_ch17_ch32_pending) return;
+
+    uint16_t dt = micros16() - sbus_ch17_ch32_tstart_us;
+    if (dt > 6500) {
+        sbus_ch17_ch32_pending = false;
+        send_sbus_rcdata(false, false, true);
+    }
 }
 
 
