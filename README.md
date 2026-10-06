@@ -27,7 +27,7 @@ You of course use the project fully at your own risk.
 
 There is still plenty of room for ideas and improvement, and in this sense the project is work in progress. It is however fair to call it stable and robust, and to perform quite well. 
 
-The mLRS system also provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hassles. It also integrates well with the mTX<sup>e</sup> project.
+The mLRS system provides a high level of usability such as a variety of options for input/output, parameter setting via the mLRS transmitter, optimization for ArduPilot/PX4 and INAV systems, wireless connection to ground control stations like MissionPlanner or QGC, or support of the Yaapu telemetry app without extra hassles. It also integrates well with the mTX<sup>e</sup> (MAVLink for EdgeTx) project.
 
 It supports the SX1280/1, SX1276, SX1262, LLCC68, LR1121 and LR2021 Semtech chips, and thus the 2.4 GHz, 915/868 MHz and 433 MHz/70 cm frequency bands.
 
@@ -76,8 +76,8 @@ mLRS provides these operation modes:
 - support of MSP and optimizations for INAV autopilot systems. Enables using the INAV telemetry widget, in-flight connection to the INAV configurator or MWP ground control, supports MSP-RC, and introduces MspX for reduced packet loss.
 - "except" and "ortho" features.
 - support for OLED display & five-way button, serial2. 
-- support of ESP32 and ESP8266 modules for wireless connection to a ground control station.
-- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121, LR2021.
+- support of ESP32 and ESP8266 modules for wireless connection to a ground control station (aka wireless bridge).
+- support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, ESP32-C3, ESP32-S3, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121, LR2021.
 
 ## Community ##
 
