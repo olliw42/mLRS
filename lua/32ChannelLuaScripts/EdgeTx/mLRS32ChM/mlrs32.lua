@@ -5,12 +5,12 @@
 ----------------------------------------------------------------------
 -- mLRS 32 Channels Lua Mixes Script
 ----------------------------------------------------------------------
--- copy script to SCRIPTS\MIXES folder on EdgeTx SD card
+-- copy script to the SCRIPTS\MIXES folder on the EdgeTx SD card
 -- file name must not exceed 6 chars (excluding .lua)
 
 
 local VERSION = {
-    script = '2026-10-05.00', -- add a '.01' if needed for the day
+    script = '2026-10-06.00', -- add a '.01' if needed for the day
 }
 
 

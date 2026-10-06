@@ -6,11 +6,11 @@ local widgetName = "mLRS 32Ch Widget"
 ----------------------------------------------------------------------
 -- mLRS 32 Channels Lua Widget Script
 ----------------------------------------------------------------------
--- copy script to SCRIPTS\WIDGETS\mLRS32ChW folder on the EdgeTx SD card
+-- copy script to the WIDGETS\mLRS32ChW folder on the EdgeTx SD card
 
 
 local VERSION = {
-    script = '2026-10-05.01', -- add a '.01' if needed for the day
+    script = '2026-10-06.00', -- add a '.01' if needed for the day
 }
 
 
