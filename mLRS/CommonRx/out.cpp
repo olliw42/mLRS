@@ -265,8 +265,11 @@ uint8_t ofs = (do_ch17_ch32) ? 16 : 0;
     // no flags in the ch17-32 frame, INAV ors them into each following frame until the next one
     uint8_t flags = 0;
     if (!do_ch17_ch32) {
-        if (rc.ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
-        if (rc.ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
+        // in 32 channels mode ch17,18 are in the ch17-32 frame, INAV would mirror the flags to ch33,34
+        if (!rc.do_32channels) {
+            if (rc.ch[16] >= 1450) flags |= SBUS_FLAG_CH17; // 1450 = +50%
+            if (rc.ch[17] >= 1450) flags |= SBUS_FLAG_CH18;
+        }
         if (frame_lost) flags |= SBUS_FLAG_FRAME_LOST;
         if (failsafe) flags |= SBUS_FLAG_FAILSAFE;
     }
