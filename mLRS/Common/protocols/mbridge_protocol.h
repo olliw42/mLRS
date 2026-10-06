@@ -76,6 +76,7 @@ typedef enum {
     MBRIDGE_CMD_MODELID_SET           = 16,
     MBRIDGE_CMD_SYSTEM_BOOTLOADER     = 17, // len = 0
     MBRIDGE_CMD_FLASH_ESPBRIDGE       = 18, // len = 0
+    MBRIDGE_CMD_MAX                   = 99, // to enforce that mbridge cmds are smaller than TXCRSF_CMD_xxx
 } MBRIDGE_CMD_ENUM;
 
 

@@ -381,7 +381,7 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     rcdata_from_txframe(&rcData, frame);
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD) {
         process_received_txcmdframe(frame);
         return;
     }
@@ -389,12 +389,12 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
-    if (!connected()) return;
+    if (connected()) {
+        sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
-    sx_serial.putbuf(frame->payload, frame->status.payload_len);
-
-    stats.bytes_received.Add(frame->status.payload_len);
-    stats.serial_data_received.Inc();
+        stats.bytes_received.Add(frame->status.payload_len);
+        stats.serial_data_received.Inc();
+    }
 }
 
 
@@ -414,6 +414,7 @@ void do_transmit(uint8_t antenna) // we send a frame to transmitter
 }
 
 
+// called in isr loop
 uint8_t do_receive(uint8_t antenna, bool do_clock_reset) // we receive a frame from receiver
 {
 uint8_t res;
@@ -451,6 +452,7 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 }
 
 
+// called in doPostReceive loop
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
@@ -487,7 +489,7 @@ tTxFrame* frame;
         process_received_frame(do_payload, frame);
 
         stats.doValidCrc1FrameReceived();
-        if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // should we count valid payload only if tx frame ?
+        if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
 
     } else { // RX_STATUS_INVALID
     }
@@ -500,6 +502,7 @@ tTxFrame* frame;
 }
 
 
+// called in doPostReceive loop
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     tarq.FrameMissed();
@@ -581,6 +584,7 @@ RESTARTCONTROLLER
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
 
+    rcData.Init();
     out.Configure(Setup.Rx.OutMode);
     mavlink.Init();
     msp.Init();
@@ -748,9 +752,9 @@ IF_SX2(
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
             invalid_frame_received = (link_rx2_status == RX_STATUS_INVALID);
         } else { // use antenna1
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
-            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // frame_received && !valid_frame_received;
+            frame_received = (link_rx1_status > RX_STATUS_NONE);             // INVALID, CRC1_VALID, VALID
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);    // CRC1_VALID, VALID
+            invalid_frame_received = (link_rx1_status == RX_STATUS_INVALID); // INVALID, = frame_received && !valid_frame_received
         }
 
 /*dbg.puts("\n> 1: ");
@@ -778,7 +782,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && connected()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && connected()
         if (!valid_frame_received) {
             mavlink.FrameLost();
             msp.FrameLost();
@@ -864,9 +868,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
 
         // we didn't receive a valid frame
-        frame_missed = false;
         if ((connect_state >= CONNECT_STATE_SYNC) && !valid_frame_received) {
-            frame_missed = true;
             // reset sync counter, relevant if in sync
             // connect_sync_cnt = 0; // NO!! when in sync this means that we need to get five in a row, right!?!
             // switch to transmit state
@@ -881,6 +883,14 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             sx2.SetToIdle();
         }
 
+        if (connect_state == CONNECT_STATE_LISTEN) {
+            link_task_reset();
+            link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        }
+
+        // report to out/rc
+        frame_missed = (connect_state >= CONNECT_STATE_SYNC && !valid_frame_received);
+
         if (!connected()) tarq.Disconnected();
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
@@ -889,11 +899,6 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         }
         stats.Next();
         if (!connected()) stats.Clear();
-
-        if (connect_state == CONNECT_STATE_LISTEN) {
-            link_task_reset();
-            link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
-        }
 
         powerup.Do();
         if (powerup.Task() == POWERUPCNT_TASK_BIND) bind.StartBind();

@@ -4,7 +4,7 @@ local widgetName = "mLRS Statistics Widget"
 -- GPL3
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
--- copy script to SCRIPTS\WIDGETS\mLRSStatsW folder on the EdgeTx SD card
+-- copy script to the WIDGETS\mLRSStatsW folder on the EdgeTx SD card
 
 
 local options = {

@@ -41,6 +41,58 @@ typedef enum {
 
 #ifdef DEVICE_IS_TRANSMITTER
 
+void rcdata_to_txframe(tTxFrame* const frame, tRcData* const rc)
+{
+    if (!frame->status.is_32channels) {
+        // rcData: 0 .. 1024 .. 2047, 11 bits
+        frame->rcV1.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
+        frame->rcV1.ch1  = rc->ch[1];
+        frame->rcV1.ch2  = rc->ch[2];
+        frame->rcV1.ch3  = rc->ch[3];
+
+        frame->rcV1.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
+        frame->rcV1.ch5  = rc->ch[5];
+        frame->rcV1.ch6  = rc->ch[6];
+        frame->rcV1.ch7  = rc->ch[7];
+
+        frame->rcV1.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
+        frame->rcV1.ch9  = rc->ch[9] / 8;
+        frame->rcV1.ch10 = rc->ch[10] / 8;
+        frame->rcV1.ch11 = rc->ch[11] / 8;
+
+        frame->rcV1.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
+        frame->rcV1.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
+        frame->rcV1.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
+        frame->rcV1.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
+    } else {
+        frame->rcV2.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
+        frame->rcV2.ch1  = rc->ch[1];
+        frame->rcV2.ch2  = rc->ch[2];
+        frame->rcV2.ch3  = rc->ch[3];
+        frame->rcV2.ch4  = rc->ch[4];
+        frame->rcV2.ch5  = rc->ch[5];
+        frame->rcV2.ch6  = rc->ch[6];
+        frame->rcV2.ch7  = rc->ch[7];
+
+        uint8_t ofs = (frame->status.seq_no & 0x01) * 4; // seq is 3 bits, so result is 0/1 -> ofs = 0 or 4
+        frame->rcV2.ch8_12  = rc->ch[8 + ofs] / 8; // 0 .. 128 .. 255, 8 bits
+        frame->rcV2.ch9_13  = rc->ch[9 + ofs] / 8;
+        frame->rcV2.ch10_14 = rc->ch[10 + ofs] / 8;
+        frame->rcV2.ch11_15 = rc->ch[11 + ofs] / 8;
+
+        #define RC_TO_9POS(rc_ch) ((rc_ch < 249) ? 0 : ((rc_ch >= 1799) ? 8 : (2*rc_ch - 54) / 443)) // was ((rc_ch + 2) / 228)
+        #define RC_TO_3POS(rc_ch) ((rc_ch >= 1536) ? 2 : ((rc_ch <= 512) ? 0 : 1))
+
+        ofs = (frame->status.seq_no & 0x03); // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 1, 2, 3
+        frame->rcV2.ch16x_20x_24x_28x =
+            RC_TO_9POS(rc->ch[16 + ofs]) +        // 0 .. 8, 9-pos
+            RC_TO_3POS(rc->ch[20 + ofs]) * 9 +    // 0 .. 1 .. 2, 3-pos
+            RC_TO_3POS(rc->ch[24 + ofs]) * 9*3 +  // 0 .. 1 .. 2, 3-pos
+            RC_TO_3POS(rc->ch[28 + ofs]) * 9*3*3; // 0 .. 1 .. 2, 3-pos
+    }
+}
+
+
 // lowest level routine to construct a tTxFrame, finalizes it
 // used by
 //   pack_txframe()
@@ -64,36 +116,18 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_TX_RX_CMD
+    frame->status.frame_type = type; // FRAME_TYPE_TX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
     frame->status.fhss_index_band = frame_stats->tx_fhss_index_band;
     frame->status.fhss_index = frame_stats->tx_fhss_index;
     frame->status.LQ_serial = frame_stats->LQ_serial;
+    frame->status.is_32channels = (rc->do_32channels) ? 1 : 0;
     frame->status.payload_len = payload_len;
 
     // pack rc data
-    // rcData: 0 .. 1024 .. 2047, 11 bits
-    frame->rc.ch0  = rc->ch[0]; // 0 .. 1024 .. 2047, 11 bits
-    frame->rc.ch1  = rc->ch[1];
-    frame->rc.ch2  = rc->ch[2];
-    frame->rc.ch3  = rc->ch[3];
-
-    frame->rc.ch4  = rc->ch[4]; // 0 .. 1024 .. 2047, 11 bits
-    frame->rc.ch5  = rc->ch[5];
-    frame->rc.ch6  = rc->ch[6];
-    frame->rc.ch7  = rc->ch[7];
-
-    frame->rc.ch8  = rc->ch[8] / 8; // 0 .. 128 .. 255, 8 bits
-    frame->rc.ch9  = rc->ch[9] / 8;
-    frame->rc.ch10 = rc->ch[10] / 8;
-    frame->rc.ch11 = rc->ch[11] / 8;
-
-    frame->rc.ch12 = (rc->ch[12] >= 1536) ? 2 : ((rc->ch[12] <= 512) ? 0 : 1); // 0 .. 1 .. 2, bits, 3-way
-    frame->rc.ch13 = (rc->ch[13] >= 1536) ? 2 : ((rc->ch[13] <= 512) ? 0 : 1);
-    frame->rc.ch14 = (rc->ch[14] >= 1536) ? 2 : ((rc->ch[14] <= 512) ? 0 : 1);
-    frame->rc.ch15 = (rc->ch[15] >= 1536) ? 2 : ((rc->ch[15] <= 512) ? 0 : 1);
+    rcdata_to_txframe(frame, rc);
 
     // pack the payload
     for (uint8_t i = 0; i < payload_len; i++) {
@@ -101,11 +135,13 @@ uint16_t crc;
     }
 
     // finalize, crc
-    fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN);
-    frame->rc.crc1 = crc;
+    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RC1_V2_LEN : FRAME_TX_RC1_V1_LEN;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RC1_LEN - 2);
+    fmav_crc_init(&crc);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + rc1_len);
+    if (frame->status.is_32channels) { frame->rcV2.crc1 = crc; } else { frame->rcV1.crc1 = crc; }
+
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + rc1_len, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - rc1_len - 2);
     frame->crc = crc;
 }
 
@@ -132,17 +168,20 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_TX) && (frame->status.frame_type != FRAME_TYPE_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
     if (frame->status.payload_len > FRAME_TX_PAYLOAD_LEN) return CHECK_ERROR_HEADER;
 
-    fmav_crc_init(&crc);
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN);
-    if (crc != frame->rc.crc1) return CHECK_ERROR_CRC1;
+    uint8_t rc1_len = (frame->status.is_32channels) ? FRAME_TX_RC1_V2_LEN : FRAME_TX_RC1_V1_LEN;
+    uint16_t crc1 = (frame->status.is_32channels) ? frame->rcV2.crc1 : frame->rcV1.crc1;
 
-    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + FRAME_TX_RC1_LEN, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - FRAME_TX_RC1_LEN - 2);
+    fmav_crc_init(&crc);
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame, FRAME_TX_RX_HEADER_LEN + rc1_len);
+    if (crc != crc1) return CHECK_ERROR_CRC1;
+
+    fmav_crc_accumulate_buf(&crc, (uint8_t*)frame + FRAME_TX_RX_HEADER_LEN + rc1_len, FRAME_TX_RX_LEN - FRAME_TX_RX_HEADER_LEN - rc1_len - 2);
     if (crc != frame->crc) return CHECK_ERROR_CRC;
 
     return CHECK_OK;
@@ -152,48 +191,93 @@ uint16_t crc;
 // fill tRcData with higher-reliabilty rc data part of a tTxFrame
 void rcdata_rc1_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    rc->ch[0] = frame->rc.ch0;
-    rc->ch[1] = frame->rc.ch1;
-    rc->ch[2] = frame->rc.ch2;
-    rc->ch[3] = frame->rc.ch3;
+    if (frame->status.is_32channels) {
+        rc->do_32channels = true;
+    }
 
-    rc->ch[12] = (frame->rc.ch12 > 1) ? 2047 : ((frame->rc.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc.ch13 > 1) ? 2047 : ((frame->rc.ch13 < 1) ? 0 : 1024);
+    if (!frame->status.is_32channels) {
+        rc->ch[0] = frame->rcV1.ch0;
+        rc->ch[1] = frame->rcV1.ch1;
+        rc->ch[2] = frame->rcV1.ch2;
+        rc->ch[3] = frame->rcV1.ch3;
+
+        rc->ch[12] = (frame->rcV1.ch12 > 1) ? 2047 : ((frame->rcV1.ch12 < 1) ? 0 : 1024);
+        rc->ch[13] = (frame->rcV1.ch13 > 1) ? 2047 : ((frame->rcV1.ch13 < 1) ? 0 : 1024);
+    } else {
+        rc->ch[0] = frame->rcV2.ch0;
+        rc->ch[1] = frame->rcV2.ch1;
+        rc->ch[2] = frame->rcV2.ch2;
+        rc->ch[3] = frame->rcV2.ch3;
+        rc->ch[4] = frame->rcV2.ch4;
+        rc->ch[5] = frame->rcV2.ch5;
+        rc->ch[6] = frame->rcV2.ch6;
+        rc->ch[7] = frame->rcV2.ch7;
+    }
 }
 
 
 // fill tRcData with all rc data of a tTxFrame
 void rcdata_from_txframe(tRcData* const rc, tTxFrame* const frame)
 {
-    rc->ch[0] = frame->rc.ch0;
-    rc->ch[1] = frame->rc.ch1;
-    rc->ch[2] = frame->rc.ch2;
-    rc->ch[3] = frame->rc.ch3;
+    if (frame->status.is_32channels) {
+        rc->do_32channels = true;
+    }
 
-    rc->ch[4] = frame->rc.ch4;
-    rc->ch[5] = frame->rc.ch5;
-    rc->ch[6] = frame->rc.ch6;
-    rc->ch[7] = frame->rc.ch7;
+    if (!frame->status.is_32channels) {
+        rc->ch[0] = frame->rcV1.ch0;
+        rc->ch[1] = frame->rcV1.ch1;
+        rc->ch[2] = frame->rcV1.ch2;
+        rc->ch[3] = frame->rcV1.ch3;
 
-    rc->ch[8] = frame->rc.ch8 * 8;
-    rc->ch[9] = frame->rc.ch9 * 8;
-    rc->ch[10] = frame->rc.ch10 * 8;
-    rc->ch[11] = frame->rc.ch11 * 8;
+        rc->ch[4] = frame->rcV1.ch4;
+        rc->ch[5] = frame->rcV1.ch5;
+        rc->ch[6] = frame->rcV1.ch6;
+        rc->ch[7] = frame->rcV1.ch7;
 
-    rc->ch[12] = (frame->rc.ch12 > 1) ? 2047 : ((frame->rc.ch12 < 1) ? 0 : 1024);
-    rc->ch[13] = (frame->rc.ch13 > 1) ? 2047 : ((frame->rc.ch13 < 1) ? 0 : 1024);
-    rc->ch[14] = (frame->rc.ch14 > 1) ? 2047 : ((frame->rc.ch14 < 1) ? 0 : 1024);
-    rc->ch[15] = (frame->rc.ch15 > 1) ? 2047 : ((frame->rc.ch15 < 1) ? 0 : 1024);
+        rc->ch[8] = frame->rcV1.ch8 * 8;
+        rc->ch[9] = frame->rcV1.ch9 * 8;
+        rc->ch[10] = frame->rcV1.ch10 * 8;
+        rc->ch[11] = frame->rcV1.ch11 * 8;
 
-    rc->ch[16] = 1024;
-    rc->ch[17] = 1024;
+        rc->ch[12] = (frame->rcV1.ch12 > 1) ? 2047 : ((frame->rcV1.ch12 < 1) ? 0 : 1024);
+        rc->ch[13] = (frame->rcV1.ch13 > 1) ? 2047 : ((frame->rcV1.ch13 < 1) ? 0 : 1024);
+        rc->ch[14] = (frame->rcV1.ch14 > 1) ? 2047 : ((frame->rcV1.ch14 < 1) ? 0 : 1024);
+        rc->ch[15] = (frame->rcV1.ch15 > 1) ? 2047 : ((frame->rcV1.ch15 < 1) ? 0 : 1024);
+    } else {
+        rc->ch[0] = frame->rcV2.ch0;
+        rc->ch[1] = frame->rcV2.ch1;
+        rc->ch[2] = frame->rcV2.ch2;
+        rc->ch[3] = frame->rcV2.ch3;
+        rc->ch[4] = frame->rcV2.ch4;
+        rc->ch[5] = frame->rcV2.ch5;
+        rc->ch[6] = frame->rcV2.ch6;
+        rc->ch[7] = frame->rcV2.ch7;
+
+        uint8_t ofs = (frame->status.seq_no & 0x01) * 4; // seq is 3 bits, so result is 0/1 -> ofs = 0 or 4
+        rc->ch[8 + ofs] = frame->rcV2.ch8_12 * 8;
+        rc->ch[9 + ofs] = frame->rcV2.ch9_13 * 8;
+        rc->ch[10 + ofs] = frame->rcV2.ch10_14 * 8;
+        rc->ch[11 + ofs] = frame->rcV2.ch11_15 * 8;
+
+        #define RC_FROM_9POS(x) ((x <= 0) ? 1 : ((x >= 8) ? 2047 : (((uint32_t)x * 443) / 2 + 138))) // was (((uint32_t)x * 2046 + 4) / 8 + 1)
+        #define RC_FROM_3POS(x) ((x > 1) ? 2047 : ((x < 1) ? 0 : 1024))
+
+        ofs = (frame->status.seq_no & 0x03); // seq is 3 bits, so result is 0/1/2/3 -> ofs = 0, 1, 2, 3
+        rc->ch[16 + ofs] = RC_FROM_9POS(frame->rcV2.ch16x_20x_24x_28x % 9);             // 0 .. 8, 9-pos
+        rc->ch[20 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / 9) % 3);       // 0 .. 2, 3-pos
+        rc->ch[24 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3)) % 3);   // 0 .. 2, 3-pos
+        rc->ch[28 + ofs] = RC_FROM_3POS((frame->rcV2.ch16x_20x_24x_28x / (9*3*3)) % 3); // 0 .. 2, 3-pos
+    }
 }
 
 #endif
 
+
 //-------------------------------------------------------
 // Rx Frames (send from Rx to Tx)
 //-------------------------------------------------------
+
+#ifdef DEVICE_IS_RECEIVER
 
 // update header info of a tRxFrame with new data, keep payload
 void update_rxframe_stats(tRxFrame* const frame, tFrameStats* const frame_stats)
@@ -203,7 +287,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     // keep !! frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    // keep !! frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -238,7 +322,7 @@ uint16_t crc;
     frame->sync_word = Config.FrameSyncWord;
     frame->status.seq_no = frame_stats->seq_no;
     frame->status.ack = frame_stats->ack;
-    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_TX_RX_CMD
+    frame->status.frame_type = type; // FRAME_TYPE_RX, FRAME_TYPE_CMD
     frame->status.antenna = frame_stats->antenna;
     frame->status.transmit_antenna = frame_stats->transmit_antenna;
     frame->status.rssi_u7 = rssi_u7_from_i8(frame_stats->rssi);
@@ -268,6 +352,8 @@ void pack_rxframe(
     _pack_rxframe_w_type(frame, FRAME_TYPE_RX, frame_stats, payload, payload_len);
 }
 
+#endif
+#ifdef DEVICE_IS_TRANSMITTER
 
 // check credentials of a tRxFrame (sync word, frame type, payload len, CRC)
 // returns 0 if OK !!
@@ -277,7 +363,7 @@ uint16_t crc;
 
     if (frame->sync_word != Config.FrameSyncWord) return CHECK_ERROR_SYNCWORD;
 
-    if ((frame->status.frame_type != FRAME_TYPE_RX) && (frame->status.frame_type != FRAME_TYPE_TX_RX_CMD)) {
+    if ((frame->status.frame_type != FRAME_TYPE_RX) && (frame->status.frame_type != FRAME_TYPE_CMD)) {
         return CHECK_ERROR_HEADER;
     }
 
@@ -289,6 +375,8 @@ uint16_t crc;
 
     return CHECK_OK;
 }
+
+#endif
 
 
 //-------------------------------------------------------
@@ -357,10 +445,12 @@ void _copy_cmdframerxparameters_to_rxsetup(tCmdFrameRxParameters* const rx_param
 void pack_txcmdframe_cmd(tTxFrame* const frame, tFrameStats* const frame_stats, tRcData* const rc, uint8_t cmd)
 {
 uint8_t payload[1];
+uint8_t len;
 
     payload[0] = cmd;
+    len = 1;
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, payload, 1);
+    _pack_txframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, rc, payload, len);
 }
 
 
@@ -417,7 +507,7 @@ tTxCmdFrameRxParams rx_params = {};
 
     _copy_rxsetup_to_cmdframerxparameters(&(rx_params.RxParams));
 
-    _pack_txframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
+    _pack_txframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, rc, (uint8_t*)&rx_params, sizeof(rx_params));
 }
 
 #endif
@@ -451,7 +541,7 @@ tRxCmdFrameRxSetupData rx_setupdata = {};
     rx_setupdata.OutMode_allowed_mask = SetupMetaData.Rx_OutMode_allowed_mask;
     rx_setupdata.SerialPort_allowed_mask = SetupMetaData.Rx_SerialPort_allowed_mask;
 
-    _pack_rxframe_w_type(frame, FRAME_TYPE_TX_RX_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
+    _pack_rxframe_w_type(frame, FRAME_TYPE_CMD, frame_stats, (uint8_t*)&rx_setupdata, sizeof(rx_setupdata));
 }
 
 

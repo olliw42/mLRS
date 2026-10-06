@@ -284,7 +284,7 @@ void init_hw(void)
     sx2.Init();
 
     mbridge.Init(Config.UseCrsf); // these affect peripherals, hence do here
-    crsf.Init(Config.UseCrsf);
+    crsf.Init(Config.UseCrsf, Config.UseCrsfBridge);
     in.Init(Config.UseIn);
 
     __enable_irq();
@@ -424,7 +424,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         link_task_reset();
 #ifdef DEVICE_HAS_JRPIN5
         switch (mbridge.cmd_in_process) {
-        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO); break;
+        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleRequestCmd(MBRIDGE_CMD_REQUEST_INFO); break;
         }
         mbridge.Unlock();
 #endif
@@ -534,7 +534,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     if (!accept_payload) return; // frame has no fresh payload
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD) {
         process_received_rxcmdframe(frame);
         return;
     }
@@ -573,6 +573,7 @@ void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
 }
 
 
+// called in isr loop
 uint8_t do_receive(uint8_t antenna) // we receive a RX frame from receiver
 {
 uint8_t res;
@@ -605,6 +606,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 }
 
 
+// called in doPreTransmit loop
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
@@ -645,7 +647,7 @@ tRxFrame* frame;
 
         process_received_frame(do_payload, frame);
 
-        stats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
+        stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
 
     } else { // RX_STATUS_INVALID
     }
@@ -658,6 +660,7 @@ tRxFrame* frame;
 }
 
 
+// called in doPreTransmit loop
 void handle_receive_none(void) // RX_STATUS_NONE
 {
     rarq.FrameMissed();
@@ -752,6 +755,7 @@ RESTARTCONTROLLER
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
 
+    rcData.Init();
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&crsf); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
     msp.Init(); // serial port selected by SerialPort
@@ -956,8 +960,8 @@ IF_SX2(
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
         } else { // use antenna1
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            frame_received = (link_rx1_status > RX_STATUS_NONE);          // INVALID, VALID
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID); // VALID
         }
 
         if (frame_received) { // frame received
@@ -981,7 +985,7 @@ IF_SX2(
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && sx_serial.IsEnabled()
         // valid_frame/frame lost logic is modified by ARQ
 #ifndef USE_ARQ
         if (!valid_frame_received) {
@@ -1041,8 +1045,7 @@ IF_SX2(
         }
 
         link_state = LINK_STATE_TRANSMIT;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
+        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
 
         if (!connected()) rarq.Disconnected();
 
@@ -1090,54 +1093,12 @@ IF_SX2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
-IF_CRSF( // CRSF mBridge emulation
-    // handle an incoming command
-    uint8_t mbcmd;
-    if (mbridge.CommandReceived(&mbcmd)) {
-        switch (mbcmd) {
-        case MBRIDGE_CMD_REQUEST_INFO:
-            setup_reload();
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
-            } else {
-                mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
-            }
-            break;
-        case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
-        case MBRIDGE_CMD_PARAM_SET: {
-            bool rx_param_changed;
-            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
-            if (param_changed && rx_param_changed && connected()) {
-                link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
-                mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mBridge
-            }
-            }break;
-        case MBRIDGE_CMD_PARAM_STORE:
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-                mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mBridge
-            } else {
-                doParamsStore = true;
-            }
-            break;
-        case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(TASK_BIND_START); break;
-        case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(TASK_BIND_STOP); break;
-        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(TASK_SYSTEM_BOOT); break;
-        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetMBridgeTask(TASK_ESPBRIDGE_FLASH); break;
-        case MBRIDGE_CMD_MODELID_SET:
-//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
-            config_id.Change(mbridge.GetModelId());
-            break;
-        }
-    }
-);
 IF_CRSF(
     crsf.Do();
     if (crsf.ChannelsUpdated(&rcData)) {
         rc_data_updated = true;
     }
-    uint8_t crsftask; uint8_t crsfcmd; uint8_t mbcmd;
+    uint8_t crsftask; uint8_t crsfcmd;
     uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
         switch (crsftask) {
@@ -1146,7 +1107,6 @@ IF_CRSF(
         case TXCRSF_SEND_LINK_STATISTICS_RX: crsf.SendLinkStatisticsRx(); break;
         case TXCRSF_SEND_LINK_STATISTICS_ALL: crsf.SendLinkStatisticsAll(); break;
         case TXCRSF_SEND_TELEMETRY_FRAME:
-            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
@@ -1165,10 +1125,35 @@ IF_CRSF(
             config_id.Change(crsf.GetCmdModelId());
             break;
         case TXCRSF_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
-        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_START); break;
-        case TXCRSF_CMD_MBRIDGE_IN:
-//dbg.puts("\ncrsf mbridge ");
-            mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
+        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_STOP); break;
+
+        case MBRIDGE_CMD_REQUEST_INFO:
+            setup_reload();
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
+            } else {
+                mbridge.HandleRequestCmd(&crsfcmd);
+            }
+            break;
+        case MBRIDGE_CMD_REQUEST_CMD:
+            mbridge.HandleRequestCmd(mbridge.GetPayloadPtr());
+            break;
+        case MBRIDGE_CMD_PARAM_SET: {
+            bool rx_param_changed;
+            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
+            if (param_changed && rx_param_changed && connected()) {
+                tasks.SetCrsfTask(TASK_RX_PARAM_SET);
+            }
+            }break;
+        case MBRIDGE_CMD_PARAM_STORE: tasks.SetCrsfTask(TASK_PARAM_STORE); break;
+        case MBRIDGE_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
+        case MBRIDGE_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_STOP); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetCrsfTask(TASK_SYSTEM_BOOT); break;
+        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetCrsfTask(TASK_ESPBRIDGE_FLASH); break;
+        case MBRIDGE_CMD_MODELID_SET:
+//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
+            config_id.Change(mbridge.GetModelId());
             break;
         }
     }

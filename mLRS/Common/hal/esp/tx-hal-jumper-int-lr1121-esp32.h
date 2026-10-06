@@ -6,37 +6,22 @@
 // hal
 //*******************************************************
 
-/*
-  Flashing ESP32C3 backpack WiFi bridge:
-  - Board: Generic ESP32C3 Dev Module, use MODULE_ESP32C3_ELRS_TX target
-  - First flash can be via web browser/ELRS WiFi
-  - Need ELRS version of esptool from https://github.com/ExpressLRS/Backpack
-  - Power up radio, plug in USB, select VCP
-  - Run something like "Backpack/python/external/esptool/esptool.py --passthrough --port /dev/ttyACM0 --baud 115200 --before etx --after hard_reset
-  - PUT ADDITIONAL LINES HERE
-
-  Flashing ESP32 module:
-  - Need ELRS python folder from https://github.com/ExpressLRS/ExpressLRS
-  - Power up radio, plug in USB, select VCP
-  - Run something like "python ExpressLRS/src/python/ETXinitPassthrough.py"
-  - Use Visual Studio Code or esptool to flash via ACM serial port.
-*/
-
 //-------------------------------------------------------
-// ESP32, RadioMaster Tx GX12, Internal LR1121 2400 & 900
+// ESP32 Pico D4, Jumper Tx, Internal LR1121, good for T15 Pro Duo, T22 Duo
+// Backpack: Generic ESP32-C3 Module, define LED_IO ???
 //-------------------------------------------------------
-// https://github.com/ExpressLRS/targets/blob/master/TX/Radiomaster%20GX12.json
+// https://github.com/ExpressLRS/Targets/pull/244
 
 #define DEVICE_HAS_JRPIN5
-#define DEVICE_HAS_DIVERSITY_SINGLE_SPI
+//?? #define DEVICE_HAS_NO_LED
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_FAN_ONOFF
 #define DEVICE_HAS_NO_SERIAL
 #define DEVICE_HAS_NO_COM
+#define DEVICE_HAS_NO_DEBUG
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_ESP32C3
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_CONFIGURE
 #define DEVICE_HAS_ESP_WIFI_BRIDGE_W_PASSTHRU_VIA_JRPIN5
-#define DEVICE_HAS_NO_DEBUG
 
 
 //-- UARTS
@@ -51,17 +36,17 @@
 #define UARTD_BAUD                TX_SERIAL_BAUDRATE
 #define UARTD_USE_TX_IO           IO_P5
 #define UARTD_USE_RX_IO           IO_P18
-#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE
-#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE
+#define UARTD_TXBUFSIZE           TX_SERIAL_TXBUFSIZE // 512
+#define UARTD_RXBUFSIZE           TX_SERIAL_RXBUFSIZE // 2048
 
 #define UART_USE_SERIAL1 // full duplex CRSF/MBridge (JR pin5)
 #define UART_BAUD                 400000
 #define UART_USE_TX_IO            IO_P1
 #define UART_USE_RX_IO            IO_P3
-#define UART_TXBUFSIZE            0  // TX FIFO = 128
-#define UART_RXBUFSIZE            0  // RX FIFO = 128 + 1
+#define UART_TXBUFSIZE            0 // TX_SERIAL_TXBUFSIZE  // 512
+#define UART_RXBUFSIZE            0 // TX_SERIAL_RXBUFSIZE  // 2048
 
-#define JR_PIN5_FULL_DUPLEX
+#define JR_PIN5_FULL_DUPLEX       // internal module
 
 
 //-- SX1: LR11xx & SPI
@@ -75,15 +60,17 @@
 #define SX_DIO                    IO_P37
 #define SX_BUSY                   IO_P36
 
+// SX_USE_RFSW_CTRL not needed, uses default {15, 0, 4, 8, 8, 2, 0, 1} selection
+
 #define SX_USE_REGULATOR_MODE_DCDC
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
 
 void sx_init_gpio(void)
 {
-    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_LOW);
+    gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH);
     gpio_init(SX_DIO, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX_BUSY, IO_MODE_INPUT_ANALOG);
+    gpio_init(SX_BUSY, IO_MODE_INPUT_PU);
 }
 
 IRAM_ATTR bool sx_busy_read(void) { return (gpio_read_activehigh(SX_BUSY)) ? true : false; }
@@ -94,40 +81,6 @@ IRAM_ATTR void sx_amp_receive(void) {}
 void sx_dio_enable_exti_isr(void) { attachInterrupt(SX_DIO, SX_DIO_EXTI_IRQHandler, RISING); }
 void sx_dio_init_exti_isroff(void) { detachInterrupt(SX_DIO); }
 IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
-
-
-//-- SX2: LR11xx & SPI
-
-#define SX2_CS_IO                 IO_P13
-#define SX2_RESET                 IO_P21
-#define SX2_DIO                   IO_P34
-#define SX2_BUSY                  IO_P39
-
-#define SX_USE_RFSW_CTRL  {31, 0, 20, 24, 24, 2, 0, 1} // radio_rfsw_ctrl array
-
-#define SX2_USE_REGULATOR_MODE_DCDC
-
-IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
-
-void sx2_init_gpio(void)
-{
-    gpio_init(SX2_CS_IO, IO_MODE_OUTPUT_PP_HIGH);
-    gpio_init(SX2_RESET, IO_MODE_OUTPUT_PP_LOW);
-    gpio_init(SX2_DIO, IO_MODE_INPUT_ANALOG);
-    gpio_init(SX2_BUSY, IO_MODE_INPUT_ANALOG);
-}
-
-IRAM_ATTR void spib_select(void) { gpio_low(SX2_CS_IO); }
-IRAM_ATTR void spib_deselect(void) { gpio_high(SX2_CS_IO); }
-
-IRAM_ATTR bool sx2_busy_read(void) { return (gpio_read_activehigh(SX2_BUSY)) ? true : false; }
-
-IRAM_ATTR void sx2_amp_transmit(void) {}
-IRAM_ATTR void sx2_amp_receive(void) {}
-
-void sx2_dio_init_exti_isroff(void) { detachInterrupt(SX2_DIO); }
-void sx2_dio_enable_exti_isr(void) { attachInterrupt(SX2_DIO, SX2_DIO_EXTI_IRQHandler, RISING); }
-IRAM_ATTR void sx2_dio_exti_isr_clearflag(void) {}
 
 
 //-- Button
@@ -147,17 +100,11 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 
 #define FAN_IO                    IO_P2
 
-void fan_init(void) { analogWriteFrequency(25000); }
+void fan_init(void) { gpio_init(FAN_IO, IO_MODE_OUTPUT_PP_LOW); }
 
 IRAM_ATTR void fan_set_power(int8_t power_dbm)
 {
-    if (power_dbm >= POWER_27_DBM) {
-        analogWrite(FAN_IO, 255);
-    } else if (power_dbm >= POWER_23_DBM) {
-        analogWrite(FAN_IO, 127);
-    } else {
-        analogWrite(FAN_IO, 0);
-    }
+    if (power_dbm >= POWER_23_DBM) { gpio_high(FAN_IO); } else { gpio_low(FAN_IO); }
 }
 
 
@@ -189,71 +136,72 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 //-- POWER
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
-#define SX_USE_LP_PA  // GX12 uses the low power amplifier for the 900 side, radio_rfo_hf option
-#define SX_PA_DAC_IO      IO_P26
+#define SX_USE_LP_PA  // uses the low power amplifier for the 900 side
+#define SX_PA_DAC_IO               IO_P26
 
 void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {
     if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
-        if (power_dbm >= POWER_30_DBM) {
-            *sx_power = 2;
+        if (power_dbm >= POWER_33_DBM) { // -> 33
+            *sx_power = 8;
+            *actual_power_dbm = 33;
+        } else if (power_dbm >= POWER_30_DBM) { // -> 30
+            *sx_power = 3;
             *actual_power_dbm = 30;
-        } else if (power_dbm >= POWER_27_DBM) {
-            *sx_power = -2;
+        } else if (power_dbm >= POWER_27_DBM) { // -> 27
+            *sx_power = -0;
             *actual_power_dbm = 27;
-        } else if (power_dbm >= POWER_24_DBM) {
-            *sx_power = -6;
+        } else if (power_dbm >= POWER_24_DBM) { // -> 24
+            *sx_power = -3;
             *actual_power_dbm = 24;
-        } else if (power_dbm >= POWER_20_DBM) {
-            *sx_power = -10;
+        } else if (power_dbm >= POWER_20_DBM) { // -> 20
+            *sx_power = -7;
             *actual_power_dbm = 20;
-        } else if (power_dbm >= POWER_17_DBM) {
-            *sx_power = -15;
+        } else if (power_dbm >= POWER_17_DBM) { // -> 17
+            *sx_power = -9;
             *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) {
-            *sx_power = -18;
-            *actual_power_dbm = 14;
         } else {
-            *sx_power = -18;
-            *actual_power_dbm = 10;
+            *sx_power = -16;
+            *actual_power_dbm = 11;
         }
     } else {
-        uint8_t dac = 120;
-        if (power_dbm >= POWER_30_DBM) {
-            dac = 100;
-            *sx_power = 7;
-            *actual_power_dbm = 30;
-        } else if (power_dbm >= POWER_27_DBM) {
+        uint8_t dac = 88;
+        if (power_dbm >= POWER_33_DBM) { // -> 33
+            dac = 70;
+            *sx_power = 3;
+            *actual_power_dbm = 32;
+        } else if (power_dbm >= POWER_30_DBM) { // -> 30
+            dac = 85;
             *sx_power = 0;
-            *actual_power_dbm = 27;
-        } else if (power_dbm >= POWER_24_DBM) {
+            *actual_power_dbm = 30;
+        } else if (power_dbm >= POWER_27_DBM) { // -> 27
             *sx_power = -5;
+            *actual_power_dbm = 27;
+        } else if (power_dbm >= POWER_24_DBM) { // -> 24
+            *sx_power = -8;
             *actual_power_dbm = 24;
-        } else if (power_dbm >= POWER_20_DBM) {
-            *sx_power = -9;
-            *actual_power_dbm = 20;
-        } else if (power_dbm >= POWER_17_DBM) {
+        } else if (power_dbm >= POWER_20_DBM) { // -> 20
             *sx_power = -12;
-            *actual_power_dbm = 17;
-        } else if (power_dbm >= POWER_14_DBM) {
+            *actual_power_dbm = 20;
+        } else if (power_dbm >= POWER_17_DBM) { // -> 17
             *sx_power = -15;
-            *actual_power_dbm = 14;
+            *actual_power_dbm = 17;
         } else {
             *sx_power = -17;
-            *actual_power_dbm = 10;
+            *actual_power_dbm = 14;
         }
-        dacWrite(SX_PA_DAC_IO, dac);  // power_apc_2
+        dacWrite(SX_PA_DAC_IO, dac);
     }
 }
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_14_DBM, .mW = 25 },
-    { .dbm = POWER_17_DBM, .mW = 50 }, 
+    { .dbm = POWER_MIN, .mW = INT8_MIN },
+    { .dbm = POWER_17_DBM, .mW = 50 },
     { .dbm = POWER_20_DBM, .mW = 100 },
     { .dbm = POWER_24_DBM, .mW = 250 },
     { .dbm = POWER_27_DBM, .mW = 500 },
     { .dbm = POWER_30_DBM, .mW = 1000 },
+    { .dbm = POWER_33_DBM, .mW = 2000 },
 };
