@@ -26,7 +26,7 @@ extern void clock_reset(void);
 extern SX_DRIVER sx;
 extern SX2_DRIVER sx2;
 
-void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len);
+void sxReadFrame(uint8_t antenna, void* const data, uint8_t len);
 void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms);
 void sxGetPacketStatus(uint8_t antenna, tStats* const stats);
 
@@ -303,7 +303,7 @@ void tBindBase::do_transmit(uint8_t antenna)
 
 uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
-    sxReadFrame(antenna, &rxBindFrame, &rxBindFrame, FRAME_TX_RX_LEN);
+    sxReadFrame(antenna, &rxBindFrame, FRAME_TX_RX_LEN);
 
     bool ok = (rxBindFrame.bind_signature == RxSignature);
     if (ok) {
@@ -353,7 +353,7 @@ void tBindBase::do_transmit(uint8_t antenna)
 
 uint8_t tBindBase::do_receive(uint8_t antenna, bool do_clock_reset)
 {
-    sxReadFrame(antenna, &txBindFrame, &txBindFrame, FRAME_TX_RX_LEN);
+    sxReadFrame(antenna, &txBindFrame, FRAME_TX_RX_LEN);
 
     bool ok = (txBindFrame.bind_signature == TxSignature);
     if (ok) {

@@ -305,14 +305,8 @@ tDebugPort dbg;
 
 tRcData rcData;
 
-#ifdef DEVICE_IS_RECEIVER
-tTxFrame txFrame, txFrame2;
-tRxFrame rxFrame;
-#endif
-#ifdef DEVICE_IS_TRANSMITTER
 tTxFrame txFrame;
-tRxFrame rxFrame, rxFrame2;
-#endif
+tRxFrame rxFrame;
 
 SX_DRIVER sx;
 SX2_DRIVER sx2;
@@ -333,12 +327,12 @@ tRfPower rfpower;
 // Sx/Sx2 convenience wrapper
 //-------------------------------------------------------
 
-void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len)
+void sxReadFrame(uint8_t antenna, void* const data, uint8_t len)
 {
     if (antenna == ANTENNA_1) {
         sx.ReadFrame((uint8_t*)data, len); // should never happen that SX is not set up when antenna1
     } else {
-        sx2.ReadFrame((uint8_t*)data2, len); // should never happen that SX2 is not set up when antenna2
+        sx2.ReadFrame((uint8_t*)data, len); // should never happen that SX2 is not set up when antenna2
     }
 }
 

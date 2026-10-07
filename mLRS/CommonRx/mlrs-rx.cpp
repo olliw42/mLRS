@@ -426,8 +426,8 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 
     // we don't need to read sx.GetRxBufferStatus(), but hey
     // we could save 2 byte's time by not reading sync_word again, but hey
-    sxReadFrame(antenna, &txFrame, &txFrame2, FRAME_TX_RX_LEN);
-    res = (antenna == ANTENNA_1) ? check_txframe(&txFrame) : check_txframe(&txFrame2);
+    sxReadFrame(antenna, &txFrame, FRAME_TX_RX_LEN);
+    res = check_txframe(&txFrame);
 
     if (res != CHECK_OK) {
         DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
@@ -456,14 +456,11 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 {
 uint8_t rx_status;
-tTxFrame* frame;
 
     if (antenna == ANTENNA_1) {
         rx_status = link_rx1_status;
-        frame = &txFrame;
     } else {
         rx_status = link_rx2_status;
-        frame = &txFrame2;
     }
 
     if (bind.IsInBind()) {
@@ -477,7 +474,7 @@ tTxFrame* frame;
 
     // handle transmit ARQ
     if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.AckReceived(frame->status.ack);
+        tarq.AckReceived(txFrame.status.ack);
     } else {
         tarq.FrameMissed();
     }
@@ -486,7 +483,7 @@ tTxFrame* frame;
 
         bool do_payload = (rx_status == RX_STATUS_VALID);
 
-        process_received_frame(do_payload, frame);
+        process_received_frame(do_payload, &txFrame);
 
         stats.doValidCrc1FrameReceived();
         if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
