@@ -798,14 +798,13 @@ void tRxMavlink::send_radio_rc_channels(void)
 int16_t channels[32]; // FASTMAVLINK_MSG_RADIO_RC_CHANNELS_FIELD_CHANNELS_NUM = 32
 uint16_t rc_len;
 
-/* this needs update to AP's AP_RCProtocol_MAVLinkRadio.h/cpp to work
+//    rc_len = (rc_channels_do_32) ? 32 : 16;
+// this needs update to AP's AP_RCProtocol_MAVLinkRadio.h/cpp to work
     rc_len = 16;
-    uint32_t tnow_ms = millis32();
-    if ((tnow_ms - rc_channels32_tlast_ms) >= 200) { // send 32 channels only at 5 Hz
-        rc_channels32_tlast_ms = tnow_ms;
+    if ((millis32() - rc_channels32_tlast_ms) >= 200) { // send 32 channels only at 5 Hz
+        rc_channels32_tlast_ms += 200;
         rc_len = (rc_channels_do_32) ? 32 : 16;
-    } */
-    rc_len = (rc_channels_do_32) ? 32 : 16;
+    }
 
     memcpy(channels, rc_chan_13b, rc_len*2); // for (uint8_t n = 0; n < rc_len; n++) channels[n] = rc_chan_13b[n];
     for (uint8_t n = rc_len; n < 32; n++) channels[n] = 0;
