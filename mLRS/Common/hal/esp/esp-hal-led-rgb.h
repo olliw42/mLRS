@@ -15,7 +15,7 @@
 #define LED_RGB_BLUE 3
 #define LED_RGB_PURPLE 4
 
-static bool leds_initialized = false; // Begin() aborts if called again, since the rmt driver is installed already
+bool leds_initialized = false; // Begin() aborts if called again, since the rmt driver is installed already
 uint8_t ledCurrentColorState;;
 
 NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> ledRGB(LED_RGB_PIXEL_NUM, LED_RGB);
