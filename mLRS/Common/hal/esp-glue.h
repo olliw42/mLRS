@@ -22,6 +22,43 @@
 #define __NOP() _NOP()
 
 
+// a dio bootloader (e.g. left in place by the ELRS flasher) doesn't route the flash WP/HD pins, and
+// nvs then fails with our qio build. So do here what the qio bootloader does, before nvs is started.
+#if defined CONFIG_IDF_TARGET_ESP32 && defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
+#include "bootloader_flash_config.h"
+#include "esp32/rom/efuse.h"
+#include "esp32/rom/spi_flash.h"
+#include "soc/spi_reg.h"
+#include "esp_flash.h"
+
+extern "C" void spi_flash_disable_interrupts_caches_and_other_cpu(void);
+extern "C" void spi_flash_enable_interrupts_caches_and_other_cpu(void);
+
+// a dio bootloader also leaves code execution from flash in dio, so switch it to qio as the qio
+// bootloader does. Must run from ram with the cache off, as it changes how code is read from flash.
+IRAM_ATTR __attribute__((noinline)) void esp_flash_qio_exec_init(void)
+{
+    spi_flash_disable_interrupts_caches_and_other_cpu();
+    esp_rom_spiflash_config_readmode(ESP_ROM_SPIFLASH_QIO_MODE);
+    spi_flash_enable_interrupts_caches_and_other_cpu();
+}
+
+__attribute__((constructor)) void esp_flash_qio_pins_init(void)
+{
+    esp_rom_spiflash_select_qio_pins(bootloader_flash_get_wp_pin(), ets_efuse_get_spiconfig());
+
+    // the flash driver has set the flash's quad enable bit at this point, skip if it has not
+    if (!esp_flash_default_chip || !esp_flash_is_quad_mode(esp_flash_default_chip)) return;
+    if (REG_READ(SPI_CTRL_REG(0)) & SPI_FREAD_QIO) return; // qio bootloader, nothing to do
+    esp_flash_qio_exec_init();
+}
+#endif
+
+#ifdef ESP32
+#include <nvs_flash.h>
+#endif
+
+
 #undef IRQHANDLER
 #define IRQHANDLER(__Declaration__)  extern "C" {IRAM_ATTR __Declaration__}
 
@@ -54,7 +91,12 @@ typedef enum
 
 // setup(), loop() streamlining between Arduino/STM code
 static uint8_t restart_controller = 0;
-void setup() {}
+void setup() {
+#ifdef ESP32
+    // arduino recovers nvs only for some of the errors, so do it here for all others
+    if (nvs_flash_init() != ESP_OK) { nvs_flash_erase(); nvs_flash_init(); }
+#endif
+}
 void main_loop(void);
 void loop() {
 #ifdef CONFIG_IDF_TARGET_ESP32C3 // ESP32C3 needs this to get around 5 ms delay every 2 s
