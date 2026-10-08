@@ -24,7 +24,8 @@
 
 // a dio bootloader (e.g. left in place by the ELRS flasher) doesn't route the flash WP/HD pins, and
 // nvs then fails with our qio build. So do here what the qio bootloader does, before nvs is started.
-#if defined CONFIG_IDF_TARGET_ESP32 && defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
+// only in c++, this file is also included by c code
+#if defined __cplusplus && defined CONFIG_IDF_TARGET_ESP32 && defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
 #include "bootloader_flash_config.h"
 #include "esp32/rom/efuse.h"
 #include "esp32/rom/spi_flash.h"
