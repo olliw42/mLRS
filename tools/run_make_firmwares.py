@@ -126,6 +126,8 @@ VERSIONONLYSTR = ''
 BRANCHSTR = ''
 HASHSTR = ''
 
+USE_LTO = False # set by --lto
+
 def mlrs_set_version():
     global VERSIONONLYSTR
     F = open(os.path.join(MLRS_DIR,'Common','common_conf.h'), mode='r')
@@ -615,6 +617,8 @@ def mlrs_compile_file(target, file):
             cmd += '-I'+os.path.join(MLRS_DIR,target.target,file)+' '
 
         cmd += '-Os '
+        if USE_LTO:
+            cmd += '-flto '
         cmd += '-ffunction-sections -fdata-sections -Wall -fstack-usage '
         if is_cpp:
             cmd += '-fno-exceptions -fno-rtti -fno-use-cxa-atexit '
@@ -704,6 +708,8 @@ def mlrs_link_target(target):
     cmd += '-static '
     cmd += '-Wl,-Map="'+os.path.join(MLRS_BUILD_DIR,target.build_dir,target.target+'.map')+'" '
     cmd += '-Wl,--gc-sections '
+    if USE_LTO:
+        cmd += '-flto=auto -Os ' # LTO re-optimizes at link, so it needs the opt level here
     cmd += '-Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group '
 
     #print(cmd)
@@ -1250,6 +1256,8 @@ if __name__ == "__main__":
                 cmdline_D_list.append(sys.argv[cmd_pos+1])
         if cmd == '--nopause' or cmd == '-np':
                 cmdline_nopause = True
+        if cmd == '--lto':
+            USE_LTO = True
         if cmd == '--version' or cmd == '-v' or cmd == '-V':
             if sys.argv[cmd_pos+1] != '':
                 cmdline_version = sys.argv[cmd_pos+1]
