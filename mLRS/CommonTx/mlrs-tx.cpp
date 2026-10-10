@@ -460,7 +460,7 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //           -> pack_txframe(...) or pack_txcmdframe(...)
 //   -> do_transmit_send(antenna)
 // receive
-//   isr:        -> irq2_status
+//   isr:        -> irq_status
 //   isr loop:   -> do_receive(antenna)
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
@@ -595,6 +595,8 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 
     if (res == CHECK_ERROR_SYNCWORD) return RX_STATUS_INVALID; // must not happen !
 
+    // can be CHECK_ERROR_HEADER, CHECK_ERROR_CRC, CHECK_OK
+
     if (res == CHECK_OK) {
         rx_status = RX_STATUS_VALID;
     }
@@ -602,12 +604,12 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     // we want to have the rssi,snr stats even if it's a bad packet
     sxGetPacketStatus(antenna, &stats);
 
-    return rx_status;
+    return rx_status; // INVALID, VALID
 }
 
 
 // called in doPreTransmit loop
-void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_VALID
+void handle_receive(uint8_t antenna) // called if INVALID, VALID
 {
 uint8_t rx_status;
 tRxFrame* frame;
@@ -625,12 +627,14 @@ tRxFrame* frame;
         return;
     }
 
-    if (rx_status < RX_STATUS_INVALID) { // must not happen
+    // can be INVALID, VALID (NONE is handled elsewhere)
+
+    if (rx_status < RX_STATUS_INVALID) { // = RX_STATUS_NONE, must not happen
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
     // handle receive ARQ, must come before process_received_frame()
-    if (rx_status == RX_STATUS_VALID) {
+    if (rx_status == RX_STATUS_VALID) { // we have valid information on ack
         rarq.Received(frame->status.seq_no);
     } else {
         rarq.FrameMissed();
@@ -641,7 +645,7 @@ tRxFrame* frame;
         msp.FrameLost();
     }
 
-    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
+    if (rx_status > RX_STATUS_INVALID) { // = RX_STATUS_VALID
 
         bool do_payload = true; // has no rc data, so do_payload is always
 
@@ -661,7 +665,7 @@ tRxFrame* frame;
 
 
 // called in doPreTransmit loop
-void handle_receive_none(void) // RX_STATUS_NONE
+void handle_receive_none(void) // called if RX_STATUS_NONE
 {
     rarq.FrameMissed();
 }
@@ -965,14 +969,13 @@ IF_SX2(
         }
 
         if (frame_received) { // frame received
+            uint8_t antenna = ANTENNA_1;
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                uint8_t antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
-                handle_receive(antenna);
+                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
             } else if (USE_ANTENNA2) {
-                handle_receive(ANTENNA_2);
-            } else { // use antenna1
-                handle_receive(ANTENNA_1);
+                antenna = ANTENNA_2;
             }
+            handle_receive(antenna);
         } else {
             handle_receive_none();
         }

@@ -556,7 +556,7 @@ tTxCmdFrameRxParams* rx_params = (tTxCmdFrameRxParams*)frame->payload;
     Setup.Common[0].Mode = rx_params->Mode;
     Setup.Common[0].Ortho = rx_params->Ortho;
 
-    // don't take over Rx parameters if there is a layout version missmatch
+    // don't take over Rx parameters if there is a layout version mismatch
     // tx_setup_layout_u16 is 0 for versions < 10401
     // TODO: conversion ?
     if (version_from_u16(rx_params->tx_setup_layout_u16) != (uint32_t)SETUPLAYOUT) return;

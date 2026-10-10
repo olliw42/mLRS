@@ -231,18 +231,25 @@ typedef struct
 // Cmd & SetupData frames
 // these are just normal Tx and Rx frames, with special payloads though
 //-------------------------------------------------------
+// Tx -> Rx
+// CMD_GET_RX_SETUPDATA           only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
+// CMD_GET_RX_SETUPDATA_WRELOAD   only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
+// CMD_GET_RX_SETUPDATA_STARTUP   only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
+// CMD_SET_RX_PARAMS              tTxCmdFrameRxParams = 64 bytes    -> response from Rx with RX_SETUPDATA
+// CMD_STORE_RX_PARAMS            only 1 cmd byte                   -> no response, rx reboots
+// Rx -> Tx
+// CMD_RX_SETUPDATA               tRxCmdFrameRxSetupData = 82 bytes
 
 typedef enum {
     FRAME_CMD_NONE = 0,
 //not used    FRAME_CMD_RX_REBOOT,  // tx -> rx, rx reboots
 //not used    FRAME_CMD_RX_BIND,    // tx -> rx, rx goes into bind mode
-
     // some of these commands have additional data
-    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata  -> response with RX_SETUPDATA
+    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata
     FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
-    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters  -> response with RX_SETUPDATA
+    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters
     FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots (no extra data)
-    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters  -> response with RX_SETUPDATA
+    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters
 } FRAME_CMD_ENUM;
 
 
@@ -278,7 +285,7 @@ typedef struct
 }) tCmdFrameRxParameters; // 24 bytes
 
 
-// send from Rx as response to command GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD
+// send from Rx as response to commands GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD
 PACKED(
 typedef struct
 {
