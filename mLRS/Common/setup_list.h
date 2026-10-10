@@ -25,55 +25,58 @@
 // this is not totally satisfying, since non-LIST options cannot be hidden
 
 // common to Tx,Rx
-#define SETUP_MSK_MODE                &SetupMetaData.Mode_allowed_mask // this we infer from the hal
-#define SETUP_MSK_RFBAND              &SetupMetaData.FrequencyBand_allowed_mask // this we infer from the hal
-#define SETUP_MSK_RFORTHO             &SetupMetaData.Ortho_allowed_mask // this we infer from the hal
+#define SETUP_MSK_MODE                &SetupMetaData.Mode_allowed_mask // inferred from the hal
+#define SETUP_MSK_RFBAND              &SetupMetaData.FrequencyBand_allowed_mask // inferred from the hal
+#define SETUP_MSK_RFORTHO             &SetupMetaData.Ortho_allowed_mask // inferred from the hal
 
 // for Tx,Rx, options limited depending on hardware, implementation
-#define SETUP_MSK_TX_DIVERSITY        &SetupMetaData.Tx_Diversity_allowed_mask // this we generate from the hal
-#define SETUP_MSK_RX_DIVERSITY        &SetupMetaData.Rx_Diversity_allowed_mask // this we get from the receiver
+#define SETUP_MSK_TX_DIVERSITY        &SetupMetaData.Tx_Diversity_allowed_mask // generated from the hal
+#define SETUP_MSK_RX_DIVERSITY        &SetupMetaData.Rx_Diversity_allowed_mask // obtained from the receiver
 
 // Tx only
-#define SETUP_MSK_TX_SER_PORT         &SetupMetaData.Tx_SerialPort_allowed_mask // this we generate from the hal
-#define SETUP_MSK_TX_SER_PORT2        &SetupMetaData.Tx_SerialPort2_allowed_mask // this we generate from the hal
-#define SETUP_MSK_TX_SER_BAUDRATE2    &SetupMetaData.Tx_SerialBaudrate2_allowed_mask // this we generate from the hal
-#define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // this we generate from the hal
-#define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // this we generate from the hal
-#define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // this we generate from the hal
-#define SETUP_MSK_TX_WIFIPROT         &SetupMetaData.Tx_WiFiProt_allowed_mask // this we generate from the hal
+#define SETUP_MSK_TX_SER_PORT         &SetupMetaData.Tx_SerialPort_allowed_mask // generated from the hal
+#define SETUP_MSK_TX_SER_PORT2        &SetupMetaData.Tx_SerialPort2_allowed_mask // generated from the hal
+#define SETUP_MSK_TX_SER_BAUDRATE2    &SetupMetaData.Tx_SerialBaudrate2_allowed_mask // generated from the hal
+#define SETUP_MSK_TX_CH_SOURCE        &SetupMetaData.Tx_ChannelsSource_allowed_mask // generated from the hal
+#define SETUP_MSK_TX_IN_MODE          &SetupMetaData.Tx_InMode_allowed_mask // generated from the hal
+#define SETUP_MSK_TX_BUZZER           &SetupMetaData.Tx_Buzzer_allowed_mask // generated from the hal
+#define SETUP_MSK_TX_WIFIPROT         &SetupMetaData.Tx_WiFiProt_allowed_mask // generated from the hal
 
 // Rx only
-#define SETUP_MSK_RX_OUT_MODE         &SetupMetaData.Rx_OutMode_allowed_mask // this we get from the receiver
-#define SETUP_MSK_RX_SER_PORT         &SetupMetaData.Rx_SerialPort_allowed_mask // this we get from the receiver
-
+#define SETUP_MSK_RX_OUT_MODE         &SetupMetaData.Rx_OutMode_allowed_mask // obtained from the receiver
+#define SETUP_MSK_RX_SER_PORT         &SetupMetaData.Rx_SerialPort_allowed_mask // obtained from the receiver
 
 // for Tx,Rx, option strings
-#define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // this we generate from the hal
-#define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // this we get from the receiver
+#define SETUP_OPT_TX_POWER            SetupMetaData.Tx_Power_optstr // generated from the hal
+#define SETUP_OPT_RX_POWER            SetupMetaData.Rx_Power_optstr // obtained from the receiver
 
 #define SETUP_OPT_DIVERSITY           "enabled,antenna1,antenna2,r:en t:ant1,r:en t:ant2"
-#define SETUP_OPT_DIVERSITY_LONGSTR   "enabled,antenna1,antenna2,r:en. t:ant1,r:en. t:ant2" // used e.g. in cli
-#define SETUP_OPT_DIVERSITY_DISPSTR   "enabled,antenna1,antenna2,ren ta1,ren ta2" // used in display, 7 chars max
+#define SETUP_OPT_DIVERSITY_CLI       "enabled,antenna1,antenna2,r:en. t:ant1,r:en. t:ant2" // used in cli
+#define SETUP_OPT_DIVERSITY_DISP      "enabled,antenna1,antenna2,ren ta1,ren ta2" // used in display, 7 chars max
 
 #define SETUP_OPT_CH_ORDER            "AETR,TAER,ETAR"
 #define SETUP_OPT_TX_SERIAL_BAUDRATE  "57600,115200,230400"
 #define SETUP_OPT_RX_SERIAL_BAUDRATE  "57600,115200,230400"
 
-#define SETUP_OPT_SERIAL_LINK_MODE          "transp.,mavlink,mavlinkX,mspX"
-#define SETUP_OPT_SERIAL_LINK_MODE_DISPSTR  "transp.,mavlink,mavlnkX,mspX"
+#define SETUP_OPT_SERIAL_LINK_MODE       "transp.,mavlink,mavlinkX,mspX"
+#define SETUP_OPT_SERIAL_LINK_MODE_DISP  "transp.,mavlink,mavlnkX,mspX"
 
-#define SETUP_OPT_MODE                "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x" // used below in LIST_COMMON, also used in e.g. cli
-#define SETUP_OPT_MODE_DISPSTR        "50 Hz,31 Hz,19 Hz,FLRC,FSK,19Hz7x" // used in display, 7 chars max, should be 6 chars however
+#define SETUP_OPT_MODE                "50 Hz,31 Hz,19 Hz,FLRC,FSK,19 Hz 7x" // used below in LIST_COMMON, also in cli
+#define SETUP_OPT_MODE_DISP           "50 Hz,31 Hz,19 Hz,FLRC,FSK,19Hz7x" // used in display, 7 chars max, better 6 chars
 
 #define SETUP_OPT_RFBAND              "2.4,915 FCC,868,433,70,866 IN,915+2.4,868+2.4" // used below in LIST_COMMON
-#define SETUP_OPT_RF_BAND_LONGSTR     "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN,915 MHz + 2.4 GHz,868 MHz + 2.4 GHz" // used e.g. in cli
-#define SETUP_OPT_RF_BAND_DISPSTR     "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN,915+2.4,868+2.4" // used in display, 7 chars max
+#define SETUP_OPT_RF_BAND_CLI         "2.4 GHz,915 MHz FCC,868 MHz,433 MHz,70 cm HAM,866 MHz IN,915 MHz + 2.4 GHz,868 MHz + 2.4 GHz" // used in cli
+#define SETUP_OPT_RF_BAND_DISP        "2.4 GHz,915 FCC,868 MHz,433 MHz,70 cm,866 IN,915+2.4,868+2.4" // used in display, 7 chars max
 
+#define SETUP_OPT_TX_SER_PORT         "serial,wbridge,serial2,com,crsfbridge"
+#define SETUP_OPT_TX_SER_PORT_DISP    "serial,wbridge,serial2,com,cbridge"
+#define SETUP_OPT_TX_SER_PORT2        "none,serial,wbridge,serial2,crsfbridge"
+#define SETUP_OPT_TX_SER_PORT2_DISP   "none,serial,wbridge,serial2,cbridge"
 
 #define MSK_ALL                       nullptr // is converted to UINT16_MAX
 
 
-#define PARAM_INDEX_MODE              1
+#define PARAM_INDEX_MODE              1 // needed for display
 
 
 // Tx parameters must begin with "Tx "
@@ -96,9 +99,9 @@
   X( Setup.Tx[0].ChannelsSource,    LIST, "Tx Ch Source",     "TX_CH_SOURCE",     0,0,0,"", "none,crsf,in", SETUP_MSK_TX_CH_SOURCE )\
   X( Setup.Tx[0].ChannelOrder,      LIST, "Tx Ch Order",      "TX_CH_ORDER",      0,0,0,"", SETUP_OPT_CH_ORDER, MSK_ALL )\
   X( Setup.Tx[0].InMode,            LIST, "Tx In Mode",       "TX_IN_MODE",       0,0,0,"", "sbus,sbus inv", SETUP_MSK_TX_IN_MODE )\
-  X( Setup.Tx[0].SerialPort,        LIST, "Tx Ser Port",      "TX_SER_PORT",      0,0,0,"", "serial,wbridge,serial2,com,crsf", SETUP_MSK_TX_SER_PORT )\
+  X( Setup.Tx[0].SerialPort,        LIST, "Tx Ser Port",      "TX_SER_PORT",      0,0,0,"", SETUP_OPT_TX_SER_PORT, SETUP_MSK_TX_SER_PORT )\
   X( Setup.Tx[0].SerialBaudrate,    LIST, "Tx Ser Baudrate",  "TX_SER_BAUD",      0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, MSK_ALL )\
-  X( Setup.Tx[0].SerialPort2,       LIST, "Tx Ser Port2",     "TX_SER_PORT2",     0,0,0,"", "none,serial,wbridge,serial2,crsf", SETUP_MSK_TX_SER_PORT2 )\
+  X( Setup.Tx[0].SerialPort2,       LIST, "Tx Ser Port2",     "TX_SER_PORT2",     0,0,0,"", SETUP_OPT_TX_SER_PORT2, SETUP_MSK_TX_SER_PORT2 )\
   X( Setup.Tx[0].SerialBaudrate2,   LIST, "Tx Ser Baudrate2", "TX_SER_BAUD2",     0,0,0,"", SETUP_OPT_TX_SERIAL_BAUDRATE, SETUP_MSK_TX_SER_BAUDRATE2 )\
   X( Setup.Tx[0].SendRadioStatus,   LIST, "Tx Snd RadioStat", "TX_SND_RADIOSTAT", 0,0,0,"", "off,1 Hz", MSK_ALL )\
   X( Setup.Tx[0].MavlinkComponent,  LIST, "Tx Mav Component", "TX_MAV_COMPONENT", 0,0,0,"", "off,enabled", MSK_ALL )\

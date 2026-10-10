@@ -293,8 +293,7 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 //           -> pack_rx_frame(...) or pack_rxcmdframe(...)
 // receive
 //   isr:        -> irq2_status
-//   isr loop:   -> do_receive(antenna, do_clock_reset)
-//               -> link_rx1_status
+//   isr loop:   -> link_rx1/2_status = do_receive(antenna, do_clock_reset)
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
 //                               -> rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
@@ -389,12 +388,11 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     link_task_reset(); // clear it if non-cmd frame is received
 
     // output data on serial, but only if connected
-    if (connected()) {
-        sx_serial.putbuf(frame->payload, frame->status.payload_len);
+    if (!connected()) return;
+    sx_serial.putbuf(frame->payload, frame->status.payload_len);
 
-        stats.bytes_received.Add(frame->status.payload_len);
-        stats.serial_data_received.Inc();
-    }
+    stats.bytes_received.Add(frame->status.payload_len);
+    stats.serial_data_received.Inc();
 }
 
 
@@ -438,6 +436,8 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
     // it can happen though, I've observed it on R9, maybe if in the ca 1 ms after receive the sx starts receiving something?
     if (res == CHECK_ERROR_SYNCWORD) { FAIL_WMSG("do_receive() CHECK_ERROR_SYNCWORD"); return RX_STATUS_INVALID; }
 
+    // can be CHECK_ERROR_HEADER, CHECK_ERROR_CRC1, CHECK_ERROR_CRC, CHECK_OK
+
     if (res == CHECK_OK || res == CHECK_ERROR_CRC) { // at least crc1 must be valid
 
         if (do_clock_reset) rxclock.Reset();
@@ -448,12 +448,12 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
     // we want to have the rssi,snr stats even if it's a bad packet
     sxGetPacketStatus(antenna, &stats);
 
-    return rx_status;
+    return rx_status; // INVALID, CRC1_VALID, VALID
 }
 
 
 // called in doPostReceive loop
-void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+void handle_receive(uint8_t antenna) // called if INVALID, CRC1_VALID, VALID
 {
 uint8_t rx_status;
 tTxFrame* frame;
@@ -471,18 +471,20 @@ tTxFrame* frame;
         return;
     }
 
-    if (rx_status < RX_STATUS_INVALID) { // must not happen
+    // can be INVALID, CRC1_VALID, VALID (NONE is handled elsewhere)
+
+    if (rx_status < RX_STATUS_INVALID) { // = RX_STATUS_NONE, must not happen
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
     // handle transmit ARQ
-    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
+    if (rx_status > RX_STATUS_INVALID) { // = RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
         tarq.AckReceived(frame->status.ack);
     } else {
         tarq.FrameMissed();
     }
 
-    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+    if (rx_status > RX_STATUS_INVALID) { // = RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
         bool do_payload = (rx_status == RX_STATUS_VALID);
 
@@ -503,7 +505,7 @@ tTxFrame* frame;
 
 
 // called in doPostReceive loop
-void handle_receive_none(void) // RX_STATUS_NONE
+void handle_receive_none(void) // called if RX_STATUS_NONE
 {
     tarq.FrameMissed();
 }
@@ -565,6 +567,9 @@ RESTARTCONTROLLER
     sx.SetRfFrequency(fhss.GetCurrFreq());
     sx2.SetRfFrequency(fhss.GetCurrFreq2());
 
+    doPostReceive2_cnt = 0;
+    doPostReceive2 = false;
+    frame_missed = false;
     link_state = LINK_STATE_RECEIVE;
     connect_state = CONNECT_STATE_LISTEN;
     connect_tmo_cnt = 0;
@@ -575,9 +580,6 @@ RESTARTCONTROLLER
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
-    doPostReceive2_cnt = 0;
-    doPostReceive2 = false;
-    frame_missed = false;
 
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();

@@ -15,13 +15,15 @@
 #define LED_RGB_BLUE 3
 #define LED_RGB_PURPLE 4
 
+bool leds_initialized = false; // Begin() aborts if called again, since the rmt driver is installed already
 uint8_t ledCurrentColorState;;
 
 NeoPixelBus<NeoGrbFeature, NeoEsp32Rmt0Ws2812xMethod> ledRGB(LED_RGB_PIXEL_NUM, LED_RGB);
 
 void leds_init(void) 
 { 
-    ledRGB.Begin();
+    if (!leds_initialized) ledRGB.Begin(); // leds_init() is called again when the controller restarts
+    leds_initialized = true;
     ledRGB.ClearTo(RgbColor(0));
     ledRGB.Show(); 
     ledCurrentColorState = LED_RGB_OFF;
