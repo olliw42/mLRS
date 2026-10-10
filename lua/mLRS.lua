@@ -13,7 +13,7 @@
 -- Tables are less efficient memory and cpu wise, but are being used to avoid the 200 local limit.
 
 local VERSION = {
-    script = '2026-10-05', -- add a '.01' if needed for the day
+    script = '2026-10-10', -- add a '.01' if needed for the day
     required_tx_version_int = 10303,  -- 'v1.3.03'
     required_rx_version_int = 10303,  -- 'v1.3.03'
 }
@@ -48,7 +48,7 @@ local LAYOUT = {
     DY = 21, -- default line distance
     -- parameter names & values
     PARAM_VALUE_DX = 135,
-    PARAM_RIGHT_X = 240,
+    PARAM_RIGHT_X = 270,
     -- popup box, location of popup box
     POPUP_X = 80, -- LCD_W/2-160
     POPUP_Y = 76,
@@ -83,8 +83,8 @@ local function setupScreen()
         LAYOUT.page_N1 = 14
         LAYOUT.page_N = 2 * LAYOUT.page_N1
         LAYOUT.DY = 28 -- default line distance
-        LAYOUT.PARAM_VALUE_DX = 130 + 40
-        LAYOUT.PARAM_RIGHT_X = 240 + 100
+        LAYOUT.PARAM_VALUE_DX = 135 + 50
+        LAYOUT.PARAM_RIGHT_X = 270 + 100
         LAYOUT.POPUP_W = 640
         LAYOUT.POPUP_H = 100
         LAYOUT.WARN_W = 740
@@ -1292,7 +1292,7 @@ local function drawPageMain()
     y = LAYOUT.COMMON_Y
     lcd.drawText(10, y, "Bind Phrase", THEME.textColor)
     if DEVICE_PARAM_LIST_complete then
-        local x = 10 + LAYOUT.PARAM_VALUE_DX
+        local x = 10 + LAYOUT.PARAM_VALUE_DX-10
         for i = 1,6 do
             local c = string.sub(DEVICE_PARAM_LIST[0].value, i, i) -- param_idx = 0 = BindPhrase
             local attr = cur_attr_x(0, i-1)
@@ -1300,7 +1300,7 @@ local function drawPageMain()
             --x = x + lcd.getTextWidth(c,1,attr)+1
             x = x + getCharWidth(c) + 1
             if i == 6 and DEVICE_PARAM_LIST[2].value == 0 then -- do only for 2.4GHz band
-                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX + 70, y, getExceptStrFromChar(c), THEME.textColor)
+                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX + 60, y, getExceptStrFromChar(c), THEME.textColor)
             end
         end
     end
@@ -1310,7 +1310,7 @@ local function drawPageMain()
     if DEVICE_PARAM_LIST_complete then
         local p = DEVICE_PARAM_LIST[1] -- param_idx = 1 = Mode
         if p.options[p.value+1] ~= nil then
-            lcd.drawText(10+LAYOUT.PARAM_VALUE_DX, y, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
+            lcd.drawText(10+LAYOUT.PARAM_VALUE_DX-10, y, p.options[p.value+1], cur_attr_p(IDX.Mode_idx,1))
         end
     end
 
@@ -1321,9 +1321,9 @@ local function drawPageMain()
         if p.options[p.value+1] ~= nil then
             --lcd.drawText(240+80, y, p.options[p.value+1], cur_attr(2))
             if p.value <= #freq_band_list then
-                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX, y, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX-10, y, freq_band_list[p.value], cur_attr_p(IDX.RFBand_idx,2))
             else
-                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
+                lcd.drawText(10+LAYOUT.PARAM_VALUE_DX-10, y + 2*LAYOUT.DY, p.options[p.value+1], cur_attr_p(IDX.RFBand_idx,2))
             end
         end
     end
