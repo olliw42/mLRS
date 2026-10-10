@@ -1473,7 +1473,8 @@ typedef struct
     uint8_t binding : 1;
     uint8_t dualband : 1;
     uint8_t rx_available : 1;
-    uint8_t spare : 4;
+    uint8_t privacy : 2;
+    uint8_t spare : 2;
 
     uint8_t rx_actual_diversity : 4;
     uint8_t tx_actual_diversity : 4;
@@ -1514,6 +1515,7 @@ tCrsfMbStatistics lstats = {};
     lstats.binding = bind.IsInBind();
     lstats.dualband = Config.IsDualBand;
     lstats.rx_available = SetupMetaData.rx_available;
+    lstats.privacy = Setup.Common[Config.ConfigId].Privacy;
 
     lstats.rx_actual_diversity = SetupMetaData.rx_actual_diversity;
     lstats.tx_actual_diversity = Config.Diversity;

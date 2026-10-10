@@ -27,6 +27,7 @@ typedef enum {
     FRAME_TYPE_TX = 0x00,
     FRAME_TYPE_RX = 0x01,
     FRAME_TYPE_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
+    FRAME_TYPE_CMD_ENCRYPTED = 0x03,
 } FRAME_TYPE_ENUM;
 
 
@@ -198,9 +199,12 @@ typedef struct
     uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare3 : 4;
-    uint8_t spare4[71];
+    uint8_t spare3[51];
+
+    uint8_t tx_uid[12]; // 12 bytes = 96 bits
+    uint64_t tx_random; //  8 bytes = 64 bits
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -221,7 +225,9 @@ typedef struct
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare3[55];
+    uint8_t spare3[43];
+
+    uint8_t rx_uid[12]; // 12 bytes = 96 bits
 
     uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
@@ -234,8 +240,8 @@ typedef struct
 // Tx -> Rx
 // CMD_GET_RX_SETUPDATA           only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
 // CMD_GET_RX_SETUPDATA_WRELOAD   only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
-// CMD_GET_RX_SETUPDATA_STARTUP   only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
-// CMD_SET_RX_PARAMS              tTxCmdFrameRxParams = 64 bytes    -> response from Rx with RX_SETUPDATA
+// CMD_GET_RX_SETUPDATA_STARTUP   1 cmd byte + 18 bytes nonce&MAC   -> response from Rx with RX_SETUPDATA
+// CMD_SET_RX_PARAMS              tTxCmdFrameRxParams = 64-12 bytes -> response from Rx with RX_SETUPDATA
 // CMD_STORE_RX_PARAMS            only 1 cmd byte                   -> no response, rx reboots
 // Rx -> Tx
 // CMD_RX_SETUPDATA               tRxCmdFrameRxSetupData = 82 bytes
@@ -250,6 +256,7 @@ typedef enum {
     FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters
     FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots (no extra data)
     FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters
+    FRAME_CMD_GET_RX_SETUPDATA_STARTUP, // tx -> rx, ask for param & metadata, send session random
 } FRAME_CMD_ENUM;
 
 
@@ -285,7 +292,8 @@ typedef struct
 }) tCmdFrameRxParameters; // 24 bytes
 
 
-// send from Rx as response to commands GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD
+// send from Rx as response to commands GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD, GET_RX_SETUPDATA_STARTUP
+// Note: This structure CANNOT be shortened by 12 bytes for nonce and MAC, and is thus not encryptable.
 PACKED(
 typedef struct
 {
@@ -307,8 +315,9 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
     uint8_t Ortho_allowed_mask_XXX; // TODO
+    uint8_t Privacy_allowed_mask_XXX; // TODO
 
-    uint8_t spare2[2];
+    uint8_t spare2;
 
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
@@ -320,6 +329,11 @@ typedef struct
 
 
 // send from Tx to do SET_RX_PARAMS
+// Note: The strange arrangement is to allow for encryption.
+// Unfortunately, the version and layout fields were placed at the end of the structure.
+// This prevents reserving the up to 12 bytes required for nonce and MAC.
+// Hence, on the Tx side these data are copied into the copy fields, and on the Rx side
+// are moved for privacy > 0 back to the end. This maintains backwards compatibility.
 PACKED(
 typedef struct
 {
@@ -331,16 +345,21 @@ typedef struct
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare2 : 4;
-    uint8_t spare3[2];
+    uint8_t spare2[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare4[24];
+    uint8_t spare3[12];
 
-    uint16_t tx_firmware_version_u16; // 16.64.64
-    uint16_t tx_setup_layout_u16; // 16.64.64
+    uint16_t tx_firmware_version_u16_new; // 16.64.64
+    uint16_t tx_setup_layout_u16_new; // 16.64.64
+
+    //--
+    uint8_t reserved_for_crypto[8]; // do not use
+    uint16_t tx_firmware_version_u16_old; // 16.64.64
+    uint16_t tx_setup_layout_u16_old; // 16.64.64
 }) tTxCmdFrameRxParams; // 64 bytes
 
 

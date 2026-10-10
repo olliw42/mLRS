@@ -103,6 +103,7 @@
 #define SETUP_RF_BAND                   SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
 
 #define SETUP_RF_ORTHO                  0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
+#define SETUP_PRIVACY                   0 // 0: off, 1: lvl1, 2: lvl2, 3: lvl3
 
 
 //-------------------------------------------------------
