@@ -5,6 +5,7 @@ local widgetName = "mLRS Statistics Widget"
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
 -- copy script to the WIDGETS\mLRSStatsW folder on the EdgeTx SD card
+-- version 2026-10-10.00
 
 
 local options = {
@@ -93,6 +94,7 @@ local function drawIt(widget, event)
             lcd.drawText(0, 0, "waits...", widget.options.Color)
             return
         end
+        lcd.drawText(zone.w-2, 0, CHAR_TELEMETRY..mbStats.privacy, widget.options.Color + RIGHT + SMLSIZE)
         if mbStats.connected < 1 then
             lcd.drawText(0, 0, "!", widget.options.Color)
         else
@@ -102,7 +104,6 @@ local function drawIt(widget, event)
             --if mbStats.privacy > 0 then
             --    lcd.drawText(zone.w-4, 0, "p"..mbStats.privacy, widget.options.Color + RIGHT)
             --end
-            lcd.drawText(zone.w-2, 0, CHAR_TELEMETRY..mbStats.privacy, widget.options.Color + RIGHT + SMLSIZE)
             lcd.drawText(0, 0, ">", widget.options.Color)
             lcd.drawNumber(10, 0, mbStats.bytes_transmitted, widget.options.Color)
             lcd.drawText(0, 20, "<", widget.options.Color)
