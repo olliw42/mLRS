@@ -119,7 +119,7 @@ void usb_deinit(void)
 
     USBD_DeInit(&husbd_CDC);
 
-#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx || defined STM32G473xx
     RCC_OscInitTypeDef RCC_OscInitStruct = {};
     RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI48;
     RCC_OscInitStruct.HSI48State = RCC_HSI48_OFF;

@@ -29,7 +29,7 @@ extern "C" {
 #if defined STM32F072xB
 #define USB_RXBUFSIZE       256
 #define USB_TXBUFSIZE       256
-#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx || defined STM32G473xx
 #define USB_RXBUFSIZE       2048 // for serial
 #define USB_TXBUFSIZE       2048 // helps with cli
 #else
@@ -48,7 +48,7 @@ extern "C" {
   #define USBD_IRQn         USB_LP_IRQn
   #define USBD_IRQHandler   USB_LP_IRQHandler
   #define USBD_INST         USB
-#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#elif defined STM32G431xx || defined STM32G441xx || defined STM32G491xx || defined STM32G474xx || defined STM32G473xx
   #include "stm32g4xx.h"
   #include "stm32g4xx_hal.h"
   #define USBD_IRQn         USB_LP_IRQn

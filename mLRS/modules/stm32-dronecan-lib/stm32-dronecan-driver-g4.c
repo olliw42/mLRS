@@ -7,7 +7,7 @@
 // DroneCAN Driver Library for STM32 using HAL
 // for use with libcanard
 //*******************************************************
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx || defined STM32G473xx
 
 #include "stm32g4xx_hal.h"
 
