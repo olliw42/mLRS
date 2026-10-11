@@ -10,8 +10,8 @@
 
 #define DBG_MAIN(x)
 #define DBG_MAIN_SLIM(x)
-#define DEBUG_ENABLED
-#define FAIL_ENABLED
+//#define DEBUG_ENABLED
+//#define FAIL_ENABLED
 
 
 // we set the priorities here to have an overview, SysTick is at 15, I2C is at 15, USB is at 0
