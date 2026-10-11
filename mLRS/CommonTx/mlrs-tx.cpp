@@ -37,6 +37,7 @@
 #include "../modules/esp-lib/esp-mcu.h"
 //xx #include "../modules/esp-lib/esp-adc.h"
 #include "../modules/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-trng.h"
 #include "../Common/hal/hal.h"
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
@@ -71,6 +72,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-adc.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #include "../Common/thirdparty/stdstm32-exti.h"
+#include "../Common/thirdparty/stdstm32-trng.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -114,6 +116,7 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -129,6 +132,7 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tCrypto crypto;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxInfo info;
@@ -258,6 +262,7 @@ void init_hw(void)
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
+    trng_init();
 
     leds_init();
     button_init();
@@ -378,6 +383,7 @@ bool link_task_set(uint8_t task)
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
@@ -442,6 +448,9 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
         break;
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_STARTUP);
+        break;
     case LINK_TASK_TX_SET_RX_PARAMS:
         pack_txcmdframe_setrxparams(frame, frame_stats, rc);
         break;
@@ -465,7 +474,8 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> process_received_rxcmdframe(frame)
+//                               -> decrypt_rxframe(frame)
+//                                  process_received_rxcmdframe(frame)
 
 void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
@@ -475,7 +485,7 @@ uint8_t payload_len = 0;
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                 if (!sx_serial.available()) break;
                 uint8_t c = sx_serial.getc();
                 payload[payload_len++] = c;
@@ -609,7 +619,7 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
 
 
 // called in doPreTransmit loop
-void handle_receive(uint8_t antenna) // called if INVALID, VALID
+bool handle_receive(uint8_t antenna) // called if INVALID, VALID
 {
 uint8_t rx_status;
 tRxFrame* frame;
@@ -624,7 +634,7 @@ tRxFrame* frame;
 
     if (bind.IsInBind()) {
         bind.handle_receive(antenna, rx_status);
-        return;
+        return true;
     }
 
     // can be INVALID, VALID (NONE is handled elsewhere)
@@ -633,8 +643,14 @@ tRxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
+    // check decrypt_rxframe()
+    bool decrypt_ok = false;
+    if (rx_status > RX_STATUS_INVALID) {
+        decrypt_ok = decrypt_rxframe(frame); // don't do for INVALID, payload is nonsense
+    }
+
     // handle receive ARQ, must come before process_received_frame()
-    if (rx_status == RX_STATUS_VALID) { // we have valid information on ack
+    if (rx_status == RX_STATUS_VALID && decrypt_ok) { // we have valid information on ack
         rarq.Received(frame->status.seq_no);
     } else {
         rarq.FrameMissed();
@@ -645,7 +661,7 @@ tRxFrame* frame;
         msp.FrameLost();
     }
 
-    if (rx_status > RX_STATUS_INVALID) { // = RX_STATUS_VALID
+    if (rx_status > RX_STATUS_INVALID && decrypt_ok) { // = RX_STATUS_VALID
 
         bool do_payload = true; // has no rc data, so do_payload is always
 
@@ -653,7 +669,7 @@ tRxFrame* frame;
 
         stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
 
-    } else { // RX_STATUS_INVALID
+    } else { // RX_STATUS_INVALID or !decrypt_ok
     }
 
     // we set it for all received frames
@@ -661,6 +677,8 @@ tRxFrame* frame;
 
     // we count all received frames
     stats.doFrameReceived();
+
+    return decrypt_ok;
 }
 
 
@@ -752,12 +770,17 @@ RESTARTCONTROLLER
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
-    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
+    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP); // we start with wanting to get rx setup data
 
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
+    crypto.Init(tCrypto::TX,
+        Setup.Common[Config.ConfigId].BindPhrase,
+        Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId],
+        Setup.Common[Config.ConfigId].Privacy);
+    crypto.SetSessionKey(Config.SessionRandom);
 
     rcData.Init();
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
@@ -975,7 +998,10 @@ IF_SX2(
             } else if (USE_ANTENNA2) {
                 antenna = ANTENNA_2;
             }
-            handle_receive(antenna);
+            bool decrypt_ok = handle_receive(antenna);
+            if (!decrypt_ok) { // if decrypt fails, count it as invalid
+                valid_frame_received = false;
+            }
         } else {
             handle_receive_none();
         }
@@ -1026,8 +1052,10 @@ IF_SX2(
                     if (!connect_occured_once) {
                         stats.JustConnected();
                     }
-                    connect_state = CONNECT_STATE_CONNECTED;
-                    connect_occured_once = true;
+                    if (crypto.ValidKeys()) { // allow connect only if also crypto allows
+                        connect_state = CONNECT_STATE_CONNECTED;
+                        connect_occured_once = true;
+                    }
                 }
                 break;
             }
@@ -1054,7 +1082,11 @@ IF_SX2(
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            if (connect_occured_once && crypto.IsAuthenticated()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            } else {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP);
+            }
         }
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
@@ -1077,7 +1109,9 @@ IF_SX2(
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
+        case BIND_TASK_TX_RESTART_CONTROLLER:
+            doParamsStore = true;
+            break;
         }
 
         // store parameters

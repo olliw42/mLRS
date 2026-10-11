@@ -142,9 +142,11 @@ uint16_t lq_to_rc(uint8_t lq);
 typedef struct
 {
     uint16_t ch[RC_DATA_LEN]; // 1 .. 1024 .. 2047 = -120% .. 120%, 11 bits
+    uint32_t tlast_update_ms;
     bool do_32channels;
     void Init(void) {
         for (uint8_t n = 0; n < RC_DATA_LEN; n++) { ch[n] = 1024; }
+        tlast_update_ms = 0;
         do_32channels = false;
     }
 } tRcData;

@@ -96,6 +96,7 @@
 #include "../Common/common.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -107,6 +108,7 @@ tPowerupCounter powerup;
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tTransmitArq tarq;
+tCrypto crypto;
 
 
 // is required in bind.h
@@ -271,6 +273,12 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         setup_reload();
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
         break;
+    case FRAME_CMD_GET_RX_SETUPDATA_STARTUP:
+        // request to send setup data, trigger sending RX_SETUPDATA in next transmission
+        crypto.SetSessionKeyFromEncryptedRandomBuf(&frame->payload[1]);
+        Config.SessionRandom = crypto.SessionRandom(); // only for reporting
+        link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        break;
     }
 }
 
@@ -292,11 +300,12 @@ void pack_rxcmdframe(tRxFrame* const frame, tFrameStats* const frame_stats)
 //       -> prepare_transmit_frame(antenna)
 //           -> pack_rx_frame(...) or pack_rxcmdframe(...)
 // receive
-//   isr:        -> irq2_status
+//   isr:        -> irq_status
 //   isr loop:   -> link_rx1/2_status = do_receive(antenna, do_clock_reset)
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
+//                               -> decrypt_txframe(frame)
+//                                  rcdata_rc1_from_txframe(...) or rcdata_from_txframe(...)
 
 void prepare_transmit_frame(uint8_t antenna)
 {
@@ -309,7 +318,7 @@ uint8_t payload_len = 0;
         if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
             // read data from serial
             if (connected()) {
-                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN; i++) {
+                for (uint8_t i = 0; i < FRAME_RX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                     if (!sx_serial.available()) break;
                     uint8_t c = sx_serial.getc();
                     payload[payload_len++] = c;
@@ -380,7 +389,7 @@ void process_received_frame(bool do_payload, tTxFrame* const frame)
     rcdata_from_txframe(&rcData, frame);
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD || frame->status.frame_type == FRAME_TYPE_CMD_ENCRYPTED) {
         process_received_txcmdframe(frame);
         return;
     }
@@ -453,7 +462,7 @@ dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));
 
 
 // called in doPostReceive loop
-void handle_receive(uint8_t antenna) // called if INVALID, CRC1_VALID, VALID
+bool handle_receive(uint8_t antenna) // called if INVALID, CRC1_VALID, VALID
 {
 uint8_t rx_status;
 tTxFrame* frame;
@@ -468,7 +477,7 @@ tTxFrame* frame;
 
     if (bind.IsInBind()) {
         bind.handle_receive(antenna, rx_status);
-        return;
+        return true;
     }
 
     // can be INVALID, CRC1_VALID, VALID (NONE is handled elsewhere)
@@ -477,14 +486,24 @@ tTxFrame* frame;
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
+    // check decrypt_txframe()
+    bool decrypt_ok = false;
+    if (rx_status > RX_STATUS_INVALID) {
+        decrypt_ok = decrypt_txframe(frame); // don't do for INVALID, payload is nonsense
+    }
+
     // handle transmit ARQ
     if (rx_status > RX_STATUS_INVALID) { // = RX_STATUS_CRC1_VALID, RX_STATUS_VALID: we have valid information on ack
-        tarq.AckReceived(frame->status.ack);
+        if (decrypt_ok) {
+            tarq.AckReceived(frame->status.ack);
+        } else {
+            tarq.Disconnected(); // force sending a new payload
+        }
     } else {
         tarq.FrameMissed();
     }
 
-    if (rx_status > RX_STATUS_INVALID) { // = RX_STATUS_CRC1_VALID, RX_STATUS_VALID
+    if (rx_status > RX_STATUS_INVALID && decrypt_ok) { // = RX_STATUS_CRC1_VALID, RX_STATUS_VALID
 
         bool do_payload = (rx_status == RX_STATUS_VALID);
 
@@ -493,7 +512,7 @@ tTxFrame* frame;
         stats.doValidCrc1FrameReceived();
         if (rx_status == RX_STATUS_VALID) stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
 
-    } else { // RX_STATUS_INVALID
+    } else { // RX_STATUS_INVALID or !decrypt_ok
     }
 
     // we set it for all received frames
@@ -501,6 +520,8 @@ tTxFrame* frame;
 
     // we count all received frames
     stats.doFrameReceived();
+
+    return decrypt_ok;
 }
 
 
@@ -585,6 +606,9 @@ RESTARTCONTROLLER
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     tarq.Init();
+    crypto.Init(tCrypto::RX,
+        Setup.Common[0].BindPhrase, Setup.peer_uid[0], Config.Uid, Setup.tx_random[0],
+        Setup.Common[0].Privacy);
 
     rcData.Init();
     out.Configure(Setup.Rx.OutMode);
@@ -771,7 +795,11 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             } else if (USE_ANTENNA2) {
                 antenna = ANTENNA_2;
             }
-            handle_receive(antenna);
+            bool decrypt_ok = handle_receive(antenna);
+            if (!decrypt_ok) { // if decrypt fails, count it as invalid
+                valid_frame_received = false;
+                invalid_frame_received = true;
+            }
         } else {
             handle_receive_none();
         }
@@ -830,7 +858,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
                 if ((connect_sync_cnt >= connect_sync_cnt_max) && (connect_fhss_index_band_seen != 0x03)) {
                     connect_sync_cnt = connect_sync_cnt_max - 1; // not yet
                 }
-                if (connect_sync_cnt >= connect_sync_cnt_max) {
+                if (connect_sync_cnt >= connect_sync_cnt_max && crypto.ValidKeys()) { // can't connect if crypto doesn't allow
                     connect_state = CONNECT_STATE_CONNECTED;
                     connect_occured_once = true;
                 }
@@ -939,11 +967,12 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         out.SetChannelOrder(Setup.Rx.ChannelOrder);
         if (connected()) {
-            out.SendRcData(&rcData, frame_missed, false, stats.GetLastRssi(), stats.GetLQ_rc());
+            bool failsafe = (millis32()- rcData.tlast_update_ms > CONNECT_TMO_MS + 5);
+            out.SendRcData(&rcData, frame_missed, failsafe, stats.GetLastRssi(), stats.GetLQ_rc());
             out.SendLinkStatistics();
-            mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, false);
-            msp.SendRcData(out.GetRcDataPtr(), frame_missed, false);
-            dronecan.SendRcData(out.GetRcDataPtr(), false);
+            mavlink.SendRcData(out.GetRcDataPtr(), frame_missed, failsafe);
+            msp.SendRcData(out.GetRcDataPtr(), frame_missed, failsafe);
+            dronecan.SendRcData(out.GetRcDataPtr(), failsafe);
             rfpower.Set(&rcData, Setup.Rx.PowerSwitchChannel, Setup.Rx.Power);
         } else {
             if (connect_occured_once) {
