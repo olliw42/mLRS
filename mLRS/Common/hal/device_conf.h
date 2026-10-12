@@ -93,6 +93,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_433_MHZ
+  #define FREQUENCY_BAND_70_CM_HAM
 #endif
 
 #ifdef RX_XRC_NOVALINK433_G473CE
@@ -100,6 +101,7 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_433_MHZ
+  #define FREQUENCY_BAND_70_CM_HAM
 #endif
 
 //-- FrsKy R9 system

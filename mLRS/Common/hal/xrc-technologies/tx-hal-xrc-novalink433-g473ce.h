@@ -33,7 +33,7 @@ SWC      PA14     SWDCLK                         SWCLK-JTCK, LPTIM1_OUT, I2C4_SM
 
 #define DELAY_USE_DWT
 
-#define EE_START_PAGE             250 // 512 kB flash, 2 kB page
+#define EE_START_PAGE             120 // 512 kB flash, 2 kB page
 
 #define MICROS_TIMx               TIM3
 #define MICROS_TIM_NAMEPREFIX     TIM3_
@@ -247,7 +247,7 @@ void esp_gpio0_low(void)  { gpio_low(ESP_GPIO0); }
 #define POWER_SX1276_MAX          SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           1 // index into rfpower_list array
+#define RFPOWER_DEFAULT           3 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 100 },

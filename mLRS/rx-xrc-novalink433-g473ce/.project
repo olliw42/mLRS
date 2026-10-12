@@ -34,17 +34,17 @@
 		<link>
 			<name>Common</name>
 			<type>2</type>
-			<location>C:/Users/q/Documents/mLRS_xrc_novalink/mLRS/Common</location>
+			<location>C:/Users/beef/Downloads/mLRS_xrc_novalink/mLRS/Common</location>
 		</link>
 		<link>
 			<name>CommonRx</name>
 			<type>2</type>
-			<location>C:/Users/q/Documents/mLRS_xrc_novalink/mLRS/CommonRx</location>
+			<location>C:/Users/beef/Downloads/mLRS_xrc_novalink/mLRS/CommonRx</location>
 		</link>
 		<link>
 			<name>modules</name>
 			<type>2</type>
-			<location>C:/Users/q/Documents/mLRS_xrc_novalink/mLRS/modules</location>
+			<location>C:/Users/beef/Downloads/mLRS_xrc_novalink/mLRS/modules</location>
 		</link>
 	</linkedResources>
 </projectDescription>
