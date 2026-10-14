@@ -159,6 +159,9 @@ GPIO15 = RTC_GPIO13
     #define SERIAL_TXD 21 // = TX1
 
     #undef LED_IO
+    #define LED_IO  8
+    #define USE_LED
+
     #undef GPIO0_IO
     #define GPIO0_IO  9
     #if WIRELESS_PROTOCOL != 4
