@@ -62,7 +62,6 @@ Troubleshooting:
 // uncomment what you want, you must select one (and only one)
 // (you also need to set the board in the Arduino IDE accordingly)
 //#define MODULE_MATEK_MTX_DB30                 // board: ESP32 PICO-D4
-//#define MODULE_XRCTECHNOLOGIES_NOVALINK         // board: XRC Technologies NOVALINK Tx Module ESP32-C3 Wireless Bridge
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
 //#define MODULE_ESP32C3_ELRS_TX                // board: ESP32C3 Dev Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
@@ -108,20 +107,8 @@ Troubleshooting:
 // For TCP, UDP (only for these two)
 // ssid = "" results in a default name, like "mLRS-13427 AP UDP"
 // password = "" makes it an open AP
-#define WIFI_SSID ""
-#define WIFI_PASSWORD ""
-
-//-------------------------------------------------------
-// Module details
-//-------------------------------------------------------
-
-#include "mlrs-wireless-bridge-boards.h"
-
-
-// Wifi setting continued
-
-String ssid = WIFI_SSID; // "mLRS AP"; // Wifi name
-String password = WIFI_PASSWORD; // "thisisgreat"; // WiFi password (min 8 chars)
+String ssid = ""; // "mLRS AP"; // Wifi name
+String password = ""; // "thisisgreat"; // WiFi password (min 8 chars)
 
 IPAddress ip(192, 168, 4, 55); // connect to this IP // MissionPlanner default is 127.0.0.1, so enter 192.168.4.55 in MP
 
@@ -193,6 +180,13 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 //-------------------------------------------------------
 
 #define VERSION_STR  "v1.3.09" // to not get version salad, use what the current mLRS version is at the time
+
+
+//-------------------------------------------------------
+// Module details
+//-------------------------------------------------------
+
+#include "mlrs-wireless-bridge-boards.h"
 
 
 //-------------------------------------------------------
@@ -1285,4 +1279,3 @@ void loop()
 
     delay(2); // give it always a bit of time
 }
-

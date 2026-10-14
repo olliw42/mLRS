@@ -22,13 +22,6 @@ board: Generic ESP32C3 Module
 is used in many ELRS Tx modules
 
 ------------------------------
-XRC Technologies NOVALINK Tx Module ESP32-C3 Wireless Bridge
-------------------------------
-board: Generic ESP32C3 Module
-For use in ESP32-C3-based NOVALINK radio systems
-https://xrctechnologies.com/
-
-------------------------------
 Espressif ESP32-DevKitC V4
 ------------------------------
 board: ESP32 Dev Module
@@ -151,24 +144,6 @@ GPIO15 = RTC_GPIO13
         #define WIRELESS_PROTOCOL 1 // make UDP the default
     #endif    
 
-//-- XRC Technologies NOVALINK Tx Module ESP32-C3 Wireless Bridge
-#elif defined MODULE_XRCTECHNOLOGIES_NOVALINK // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
-    #ifndef ARDUINO_ESP32C3_DEV // ARDUINO_BOARD != ESP32C3_DEV
-        #error Select board ESP32C3 Dev Module!
-    #endif
-    #define WIFI_SSID "XRC TECHNOLOGIES NOVALINK"
-    #define USE_SERIAL_DBG1
-    #undef USE_SERIAL1_DBG
-    #undef USE_SERIAL2_DBG
-
-    #define SERIAL_RXD 20 // = RX1
-    #define SERIAL_TXD 21 // = TX1
-    
-    #define USE_LED
-    #define LED_IO 10
-    #undef GPIO0_IO
-    #define GPIO0_IO  9
-    #define WIRELESS_PROTOCOL 1 // make UDP the default
 
 //-- ELRS Tx Module ESP32C3 backpack
 #elif defined MODULE_ESP32C3_ELRS_TX // ARDUINO_ESP32C3_DEV, ARDUINO_BOARD == ESP32C3_DEV
@@ -507,4 +482,3 @@ GPIO15 = RTC_GPIO13
     void led_on(bool is_connected) {}
     void led_off(void) {}
 #endif
-
