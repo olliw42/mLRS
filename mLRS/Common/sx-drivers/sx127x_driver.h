@@ -45,6 +45,55 @@ const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
 };
 
 
+// FSK 50 Hz, must match the Sx126x, Lr11xx, Lr20xx GfskConfiguration, frame > FIFO so it's streamed via DIO1
+// whitening is done in software, as the SX127x seed can't be set to match the SX126x default seed
+const tSxGfskConfiguration Sx127xGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
+    { .BitRate_bps = 100000,
+      .PulseShape = SX1276_FSK_PULSESHAPE_BT_1,
+      .Bandwidth = SX1276_FSK_BW_166700, // single side, sx126x uses 312 kHz double side
+      .Fdev_hz = 50000,
+      .PreambleLength = 16,
+      .PreambleDetectorLength = SX1276_FSK_PREAMBLE_DETECTOR_LENGTH_8BITS,
+      .SyncWordLength = 16,
+      .AddrComp = 0, // not used
+      .PacketType = SX1276_FSK_PKT_FIX_LEN,
+      .PayloadLength = FRAME_TX_RX_LEN,
+      .CRCType = SX1276_FSK_CRC_OFF,
+      .Whitening = SX1276_FSK_WHITENING_OFF, // done in software
+      .TimeOverAir = 7600,
+      .ReceiverSensitivity = -104, // this is a guess
+    }
+};
+
+
+#define SX127X_FSK_FIFO_THRESHOLD         32 // FifoLevel irq when more than 32 bytes in FIFO
+#define SX127X_FSK_FIFO_SIZE              64 // streaming relies on 33 < FRAME_TX_RX_LEN <= 95
+
+// ATTENTION: FSK FIFO burst writes at 10 MHz spi clock corrupt data, bit 0 of a byte is replaced by the MSB
+// of the next byte, 8 MHz works, LoRa is not affected, so FSK capable boards need SPI_FREQUENCY <= 8 MHz
+
+// whitening seed of SX126x, LR11xx, LR20xx chip default, SX126x register 0x06B8 resets to 0x0100
+// verified on air against LR1121
+#define SX127X_FSK_WHITENING_SEED         0x0100
+
+
+// PN9 whitening, x^9 + x^5 + 1, as done by SX126x, LR11xx, LR20xx
+// the key bits are taken MSB first, i.e. bit reversed compared to the SX127x/CC1101 PN9 byte
+void sx127x_fsk_whiten(uint8_t* const data, uint8_t len, uint16_t seed)
+{
+    uint16_t lfsr = seed;
+    for (uint8_t n = 0; n < len; n++) {
+        uint8_t key = 0;
+        for (uint8_t i = 0; i < 8; i++) {
+            key = (key << 1) | (lfsr & 0x01);
+            uint16_t bit = (lfsr ^ (lfsr >> 5)) & 0x01;
+            lfsr = (lfsr >> 1) | (bit << 8);
+        }
+        data[n] ^= key;
+    }
+}
+
+
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
 void sx1276_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
 {
@@ -79,7 +128,13 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         gconfig = nullptr;
         lora_configuration = nullptr;
+        gfsk_configuration = nullptr;
+        is_in_lora_mode = true;
         low_frequency_mode = 0;
+        fsk_rssi = -127;
+        power_dbm_last = 0;
+        fsk_state = FSK_STATE_IDLE;
+        fsk_pos = 0;
     }
 
     //-- high level API functions
@@ -119,13 +174,46 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         gconfig->LoraConfigIndex = _gconfig->LoraConfigIndex;
 
+        if (!is_in_lora_mode) { // we need to switch from FSK to LoRa, keep the power, bind may have lowered it
+            _configure_lora();
+            SetRfPower_dbm(power_dbm_last);
+            return;
+        }
+
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
+    }
+
+    void SetGfskConfiguration(const tSxGfskConfiguration* const config, uint16_t sync_word)
+    {
+        SetModulationParamsFSK(config->BitRate_bps,
+                               config->PulseShape,
+                               config->Bandwidth,
+                               config->Fdev_hz);
+
+        SetPacketParamsFSK(config->PreambleLength,
+                           config->PreambleDetectorLength,
+                           config->SyncWordLength,
+                           config->PacketType,
+                           config->PayloadLength,
+                           config->CRCType,
+                           config->Whitening);
+
+        SetSyncWordFSK(sync_word);
+    }
+
+    void SetGfskConfigurationByIndex(uint8_t index, uint16_t sync_word)
+    {
+        if (index >= sizeof(Sx127xGfskConfiguration)/sizeof(Sx127xGfskConfiguration[0])) while(1){} // must not happen
+
+        gfsk_configuration = &(Sx127xGfskConfiguration[index]);
+        SetGfskConfiguration(gfsk_configuration, sync_word);
     }
 
     void SetRfPower_dbm(int8_t power_dbm)
     {
         if (!gconfig) return;
 
+        power_dbm_last = power_dbm;
         _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
         // MaxPower is irrelevant, so set it to SX1276_MAX_POWER_15_DBM
         // there would be special setting for +20dBm mode, don't do it
@@ -160,6 +248,42 @@ class Sx127xDriverCommon : public Sx127xDriverBase
                 low_frequency_mode = SX1276_LOW_FREQUENCY_MODE_OFF;
         }
 
+        if (gconfig->modeIsLora()) {
+            _configure_lora();
+        } else {
+            _configure_fsk();
+        }
+
+        SetRfPower_dbm(gconfig->Power_dbm);
+    }
+
+    void _configure_fsk(void)
+    {
+        is_in_lora_mode = false;
+
+        SetSleep(); // must be in sleep to switch to FSK mode
+        WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_FSK_OOK |
+                                         low_frequency_mode |
+                                         SX1276_MODE_SLEEP);
+        SetStandby();
+
+        SetLnaParams(SX1276_LNA_GAIN_DEFAULT, SX1276_LNA_BOOST_HF_ON);
+
+        SetGfskConfigurationByIndex(0, gconfig->FskSyncWord);
+
+        // no AFC, loses ca 15% of frames with the 16 bit preamble
+        SetRxConfigFSK(SX1276_FSK_RX_CONFIG_AGC_AUTO_ON | SX1276_FSK_RX_CONFIG_TRIGGER_PREAMBLE_DETECT,
+                       SX1276_FSK_RSSI_SMOOTHING_32);
+
+        SetFifoThresholdFSK(SX127X_FSK_FIFO_THRESHOLD);
+        SetDioMappingFSK(SX1276_FSK_DIO0_MAPPING_PAYLOAD_READY_PACKET_SENT, SX1276_FSK_DIO1_MAPPING_FIFO_LEVEL);
+        _fsk_standby();
+    }
+
+    void _configure_lora(void)
+    {
+        is_in_lora_mode = true;
+
         SetSleep(); // must be in sleep to switch to LoRa mode
         WriteRegister(SX1276_REG_OpMode, SX1276_PACKET_TYPE_LORA |
                                          SX1276_ACCESS_SHARED_REG_LORA |
@@ -179,7 +303,6 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         // 5 OcpOn, 4-0 OcpTrim
         //ReadWriteRegister(SX1276_REG_Ocp, 0x3F, SX1276_OCP_ON | SX1276_OCP_TRIM_150_MA);
         //SetPowerParams(SX1276_PA_SELECT_PA_BOOST, SX1276_MAX_POWER_15_DBM, 0, SX1276_PA_RAMP_40_US);
-        SetRfPower_dbm(gconfig->Power_dbm);
 
         SetLoraConfigurationByIndex(gconfig->LoraConfigIndex);
 
@@ -209,6 +332,19 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
     {
+        if (!is_in_lora_mode) {
+            // fill FIFO, tx starts as soon as FIFO is not empty, the rest is written in HandleDio1Irq()
+            // don't fill the FIFO completely, FifoLevel is invalid once FifoFull occurred
+            _fsk_standby();
+            memcpy(fsk_buf, data, FRAME_TX_RX_LEN);
+            sx127x_fsk_whiten(fsk_buf, FRAME_TX_RX_LEN, SX127X_FSK_WHITENING_SEED);
+            fsk_pos = SX127X_FSK_FIFO_SIZE - 1;
+            WriteFifoFSK(fsk_buf, fsk_pos);
+            fsk_state = FSK_STATE_TX;
+            SetTx();
+            return;
+        }
+
         WriteBuffer(0, data, len);
         ClearIrqStatus(SX1276_IRQ_ALL);
         SetTx();
@@ -216,6 +352,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetToRx(void)
     {
+        if (!is_in_lora_mode) {
+            _fsk_standby();
+            fsk_pos = 0;
+            fsk_state = FSK_STATE_RX;
+            SetRxContinuous();
+            return;
+        }
+
         uint16_t tmo_ms = 0;
         WriteRegister(SX1276_REG_FifoAddrPtr, 0);
         ClearIrqStatus(SX1276_IRQ_ALL);
@@ -229,8 +373,91 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void SetToIdle(void)
     {
+        if (!is_in_lora_mode) { // FSK flags can't be cleared by writing, register 0x12 is RxBw in FSK mode!
+            _fsk_standby();
+            return;
+        }
+
         SetStandby();
         ClearIrqStatus(SX1276_IRQ_ALL);
+    }
+
+    void _fsk_standby(void)
+    {
+        fsk_state = FSK_STATE_IDLE; // first, so a DIO1 isr can't do spi in the middle of ours
+        SetStandby();
+        _clear_fifo_fsk();
+    }
+
+    // clearing the FIFO does not update FifoLevel (it is only updated by FIFO read/write operations),
+    // so a stale high level would swallow the next rising edge, hence a dummy write and read, must be in Standby
+    void _clear_fifo_fsk(void)
+    {
+        ClearFifoFSK();
+        WriteRegister(SX1276_REG_Fifo, 0);
+        ReadRegister(SX1276_REG_Fifo);
+    }
+
+    // the isrs use this to check the sync word or bind signature
+    void ReadBuffer(uint8_t offset, uint8_t* data, uint8_t len)
+    {
+        if (!is_in_lora_mode) { // frame was streamed into fsk_buf by the isrs
+            memcpy(data, fsk_buf + offset, len);
+            return;
+        }
+
+        Sx127xDriverBase::ReadBuffer(offset, data, len);
+    }
+
+    // DIO1 is FifoLevel, is called on both edges
+    // Tx: tops up the FIFO once it has drained to the threshold
+    // Rx: drains the FIFO whenever it has more than threshold bytes
+    void HandleDio1Irq(void)
+    {
+        if (is_in_lora_mode) return;
+
+        if (fsk_state == FSK_STATE_TX) {
+            if (fsk_pos >= FRAME_TX_RX_LEN) return;
+            if (GetIrqStatusFSK() & SX1276_FSK_IRQ2_FIFO_LEVEL) return; // not yet drained
+            WriteFifoFSK(fsk_buf + fsk_pos, FRAME_TX_RX_LEN - fsk_pos);
+            fsk_pos = FRAME_TX_RX_LEN;
+            return;
+        }
+
+        if (fsk_state == FSK_STATE_RX) {
+            // FifoLevel set means at least threshold + 1 bytes are available, so reading that many is safe
+            // never drain the last bytes, PayloadReady is only a 31 ns pulse if the FIFO is empty at packet end, errata 3.1
+            const uint8_t chunk = SX127X_FSK_FIFO_THRESHOLD + 1;
+            while ((fsk_pos + chunk < FRAME_TX_RX_LEN) && (GetIrqStatusFSK() & SX1276_FSK_IRQ2_FIFO_LEVEL)) {
+                if (fsk_pos == 0) GetRssiFSK(&fsk_rssi); // no packet rssi in FSK mode, so take it mid packet
+                ReadFifoFSK(fsk_buf + fsk_pos, chunk);
+                fsk_pos += chunk;
+            }
+        }
+    }
+
+    uint16_t GetAndClearIrqStatus(uint16_t IrqMask)
+    {
+        if (is_in_lora_mode) return Sx127xDriverBase::GetAndClearIrqStatus(IrqMask);
+
+        // map FSK flags to LoRa irq bits, so the loops don't need to know
+        // only look when a Tx or Rx is ongoing, in Idle the main loop may be using the spi
+        if (fsk_state == FSK_STATE_TX) {
+            if (!(GetIrqStatusFSK() & SX1276_FSK_IRQ2_PACKET_SENT)) return 0;
+            fsk_state = FSK_STATE_IDLE;
+            SetStandby(); // FSK stays in Tx after PacketSent
+            return SX1276_IRQ_TX_DONE;
+        } else if (fsk_state == FSK_STATE_RX) {
+            if (!(GetIrqStatusFSK() & SX1276_FSK_IRQ2_PAYLOAD_READY)) return 0;
+            // the rest of the frame is in the FIFO, fetch it
+            ReadFifoFSK(fsk_buf + fsk_pos, FRAME_TX_RX_LEN - fsk_pos);
+            sx127x_fsk_whiten(fsk_buf, FRAME_TX_RX_LEN, SX127X_FSK_WHITENING_SEED);
+            fsk_state = FSK_STATE_IDLE;
+            SetStandby();
+            return SX1276_IRQ_RX_DONE;
+        }
+
+        return 0;
     }
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
@@ -238,7 +465,12 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
         int16_t rssi;
-        Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
+        if (is_in_lora_mode) {
+            Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
+        } else {
+            rssi = fsk_rssi;
+            *Snr = 0;
+        }
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
@@ -253,6 +485,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void HandleAFC(void)
     {
+        if (!is_in_lora_mode) return; // no AFC in FSK, AfcDo() would mess with FSK registers
+
         AfcDo();
     }
 
@@ -267,11 +501,15 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         int8_t power_dbm = gconfig->Power_dbm;
         _rfpower_calc(power_dbm, &sx_power, &actual_power_dbm);
 
-        uint8_t index = gconfig->LoraConfigIndex;
-        if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while(1){} // must not happen
-        lora_configuration = &(Sx127xLoraConfiguration[index]);
+        if (gconfig->modeIsLora()) {
+            uint8_t index = gconfig->LoraConfigIndex;
+            if (index >= sizeof(Sx127xLoraConfiguration)/sizeof(Sx127xLoraConfiguration[0])) while(1){} // must not happen
+            lora_configuration = &(Sx127xLoraConfiguration[index]);
 
-        symbol_time_us = calc_symbol_time_us(lora_configuration->SpreadingFactor, lora_configuration->Bandwidth);
+            symbol_time_us = calc_symbol_time_us(lora_configuration->SpreadingFactor, lora_configuration->Bandwidth);
+        } else {
+            gfsk_configuration = &(Sx127xGfskConfiguration[0]);
+        }
     }
 
     // cumbersome to calculate in general, so use hardcoded for a specific settings
@@ -279,25 +517,25 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         if (!gconfig) return 0; // should not happen in practice
 
-        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return lora_configuration->TimeOverAir;
+        return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
     int16_t ReceiverSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
-        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return lora_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
     }
 
     int8_t RfPower_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
-        if (lora_configuration == nullptr) _config_calc(); // ensure it is set
+        if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
         return actual_power_dbm;
     }
@@ -307,6 +545,20 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
   private:
     const tSxLoraConfiguration* lora_configuration;
+    const tSxGfskConfiguration* gfsk_configuration;
+    bool is_in_lora_mode; // tracks the actual chip mode, gconfig->is_lora is the requested mode
+    int16_t fsk_rssi;
+    int8_t power_dbm_last;
+
+    // FSK frame streaming, frames are larger than the FIFO
+    typedef enum {
+        FSK_STATE_IDLE = 0,
+        FSK_STATE_TX,
+        FSK_STATE_RX,
+    } FSK_STATE_ENUM;
+    volatile uint8_t fsk_state;
+    uint8_t fsk_buf[FRAME_TX_RX_LEN];
+    volatile uint8_t fsk_pos;
     uint8_t low_frequency_mode;
     int8_t sx_power;
     int8_t actual_power_dbm;
@@ -420,6 +672,10 @@ class Sx127xDriver : public Sx127xDriverCommon
         sx_init_gpio();
         sx_dio_exti_isr_clearflag();
         sx_dio_init_exti_isroff();
+#ifdef DEVICE_HAS_SX127x_FSK
+        sx_dio1_exti_isr_clearflag();
+        sx_dio1_init_exti_isroff();
+#endif
 
         // no idea how long the SX1276 takes to boot up, so give it some good time
         delay_ms(300);
@@ -451,6 +707,9 @@ class Sx127xDriver : public Sx127xDriverCommon
         Configure(global_config);
         delay_us(125); // may not be needed
         sx_dio_enable_exti_isr();
+#ifdef DEVICE_HAS_SX127x_FSK
+        sx_dio1_enable_exti_isr();
+#endif
     }
 
     //-- these are the API functions used in the loop
@@ -575,6 +834,10 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         sx2_init_gpio();
         sx2_dio_exti_isr_clearflag();
         sx2_dio_init_exti_isroff();
+#ifdef DEVICE_HAS_SX127x_FSK
+        sx2_dio1_exti_isr_clearflag();
+        sx2_dio1_init_exti_isroff();
+#endif
 
         // no idea how long the SX1276 takes to boot up, so give it some good time
         delay_ms(300);
@@ -598,6 +861,9 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         Configure(global_config);
         delay_us(125); // may not be needed
         sx2_dio_enable_exti_isr();
+#ifdef DEVICE_HAS_SX127x_FSK
+        sx2_dio1_enable_exti_isr();
+#endif
     }
 
     //-- these are the API functions used in the loop
