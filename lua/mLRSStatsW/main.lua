@@ -26,6 +26,7 @@ ui.COLOR_EARTH = lcd.RGB(107, 142, 35)
 
 
 ----------------------------------------------------------------------
+-- CRSF Mb statistics decoder
 ----------------------------------------------------------------------
 
 local mbStats = nil
@@ -57,11 +58,11 @@ local function decodeCrsfMbStatistics(command, packet)
     mbStats.receiver_receive_antenna  = (b >> 2) & 0x01
     mbStats.receiver_transmit_antenna = (b >> 3) & 0x01
 
-    mbStats.rssi1 = packet[5];
+    mbStats.rssi1 = packet[5]
     if mbStats.rssi1 >= 128 then mbStats.rssi1 = mbStats.rssi1 - 256 end
-    mbStats.rssi2 = packet[6];
+    mbStats.rssi2 = packet[6]
     if mbStats.rssi2 >= 128 then mbStats.rssi2 = mbStats.rssi2 - 256 end
-    mbStats.receiver_rssi = packet[7];
+    mbStats.receiver_rssi = packet[7]
     if mbStats.receiver_rssi >= 128 then mbStats.receiver_rssi = mbStats.receiver_rssi - 256 end
 
     mbStats.LQ_serial = packet[8]
@@ -84,8 +85,14 @@ local function decodeCrsfMbStatistics(command, packet)
         mbRssiListCountLast = mbStats.fhss1_cnt
     end
     mbRssiList[mbStats.fhss1_curr_i] = { rssi1 = mbStats.rssi1, rssi2 = mbStats.rssi2 }
+
+    return true
 end
 
+
+----------------------------------------------------------------------
+-- Drawing
+----------------------------------------------------------------------
 
 local function drawIt(widget, event)
     local zone = widget.zone
@@ -122,10 +129,10 @@ local function drawIt(widget, event)
         return
     end
 
-    local x, y;
+    local x, y
 
-    x = 255;
-    y = 25;
+    x = 255
+    y = 25
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_WHITE)
     lcd.drawText(x-72, y, "rx LQ", CUSTOM_COLOR)
     lcd.drawNumber(x, y-6, mbStats.receiver_LQ_rc, CUSTOM_COLOR+MIDSIZE+CENTER)
@@ -147,8 +154,8 @@ local function drawIt(widget, event)
 
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_WHITE)
 
-    x = 60;
-    y = y - 45;
+    x = 60
+    y = y - 45
     lcd.drawText(x-10, y, "tx rssi", CUSTOM_COLOR)
     local rssi = (mbStats.receive_antenna == 0) and mbStats.rssi1 or mbStats.rssi2 -- that's Lua for (cond) ? a1 : a2
     lcd.drawNumber(x+70, y, rssi, CUSTOM_COLOR)
@@ -192,7 +199,7 @@ local function drawIt(widget, event)
         end
     end
 
-    -- RSSI spektrum graph
+    -- RSSI spectrum graph
 
     x = 70
     y = 260
@@ -233,7 +240,7 @@ end
 
 
 ----------------------------------------------------------------------
--- Initialization
+-- Widget
 ----------------------------------------------------------------------
 
 local function create(zone, options)
