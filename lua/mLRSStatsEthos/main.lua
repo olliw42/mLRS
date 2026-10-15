@@ -32,8 +32,6 @@ local PAINT_PERIOD_10ms = 10
 ----------------------------------------------------------------------
 -- CRSF Mb statistics decoder
 ----------------------------------------------------------------------
--- frame: 0xEA, len, 0x82, 0x65, 17 bytes, crc
--- Ethos popFrame() returns data[1] = first payload byte (0x65), like EdgeTx
 
 local mbStats = nil
 local mbStatsTLast_10ms = 0
@@ -120,19 +118,6 @@ local function line(x1, y1, x2, y2)
     lcd.drawLine(X(x1), Y(y1), X(x2), Y(y2))
 end
 
-local function drawHLineThick(x1, x2, y)
-    -- 3 px thick on the EdgeTx grid, scaled
-    local yc, t = Y(y), math.max(1, math.floor(sy + 0.5))
-    for d = -t, t do lcd.drawLine(X(x1), yc + d, X(x2), yc + d) end
-end
-
-local function triangle(x1, y1, x2, y2, x3, y3)
-    if lcd.drawFilledTriangle then
-        lcd.drawFilledTriangle(X(x1), Y(y1), X(x2), Y(y2), X(x3), Y(y3))
-    else
-        line(x1, y1, x2, y2); line(x2, y2, x3, y3); line(x3, y3, x1, y1)
-    end
-end
 
 
 local function drawCompact(widget, w, h)
@@ -145,13 +130,10 @@ local function drawCompact(widget, w, h)
     lcd.drawText(w - 2, 2, "P"..mbStats.privacy, TEXT_RIGHT)
     if mbStats.connected < 1 then
         lcd.drawText(2, 2, "!")
-        return
-    end
-    local _, th = lcd.getTextSize("0")
-    lcd.drawText(2, 2, "> "..mbStats.bytes_transmitted)
-    lcd.drawText(2, 2 + th, "< "..mbStats.bytes_received)
-    if h >= 3 * th + 4 then
-        lcd.drawText(2, 2 + 2*th, "LQ "..mbStats.receiver_LQ_rc)
+    else
+        local _, th = lcd.getTextSize("0")
+        lcd.drawText(2, 2, "> "..mbStats.bytes_transmitted)
+        lcd.drawText(2, 2 + th, "< "..mbStats.bytes_received)
     end
 end
 
@@ -184,13 +166,17 @@ local function drawFull(widget, w, h)
     y = 90
     lcd.color(ui.COLOR_RED)
     lcd.drawRectangle(X(60), Y(y), X(100), Y(50))
-    lcd.drawRectangle(X(60)+1, Y(y)+1, X(100)-2, Y(50)-2)
+    lcd.drawRectangle(X(61), Y(y+1), X(98), Y(48))
     lcd.drawRectangle(X(300), Y(y), X(100), Y(50))
-    lcd.drawRectangle(X(300)+1, Y(y)+1, X(100)-2, Y(50)-2)
-    drawHLineThick(177, 280, y+25-10)
-    drawHLineThick(180, 283, y+25+10)
-    triangle(280+5, y+25-10, 280, y+25-10-5, 280, y+25-10+5)
-    triangle(180-5, y+25+10, 180, y+25+10-5, 180, y+25+10+5)
+    lcd.drawRectangle(X(301), Y(y+1), X(98), Y(48))
+    line(177, y+25-10, 280, y+25-10)
+    line(177, y+25-9, 280, y+25-9)
+    line(177, y+25-11, 280, y+25-11)
+    line(180, y+25+10, 283, y+25+10)
+    line(180, y+25+11, 283, y+25+11)
+    line(180, y+25+9, 283, y+25+9)
+    lcd.drawFilledTriangle(X(280+5), Y(y+25-10), X(280), Y(y+25-10-5), X(280), Y(y+25-10+5))
+    lcd.drawFilledTriangle(X(180-5), Y(y+25+10), X(180), Y(y+25+10-5), X(180), Y(y+25+10+5))
 
     lcd.color(ui.COLOR_WHITE)
 
@@ -226,13 +212,13 @@ local function drawFull(widget, w, h)
     text(x, y, "Bps")
     text(x+46, y, mbStats.bytes_received)
 
-    -- privacy key symbol
     x = 225
     y = 114
     if mbStats.privacy > 0 then
         lcd.drawCircle(X(x), Y(y), X(5))
         local xend = x + 15 + mbStats.privacy * 3 -- 1: 17, 2: 20, 3: 23
         line(x+4, y, xend, y)
+        line(xend, y, xend, y-5)
         for i = 1, mbStats.privacy do
             line(xend, y, xend, y-5)
             xend = xend - 5
@@ -253,34 +239,28 @@ local function drawFull(widget, w, h)
 
     if mbRssiList == nil then return end
 
-    local barw = math.max(1, math.floor(sx + 0.5))
-
     lcd.color(ui.COLOR_YELLOW)
     for i = 0, mbStats.fhss1_cnt - 1 do
-        local r = mbRssiList[i].rssi1
-        if r > 120 then
-            lcd.drawFilledRectangle(X(x + i*15 - 1), Y(y - 1), X(3), Y(5))
-        else
-            if r > -40 then r = -40 end
-            r = 110 + r
-            if r > 0 then
-                lcd.drawFilledRectangle(X(x + i*15) - barw // 2, Y(y - r), barw, Y(y) - Y(y - r))
-            end
-        end
+      local r = mbRssiList[i].rssi1
+      if r > 120 then
+        lcd.drawFilledRectangle(X(x + i*15 - 1), Y(y - 1), X(3), Y(5))
+      else
+        if r > -40 then r = -40 end
+        r = 110 + r
+        line(x + i*15, y, x + i*15, y - r)
+      end
     end
 
     lcd.color(ui.COLOR_RED)
     for i = 0, mbStats.fhss1_cnt - 1 do
-        local r = mbRssiList[i].rssi2
-        if r > 120 then
-            lcd.drawFilledRectangle(X(x+3 + i*15 - 1), Y(y - 1), X(3), Y(5))
-        else
-            if r > -40 then r = -40 end
-            r = 110 + r
-            if r > 0 then
-                lcd.drawFilledRectangle(X(x+3 + i*15) - barw // 2, Y(y - r), barw, Y(y) - Y(y - r))
-            end
-        end
+      local r = mbRssiList[i].rssi2
+      if r > 120 then
+        lcd.drawFilledRectangle(X(x+3 + i*15 - 1), Y(y - 1), X(3), Y(5))
+      else
+        if r > -40 then r = -40 end
+        r = 110 + r
+        line(x+3 + i*15, y, x+3 + i*15, y - r)
+      end
     end
 end
 
@@ -295,16 +275,12 @@ end
 
 
 local function wakeup(widget)
-    if widget.sensor == nil and crsf ~= nil and crsf.getSensor ~= nil then
-        widget.sensor = crsf.getSensor()
-    end
+    if widget.sensor == nil then widget.sensor = crsf.getSensor() end
 
-    if widget.sensor ~= nil then
-        for _ = 1, 32 do
-            local command, packet = widget.sensor:popFrame(0x82)
-            if command == nil or packet == nil then break end
-            if decodeCrsfMbStatistics(command, packet) then widget.dirty = true end
-        end
+    while true do
+        local command, packet = widget.sensor:popFrame(0x82)
+        if command == nil or packet == nil then break end
+        if decodeCrsfMbStatistics(command, packet) then widget.dirty = true end
     end
 
     local stale = (mbStats == nil) or (tnow_10ms() - mbStatsTLast_10ms > STALE_10ms)
