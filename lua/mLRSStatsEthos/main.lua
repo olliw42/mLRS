@@ -1,25 +1,32 @@
 local widgetName = "mLRS Statistics"
 ----------------------------------------------------------------------
--- Copyright (c) OlliW @ www.olliw.eu
+-- Copyright (c) mLRS project
 -- GPL3
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
+----------------------------------------------------------------------
+-- contributed by erwinquilloy
 ----------------------------------------------------------------------
 -- Ethos port of lua/mLRSStatsW/main.lua (EdgeTx widget, version 2026-10-10.00)
 -- copy main.lua to SD:\scripts\mlrsstats\ on the Ethos radio SD card, restart radio
 -- then add the "mLRS Statistics" widget to a screen; use a full screen layout for the
 -- detailed view, a small widget shows the compact view
 -- requires mLRS Tx module firmware v1.4.04 or later (CRSF 0x82/0x65 Mb statistics frame)
--- version 2026-10-14.00
+-- version 2026-10-15.00
 
 
-local COLOR_WHITE = lcd.RGB(0xFF, 0xFF, 0xFF)
-local COLOR_LIGHTGREY = lcd.RGB(0xB0, 0xB0, 0xB0)
-local COLOR_RED = lcd.RGB(0xE5, 0x20, 0x1E)
-local COLOR_YELLOW = lcd.RGB(0xFF, 0xD0, 0x00)
-local COLOR_BACKGROUND = lcd.RGB(0x08, 0x54, 0x88)
+local ui = {}
+ui.COLOR_WHITE = lcd.RGB(0xFF, 0xFF, 0xFF)
+ui.COLOR_BLACK = lcd.RGB(0x00, 0x00, 0x00)
+ui.COLOR_LIGHTGREY = lcd.RGB(0xB0, 0xB0, 0xB0)
+ui.COLOR_GREEN = lcd.RGB(25, 150, 50)
+ui.COLOR_RED = lcd.RGB(0xE5, 0x20, 0x1E)
+ui.COLOR_YELLOW = lcd.RGB(0xFF, 0xD0, 0x00)
+ui.COLOR_BACKGROUND = lcd.RGB(0x08, 0x54, 0x88)
+ui.COLOR_SKY = lcd.RGB(135, 206, 235)
+ui.COLOR_EARTH = lcd.RGB(107, 142, 35)
 
-local STALE_S = 1.5 -- no stats frame for this long -> show waiting again
-local PAINT_PERIOD_S = 0.1
+local STALE_10ms = 150 -- no stats frame for this long -> show waiting again
+local PAINT_PERIOD_10ms = 10
 
 
 ----------------------------------------------------------------------
@@ -29,21 +36,16 @@ local PAINT_PERIOD_S = 0.1
 -- Ethos popFrame() returns data[1] = first payload byte (0x65), like EdgeTx
 
 local mbStats = nil
-local mbStatsAt = 0
+local mbStatsTLast_10ms = 0
 local mbRssiList = nil
 local mbRssiListCountLast = 0
 
-local function now() return os.clock() end
-
-local function s8(v)
-    if v >= 128 then return v - 256 end
-    return v
-end
+local function tnow_10ms() return math.floor(os.clock() * 100) end
 
 
 local function decodeCrsfMbStatistics(command, packet)
-    if command ~= 0x82 or packet == nil or #packet < 18 or packet[1] ~= 0x65 then
-        return false
+    if command ~= 0x82 or #packet < 18 or packet[1] ~= 0x65 then
+        return nil
     end
 
     if mbStats == nil then mbStats = {} end
@@ -65,9 +67,12 @@ local function decodeCrsfMbStatistics(command, packet)
     mbStats.receiver_receive_antenna  = (b >> 2) & 0x01
     mbStats.receiver_transmit_antenna = (b >> 3) & 0x01
 
-    mbStats.rssi1 = s8(packet[5])
-    mbStats.rssi2 = s8(packet[6])
-    mbStats.receiver_rssi = s8(packet[7])
+    mbStats.rssi1 = packet[5]
+    if mbStats.rssi1 >= 128 then mbStats.rssi1 = mbStats.rssi1 - 256 end
+    mbStats.rssi2 = packet[6]
+    if mbStats.rssi2 >= 128 then mbStats.rssi2 = mbStats.rssi2 - 256 end
+    mbStats.receiver_rssi = packet[7]
+    if mbStats.receiver_rssi >= 128 then mbStats.receiver_rssi = mbStats.receiver_rssi - 256 end
 
     mbStats.LQ_serial = packet[8]
     mbStats.receiver_LQ_rc = packet[9]
@@ -88,11 +93,9 @@ local function decodeCrsfMbStatistics(command, packet)
         for i = 0, mbStats.fhss1_cnt - 1 do mbRssiList[i] = { rssi1 = 0, rssi2 = 0 } end
         mbRssiListCountLast = mbStats.fhss1_cnt
     end
-    if mbStats.fhss1_curr_i < mbStats.fhss1_cnt then
-        mbRssiList[mbStats.fhss1_curr_i] = { rssi1 = mbStats.rssi1, rssi2 = mbStats.rssi2 }
-    end
+    mbRssiList[mbStats.fhss1_curr_i] = { rssi1 = mbStats.rssi1, rssi2 = mbStats.rssi2 }
 
-    mbStatsAt = now()
+    mbStatsTLast_10ms = tnow_10ms()
     return true
 end
 
@@ -117,7 +120,7 @@ local function line(x1, y1, x2, y2)
     lcd.drawLine(X(x1), Y(y1), X(x2), Y(y2))
 end
 
-local function thickHLine(x1, x2, y)
+local function drawHLineThick(x1, x2, y)
     -- 3 px thick on the EdgeTx grid, scaled
     local yc, t = Y(y), math.max(1, math.floor(sy + 0.5))
     for d = -t, t do lcd.drawLine(X(x1), yc + d, X(x2), yc + d) end
@@ -129,11 +132,6 @@ local function triangle(x1, y1, x2, y2, x3, y3)
     else
         line(x1, y1, x2, y2); line(x2, y2, x3, y3); line(x3, y3, x1, y1)
     end
-end
-
-local function box(x, y, w, h)
-    lcd.drawRectangle(X(x), Y(y), X(w), Y(h))
-    lcd.drawRectangle(X(x)+1, Y(y)+1, X(w)-2, Y(h)-2)
 end
 
 
@@ -166,10 +164,10 @@ local function drawFull(widget, w, h)
         FONT_SMALL, FONT_NORMAL, FONT_BIG = FONT_XS, FONT_S, FONT_L
     end
 
-    lcd.color(COLOR_BACKGROUND)
+    lcd.color(ui.COLOR_BACKGROUND)
     lcd.drawFilledRectangle(0, 0, w, h)
 
-    lcd.color(COLOR_WHITE)
+    lcd.color(ui.COLOR_WHITE)
     text(50, 1, "mLRS Statistics")
     if mbStats == nil then
         text(100, 20, "Waiting for packet...")
@@ -184,26 +182,30 @@ local function drawFull(widget, w, h)
     text(x, y-6, mbStats.receiver_LQ_rc, FONT_BIG, TEXT_CENTERED)
 
     y = 90
-    lcd.color(COLOR_RED)
-    box(60, y, 100, 50)
-    box(300, y, 100, 50)
-    thickHLine(177, 280, y+25-10)
-    thickHLine(180, 283, y+25+10)
+    lcd.color(ui.COLOR_RED)
+    lcd.drawRectangle(X(60), Y(y), X(100), Y(50))
+    lcd.drawRectangle(X(60)+1, Y(y)+1, X(100)-2, Y(50)-2)
+    lcd.drawRectangle(X(300), Y(y), X(100), Y(50))
+    lcd.drawRectangle(X(300)+1, Y(y)+1, X(100)-2, Y(50)-2)
+    drawHLineThick(177, 280, y+25-10)
+    drawHLineThick(180, 283, y+25+10)
     triangle(280+5, y+25-10, 280, y+25-10-5, 280, y+25-10+5)
     triangle(180-5, y+25+10, 180, y+25+10-5, 180, y+25+10+5)
 
-    lcd.color(COLOR_WHITE)
+    lcd.color(ui.COLOR_WHITE)
 
     x = 60
     y = y - 45
     text(x-10, y, "tx rssi")
-    local rssi = (mbStats.receive_antenna == 0) and mbStats.rssi1 or mbStats.rssi2
+    local rssi = (mbStats.receive_antenna == 0) and mbStats.rssi1 or mbStats.rssi2 -- that's Lua for (cond) ? a1 : a2
     text(x+70, y, rssi)
     text(x-10, y+20, "tx LQ ser")
     text(x+70, y+20, mbStats.LQ_serial)
 
-    text(x+75, y+50, (mbStats.transmit_antenna == 0) and "a1" or "a2")
-    text(x+75, y+70, (mbStats.receive_antenna == 0) and "a1" or "a2")
+    local s = (mbStats.transmit_antenna == 0) and "a1" or "a2"
+    text(x+75, y+50, s)
+    s = (mbStats.receive_antenna == 0) and "a1" or "a2"
+    text(x+75, y+70, s)
 
     x = 300
     text(x, y, "rx rssi")
@@ -211,8 +213,10 @@ local function drawFull(widget, w, h)
     text(x, y+20, "rx LQ ser")
     text(x+80, y+20, mbStats.receiver_LQ_serial)
 
-    text(x+5, y+50, (mbStats.receiver_receive_antenna == 0) and "a1" or "a2")
-    text(x+5, y+70, (mbStats.receiver_transmit_antenna == 0) and "a1" or "a2")
+    s = (mbStats.receiver_receive_antenna == 0) and "a1" or "a2"
+    text(x+5, y+50, s)
+    s = (mbStats.receiver_transmit_antenna == 0) and "a1" or "a2"
+    text(x+5, y+70, s)
 
     x = 190
     y = y + 35
@@ -239,7 +243,7 @@ local function drawFull(widget, w, h)
 
     x = 70
     y = 260
-    lcd.color(COLOR_LIGHTGREY)
+    lcd.color(ui.COLOR_LIGHTGREY)
     line(x - 10, y, x + 24*15 + 10, y)
     line(x - 10, y - (110 - 90), x + 24*15 + 10, y - (110 - 90))
     line(x - 10, y - (110 - 50), x + 24*15 + 10, y - (110 - 50))
@@ -251,21 +255,30 @@ local function drawFull(widget, w, h)
 
     local barw = math.max(1, math.floor(sx + 0.5))
 
-    for ant = 1, 2 do
-        lcd.color(ant == 1 and COLOR_YELLOW or COLOR_RED)
-        local xo = (ant == 1) and 0 or 3
-        for i = 0, mbStats.fhss1_cnt - 1 do
-            local e = mbRssiList[i]
-            local r = e and ((ant == 1) and e.rssi1 or e.rssi2) or 0
-            local xi = x + xo + i*15
-            if r > 120 then -- invalid marker
-                lcd.drawFilledRectangle(X(xi - 1), Y(y - 1), X(3), Y(5))
-            else
-                if r > -40 then r = -40 end
-                r = 110 + r
-                if r > 0 then
-                    lcd.drawFilledRectangle(X(xi) - barw // 2, Y(y - r), barw, Y(y) - Y(y - r))
-                end
+    lcd.color(ui.COLOR_YELLOW)
+    for i = 0, mbStats.fhss1_cnt - 1 do
+        local r = mbRssiList[i].rssi1
+        if r > 120 then
+            lcd.drawFilledRectangle(X(x + i*15 - 1), Y(y - 1), X(3), Y(5))
+        else
+            if r > -40 then r = -40 end
+            r = 110 + r
+            if r > 0 then
+                lcd.drawFilledRectangle(X(x + i*15) - barw // 2, Y(y - r), barw, Y(y) - Y(y - r))
+            end
+        end
+    end
+
+    lcd.color(ui.COLOR_RED)
+    for i = 0, mbStats.fhss1_cnt - 1 do
+        local r = mbRssiList[i].rssi2
+        if r > 120 then
+            lcd.drawFilledRectangle(X(x+3 + i*15 - 1), Y(y - 1), X(3), Y(5))
+        else
+            if r > -40 then r = -40 end
+            r = 110 + r
+            if r > 0 then
+                lcd.drawFilledRectangle(X(x+3 + i*15) - barw // 2, Y(y - r), barw, Y(y) - Y(y - r))
             end
         end
     end
@@ -277,7 +290,7 @@ end
 ----------------------------------------------------------------------
 
 local function create()
-    return { color = COLOR_WHITE, sensor = nil, lastPaint = 0, dirty = true, stale = true }
+    return { color = ui.COLOR_WHITE, sensor = nil, lastPaint_10ms = 0, dirty = true, stale = true }
 end
 
 
@@ -289,12 +302,12 @@ local function wakeup(widget)
     if widget.sensor ~= nil then
         for _ = 1, 32 do
             local command, packet = widget.sensor:popFrame(0x82)
-            if command == nil then break end
+            if command == nil or packet == nil then break end
             if decodeCrsfMbStatistics(command, packet) then widget.dirty = true end
         end
     end
 
-    local stale = (mbStats == nil) or (now() - mbStatsAt > STALE_S)
+    local stale = (mbStats == nil) or (tnow_10ms() - mbStatsTLast_10ms > STALE_10ms)
     if stale and mbStats ~= nil then
         mbStats = nil
         mbRssiList = nil
@@ -304,9 +317,9 @@ local function wakeup(widget)
         widget.dirty = true
     end
 
-    if widget.dirty and (now() - widget.lastPaint >= PAINT_PERIOD_S) then
+    if widget.dirty and (tnow_10ms() - widget.lastPaint_10ms >= PAINT_PERIOD_10ms) then
         widget.dirty = false
-        widget.lastPaint = now()
+        widget.lastPaint_10ms = tnow_10ms()
         lcd.invalidate()
     end
 end
