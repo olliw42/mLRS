@@ -134,6 +134,15 @@ extern "C" { void delay_ms(uint16_t ms); }
 #include "matek/rx-hal-matek-mr900-30c-g431kb.h"
 #endif
 
+//-- XRC Technologies NOVALINK mLRS devices
+
+#ifdef TX_XRC_NOVALINK433_G473CE
+#include "xrc-technologies/tx-hal-xrc-novalink433-g473ce.h"
+#endif
+
+#ifdef RX_XRC_NOVALINK433_G473CE
+#include "xrc-technologies/rx-hal-xrc-novalink433-g473ce.h"
+#endif
 
 //-- FrsKy R9 system
 
