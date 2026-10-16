@@ -23,6 +23,14 @@ Please see the [documentation page](https://github.com/olliw42/mLRS-docu/blob/ma
 
 The Lua script files for ETHOS radios are found in the folder named "Ethos". In that folder you also find information on how to install and use it.
 
+## mLRS Statistics Widget
+
+[mLRSStatsW](mLRSStatsW/main.lua) is the statistics widget for EdgeTx color radios. Copy it to the WIDGETS\mLRSStatsW folder on the SD card.
+
+[mLRSStatsEthos](mLRSStatsEthos/main.lua) is the same widget for Ethos (FrSky) radios. Copy main.lua to SD:\scripts\mlrsstats\, restart the radio and add the "mLRS Statistics" widget to a screen. A full screen layout gives the detailed view, a small widget shows a compact view. Tested on a FrSky X20S (800x480) with Ethos 1.6.6; the layout scales to other screen sizes.
+
+Both widgets require mLRS Tx module firmware v1.4.04 or later.
+
 
 
 
