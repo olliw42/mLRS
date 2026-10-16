@@ -109,13 +109,9 @@ local function Y(y) return math.floor(y * sy + 0.5) end
 
 local FONT_SMALL, FONT_NORMAL, FONT_BIG = FONT_XS, FONT_S, FONT_L
 
-local function text(x, y, s, font, flags)
+local function drawText(x, y, s, font, flags)
     lcd.font(font or FONT_NORMAL)
     lcd.drawText(X(x), Y(y), tostring(s), flags or TEXT_LEFT)
-end
-
-local function line(x1, y1, x2, y2)
-    lcd.drawLine(X(x1), Y(y1), X(x2), Y(y2))
 end
 
 
@@ -150,9 +146,9 @@ local function drawFull(widget, w, h)
     lcd.drawFilledRectangle(0, 0, w, h)
 
     lcd.color(ui.COLOR_WHITE)
-    text(50, 1, "mLRS Statistics")
+    drawText(50, 1, "mLRS Statistics")
     if mbStats == nil then
-        text(100, 20, "Waiting for packet...")
+        drawText(100, 20, "Waiting for packet...")
         return
     end
 
@@ -160,8 +156,8 @@ local function drawFull(widget, w, h)
 
     x = 255
     y = 25
-    text(x-72, y, "rx LQ")
-    text(x, y-6, mbStats.receiver_LQ_rc, FONT_BIG, TEXT_CENTERED)
+    drawText(x-72, y, "rx LQ")
+    drawText(x, y-6, mbStats.receiver_LQ_rc, FONT_BIG, TEXT_CENTERED)
 
     y = 90
     lcd.color(ui.COLOR_RED)
@@ -169,12 +165,12 @@ local function drawFull(widget, w, h)
     lcd.drawRectangle(X(61), Y(y+1), X(98), Y(48))
     lcd.drawRectangle(X(300), Y(y), X(100), Y(50))
     lcd.drawRectangle(X(301), Y(y+1), X(98), Y(48))
-    line(177, y+25-10, 280, y+25-10)
-    line(177, y+25-9, 280, y+25-9)
-    line(177, y+25-11, 280, y+25-11)
-    line(180, y+25+10, 283, y+25+10)
-    line(180, y+25+11, 283, y+25+11)
-    line(180, y+25+9, 283, y+25+9)
+    lcd.drawLine(X(177), Y(y+25-10), X(280), Y(y+25-10))
+    lcd.drawLine(X(177), Y(y+25-9), X(280), Y(y+25-9))
+    lcd.drawLine(X(177), Y(y+25-11), X(280), Y(y+25-11))
+    lcd.drawLine(X(180), Y(y+25+10), X(283), Y(y+25+10))
+    lcd.drawLine(X(180), Y(y+25+11), X(283), Y(y+25+11))
+    lcd.drawLine(X(180), Y(y+25+9), X(283), Y(y+25+9))
     lcd.drawFilledTriangle(X(280+5), Y(y+25-10), X(280), Y(y+25-10-5), X(280), Y(y+25-10+5))
     lcd.drawFilledTriangle(X(180-5), Y(y+25+10), X(180), Y(y+25+10-5), X(180), Y(y+25+10+5))
 
@@ -182,45 +178,45 @@ local function drawFull(widget, w, h)
 
     x = 60
     y = y - 45
-    text(x-10, y, "tx rssi")
+    drawText(x-10, y, "tx rssi")
     local rssi = (mbStats.receive_antenna == 0) and mbStats.rssi1 or mbStats.rssi2 -- that's Lua for (cond) ? a1 : a2
-    text(x+70, y, rssi)
-    text(x-10, y+20, "tx LQ ser")
-    text(x+70, y+20, mbStats.LQ_serial)
+    drawText(x+70, y, rssi)
+    drawText(x-10, y+20, "tx LQ ser")
+    drawText(x+70, y+20, mbStats.LQ_serial)
 
     local s = (mbStats.transmit_antenna == 0) and "a1" or "a2"
-    text(x+75, y+50, s)
+    drawText(x+75, y+50, s)
     s = (mbStats.receive_antenna == 0) and "a1" or "a2"
-    text(x+75, y+70, s)
+    drawText(x+75, y+70, s)
 
     x = 300
-    text(x, y, "rx rssi")
-    text(x+80, y, mbStats.receiver_rssi)
-    text(x, y+20, "rx LQ ser")
-    text(x+80, y+20, mbStats.receiver_LQ_serial)
+    drawText(x, y, "rx rssi")
+    drawText(x+80, y, mbStats.receiver_rssi)
+    drawText(x, y+20, "rx LQ ser")
+    drawText(x+80, y+20, mbStats.receiver_LQ_serial)
 
     s = (mbStats.receiver_receive_antenna == 0) and "a1" or "a2"
-    text(x+5, y+50, s)
+    drawText(x+5, y+50, s)
     s = (mbStats.receiver_transmit_antenna == 0) and "a1" or "a2"
-    text(x+5, y+70, s)
+    drawText(x+5, y+70, s)
 
     x = 190
     y = y + 35
-    text(x, y, "Bps")
-    text(x+46, y, mbStats.bytes_transmitted)
+    drawText(x, y, "Bps")
+    drawText(x+46, y, mbStats.bytes_transmitted)
     y = y + 50
-    text(x, y, "Bps")
-    text(x+46, y, mbStats.bytes_received)
+    drawText(x, y, "Bps")
+    drawText(x+46, y, mbStats.bytes_received)
 
     x = 225
     y = 114
     if mbStats.privacy > 0 then
         lcd.drawCircle(X(x), Y(y), X(5))
         local xend = x + 15 + mbStats.privacy * 3 -- 1: 17, 2: 20, 3: 23
-        line(x+4, y, xend, y)
-        line(xend, y, xend, y-5)
+        lcd.drawLine(X(x+4), Y(y), X(xend), Y(y))
+        lcd.drawLine(X(xend), Y(y), X(xend), Y(y-5))
         for i = 1, mbStats.privacy do
-            line(xend, y, xend, y-5)
+            lcd.drawLine(X(xend), Y(y), X(xend), Y(y-5))
             xend = xend - 5
         end
     end
@@ -230,12 +226,12 @@ local function drawFull(widget, w, h)
     x = 70
     y = 260
     lcd.color(ui.COLOR_LIGHTGREY)
-    line(x - 10, y, x + 24*15 + 10, y)
-    line(x - 10, y - (110 - 90), x + 24*15 + 10, y - (110 - 90))
-    line(x - 10, y - (110 - 50), x + 24*15 + 10, y - (110 - 50))
-    text(x-15, y-9, "-110", FONT_SMALL, TEXT_RIGHT)
-    text(x-15, y-9-20, "-90", FONT_SMALL, TEXT_RIGHT)
-    text(x-15, y-9-60, "-50", FONT_SMALL, TEXT_RIGHT)
+    lcd.drawLine(X(x - 10), Y(y), X(x + 24*15 + 10), Y(y))
+    lcd.drawLine(X(x - 10), Y(y - (110 - 90)), X(x + 24*15 + 10), Y(y - (110 - 90)))
+    lcd.drawLine(X(x - 10), Y(y - (110 - 50)), X(x + 24*15 + 10), Y(y - (110 - 50)))
+    drawText(x-15, y-9, "-110", FONT_SMALL, TEXT_RIGHT)
+    drawText(x-15, y-9-20, "-90", FONT_SMALL, TEXT_RIGHT)
+    drawText(x-15, y-9-60, "-50", FONT_SMALL, TEXT_RIGHT)
 
     if mbRssiList == nil then return end
 
@@ -247,7 +243,7 @@ local function drawFull(widget, w, h)
       else
         if r > -40 then r = -40 end
         r = 110 + r
-        line(x + i*15, y, x + i*15, y - r)
+        lcd.drawLine(X(x + i*15), Y(y), X(x + i*15), Y(y - r))
       end
     end
 
@@ -259,7 +255,7 @@ local function drawFull(widget, w, h)
       else
         if r > -40 then r = -40 end
         r = 110 + r
-        line(x+3 + i*15, y, x+3 + i*15, y - r)
+        lcd.drawLine(X(x+3 + i*15), Y(y), X(x+3 + i*15), Y(y - r))
       end
     end
 end
