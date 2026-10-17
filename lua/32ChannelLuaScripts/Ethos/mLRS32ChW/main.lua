@@ -5,7 +5,8 @@
 ----------------------------------------------------------------------
 -- mLRS 32 Channels Lua Task Script for Ethos
 ----------------------------------------------------------------------
--- copy main.lua to SD:\scripts\mlrs32\ on the Ethos radio SD card, restart radio
+-- copy main.lua to SD:\scripts\mLRS32ChW\ on the Ethos radio SD card
+-- restart radio
 -- then enable the task per model: Model setup -> Lua -> Lua tasks -> "mLRS 32Ch"
 -- runs as background task, sends channels 17-32 as CRSF 0x17 frame
 

@@ -6,8 +6,9 @@ local widgetName = "mLRS Statistics"
 ----------------------------------------------------------------------
 -- contributed by erwinquilloy
 ----------------------------------------------------------------------
--- Ethos port of lua/mLRSStatsW/main.lua (EdgeTx widget, version 2026-10-10.00)
--- copy main.lua to SD:\scripts\mlrsstats\ on the Ethos radio SD card, restart radio
+-- Ethos port of EdgeTx\mLRSStatsW\main.lua (EdgeTx widget)
+-- copy main.lua to SD:\scripts\mLRSStatsW\ on the Ethos radio SD card
+-- restart radio
 -- then add the "mLRS Statistics" widget to a screen; use a full screen layout for the
 -- detailed view, a small widget shows the compact view
 -- requires mLRS Tx module firmware v1.4.04 or later (CRSF 0x82/0x65 Mb statistics frame)
