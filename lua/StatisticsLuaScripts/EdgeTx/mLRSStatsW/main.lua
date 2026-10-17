@@ -5,7 +5,7 @@ local widgetName = "mLRS Statistics Widget"
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
 -- copy script to the WIDGETS\mLRSStatsW folder on the EdgeTx SD card
--- version 2026-10-16.00
+-- version 2026-10-17.00
 
 
 local options = {
@@ -125,7 +125,7 @@ local function drawFilledRectangle(x, y, w, h, flag)
 end
 
 local function drawCircle(x, y, r, color)
-    lcd.drawCircle(X(x), Y(x), X(r), color) -- TODO: better r
+    lcd.drawCircle(X(x), Y(y), X(r), color) -- TODO: better r
 end
 
 
