@@ -895,6 +895,7 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
             connect_state = CONNECT_STATE_LISTEN;
             connect_listen_cnt = 0;
             link_state = LINK_STATE_RECEIVE; // switch back to RX
+            crypto.Disconnected();
         }
 
         // we didn't receive a valid frame

@@ -173,6 +173,15 @@ uint64_t session_random;
 }
 
 
+// only Rx: allow new session key after a disconnect if not authenticating
+void tCrypto::Disconnected(void)
+{
+    if (_role != RX) return; // only Rx
+
+    if (!_mac_len) _session_key_has_been_set = false;
+}
+
+
 //-- API miscellaneous
 
 uint16_t tCrypto::NonceLen(void)
