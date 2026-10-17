@@ -916,7 +916,14 @@ IF_SX(
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq_status & SX_IRQ_RX_DONE) {
                 irq_status = 0;
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+                sx2_dio_init_exti_isroff(); // shared SPI bus, sx2 isr must not interrupt sx transfers
+#endif
                 link_rx1_status = do_receive(ANTENNA_1);
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+                if (gpio_read_activehigh(SX2_DIO)) SX2_DIO_EXTI_IRQHandler(); // catch edge missed while isr was off
+                sx2_dio_enable_exti_isr();
+#endif
                 DBG_MAIN_SLIM(dbg.puts("1<");)
             }
         }
@@ -950,7 +957,14 @@ IF_SX2(
         if (link_state == LINK_STATE_RECEIVE_WAIT) {
             if (irq2_status & SX2_IRQ_RX_DONE) {
                 irq2_status = 0;
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+                sx_dio_init_exti_isroff(); // shared SPI bus, sx isr must not interrupt sx2 transfers
+#endif
                 link_rx2_status = do_receive(ANTENNA_2);
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+                if (gpio_read_activehigh(SX_DIO)) SX_DIO_EXTI_IRQHandler(); // catch edge missed while isr was off
+                sx_dio_enable_exti_isr();
+#endif
                 DBG_MAIN_SLIM(dbg.puts("2<");)
             }
         }
