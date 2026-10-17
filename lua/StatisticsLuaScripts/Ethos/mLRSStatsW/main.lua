@@ -11,7 +11,7 @@ local widgetName = "mLRS Statistics"
 -- then add the "mLRS Statistics" widget to a screen; use a full screen layout for the
 -- detailed view, a small widget shows the compact view
 -- requires mLRS Tx module firmware v1.4.04 or later (CRSF 0x82/0x65 Mb statistics frame)
--- version 2026-10-15.00
+-- version 2026-10-17.00
 
 
 local ui = {}
@@ -25,6 +25,7 @@ ui.COLOR_BACKGROUND = lcd.RGB(0x08, 0x54, 0x88)
 ui.COLOR_SKY = lcd.RGB(135, 206, 235)
 ui.COLOR_EARTH = lcd.RGB(107, 142, 35)
 
+
 local STALE_10ms = 150 -- no stats frame for this long -> show waiting again
 local PAINT_PERIOD_10ms = 10
 
@@ -32,11 +33,14 @@ local PAINT_PERIOD_10ms = 10
 ----------------------------------------------------------------------
 -- CRSF Mb statistics decoder
 ----------------------------------------------------------------------
+-- frame: 0xEA, len, 0x82, 0x65, 17 bytes, crc
+-- Ethos popFrame() returns data[1] = first payload byte (0x65), like EdgeTx
 
 local mbStats = nil
 local mbStatsTLast_10ms = 0
 local mbRssiList = nil
 local mbRssiListCountLast = 0
+
 
 local function tnow_10ms() return math.floor(os.clock() * 100) end
 
@@ -114,6 +118,25 @@ local function drawText(x, y, s, font, flags)
     lcd.drawText(X(x), Y(y), tostring(s), flags or TEXT_LEFT)
 end
 
+local function drawRectangle(x, y, w, h)
+    lcd.drawRectangle(X(x), Y(y), X(w), Y(h))
+end
+
+local function drawLine(x1, y1, x2, y2)
+    lcd.drawLine(X(x1), Y(y1), X(x2), Y(y2))
+end
+
+local function drawFilledTriangle(x1, y1, x2, y2, x3, y3)
+    lcd.drawFilledTriangle(X(x1), Y(y1), X(x2), Y(y2), X(x3), Y(y3))
+end
+
+local function drawFilledRectangle(x, y, w, h)
+    lcd.drawFilledRectangle(X(x), Y(y), X(w), Y(h))
+end
+
+local function drawCircle(x, y, r)
+    lcd.drawCircle(X(x), Y(y), X(r))
+end
 
 
 local function drawCompact(widget, w, h)
@@ -135,6 +158,7 @@ end
 
 
 local function drawFull(widget, w, h)
+    -- this piece must come here
     sx, sy = w / 480, h / 272
     if sy >= 1.4 then
         FONT_SMALL, FONT_NORMAL, FONT_BIG = FONT_S, FONT_STD, FONT_XL
@@ -161,18 +185,18 @@ local function drawFull(widget, w, h)
 
     y = 90
     lcd.color(ui.COLOR_RED)
-    lcd.drawRectangle(X(60), Y(y), X(100), Y(50))
-    lcd.drawRectangle(X(61), Y(y+1), X(98), Y(48))
-    lcd.drawRectangle(X(300), Y(y), X(100), Y(50))
-    lcd.drawRectangle(X(301), Y(y+1), X(98), Y(48))
-    lcd.drawLine(X(177), Y(y+25-10), X(280), Y(y+25-10))
-    lcd.drawLine(X(177), Y(y+25-9), X(280), Y(y+25-9))
-    lcd.drawLine(X(177), Y(y+25-11), X(280), Y(y+25-11))
-    lcd.drawLine(X(180), Y(y+25+10), X(283), Y(y+25+10))
-    lcd.drawLine(X(180), Y(y+25+11), X(283), Y(y+25+11))
-    lcd.drawLine(X(180), Y(y+25+9), X(283), Y(y+25+9))
-    lcd.drawFilledTriangle(X(280+5), Y(y+25-10), X(280), Y(y+25-10-5), X(280), Y(y+25-10+5))
-    lcd.drawFilledTriangle(X(180-5), Y(y+25+10), X(180), Y(y+25+10-5), X(180), Y(y+25+10+5))
+    drawRectangle(60, y, 100, 50)
+    drawRectangle(61, y+1, 98, 48)
+    drawRectangle(300, y, 100, 50)
+    drawRectangle(301, y+1, 98, 48)
+    drawLine(177, y+25-10, 280, y+25-10)
+    drawLine(177, y+25-9, 280, y+25-9)
+    drawLine(177, y+25-11, 280, y+25-11)
+    drawLine(180, y+25+10, 283, y+25+10)
+    drawLine(180, y+25+11, 283, y+25+11)
+    drawLine(180, y+25+9, 283, y+25+9)
+    drawFilledTriangle(280+5, y+25-10, 280, y+25-10-5, 280, y+25-10+5)
+    drawFilledTriangle(180-5, y+25+10, 180, y+25+10-5, 180, y+25+10+5)
 
     lcd.color(ui.COLOR_WHITE)
 
@@ -208,27 +232,26 @@ local function drawFull(widget, w, h)
     drawText(x, y, "Bps")
     drawText(x+46, y, mbStats.bytes_received)
 
+    -- privacy key symbol
     x = 225
     y = 114
     if mbStats.privacy > 0 then
-        lcd.drawCircle(X(x), Y(y), X(5))
+        drawCircle(x, y, 5)
         local xend = x + 15 + mbStats.privacy * 3 -- 1: 17, 2: 20, 3: 23
-        lcd.drawLine(X(x+4), Y(y), X(xend), Y(y))
-        lcd.drawLine(X(xend), Y(y), X(xend), Y(y-5))
+        drawLine(x+4, y, xend, y)
         for i = 1, mbStats.privacy do
-            lcd.drawLine(X(xend), Y(y), X(xend), Y(y-5))
+            drawLine(xend, y, xend, y-5)
             xend = xend - 5
         end
     end
 
     -- RSSI spectrum graph
-
     x = 70
     y = 260
     lcd.color(ui.COLOR_LIGHTGREY)
-    lcd.drawLine(X(x - 10), Y(y), X(x + 24*15 + 10), Y(y))
-    lcd.drawLine(X(x - 10), Y(y - (110 - 90)), X(x + 24*15 + 10), Y(y - (110 - 90)))
-    lcd.drawLine(X(x - 10), Y(y - (110 - 50)), X(x + 24*15 + 10), Y(y - (110 - 50)))
+    drawLine(x - 10, y, x + 24*15 + 10, y)
+    drawLine(x - 10, y - (110 - 90), x + 24*15 + 10, y - (110 - 90))
+    drawLine(x - 10, y - (110 - 50), x + 24*15 + 10, y - (110 - 50))
     drawText(x-15, y-9, "-110", FONT_SMALL, TEXT_RIGHT)
     drawText(x-15, y-9-20, "-90", FONT_SMALL, TEXT_RIGHT)
     drawText(x-15, y-9-60, "-50", FONT_SMALL, TEXT_RIGHT)
@@ -237,26 +260,26 @@ local function drawFull(widget, w, h)
 
     lcd.color(ui.COLOR_YELLOW)
     for i = 0, mbStats.fhss1_cnt - 1 do
-      local r = mbRssiList[i].rssi1
-      if r > 120 then
-        lcd.drawFilledRectangle(X(x + i*15 - 1), Y(y - 1), X(3), Y(5))
-      else
-        if r > -40 then r = -40 end
-        r = 110 + r
-        lcd.drawLine(X(x + i*15), Y(y), X(x + i*15), Y(y - r))
-      end
+        local r = mbRssiList[i].rssi1
+        if r > 120 then
+            drawFilledRectangle(x + i*15 - 1, y - 1, 3, 5)
+        else
+            if r > -40 then r = -40 end
+            r = 110 + r
+            drawLine(x + i*15, y, x + i*15, y - r)
+        end
     end
 
     lcd.color(ui.COLOR_RED)
     for i = 0, mbStats.fhss1_cnt - 1 do
-      local r = mbRssiList[i].rssi2
-      if r > 120 then
-        lcd.drawFilledRectangle(X(x+3 + i*15 - 1), Y(y - 1), X(3), Y(5))
-      else
-        if r > -40 then r = -40 end
-        r = 110 + r
-        lcd.drawLine(X(x+3 + i*15), Y(y), X(x+3 + i*15), Y(y - r))
-      end
+        local r = mbRssiList[i].rssi2
+        if r > 120 then
+            drawFilledRectangle(x+3 + i*15 - 1, y - 1, 3, 5)
+        else
+            if r > -40 then r = -40 end
+            r = 110 + r
+            drawLine(x+3 + i*15, y, x+3 + i*15, y - r)
+        end
     end
 end
 
@@ -311,7 +334,8 @@ local function configure(widget)
     local line = form.addLine("Color (compact view)")
     form.addColorField(line, nil,
         function() return widget.color end,
-        function(value) widget.color = value end)
+        function(value) widget.color = value end
+        )
 end
 
 
@@ -339,4 +363,6 @@ local function init()
     })
 end
 
-return { init = init }
+return {
+    init = init
+}
