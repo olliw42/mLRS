@@ -1372,7 +1372,7 @@ tCrsfLinkStatisticsRx clstats;
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);    // ignored by EdgeTx
     clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(            // EdgeTx -> "RRSP"   %     ?downlink but "R"?
         stats.received_rssi,
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
+        SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm())
         );
     clstats.downlink_LQ = stats.GetReceivedLQ_rc();                   // ignored by EdgeTx
     clstats.downlink_snr = UINT8_MAX;                                 // ignored by EdgeTx,       we don't know it
@@ -1390,7 +1390,7 @@ tCrsfLinkStatisticsTx clstats;
     clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());      // ignored by EdgeTx
     clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(              // EdgeTx -> "TRSP"   %     ?uplink but "T"?
         stats.GetLastRssi(),
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
+        SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm())
         );
     clstats.uplink_LQ = stats.GetLQ_serial();                         // ignored by EdgeTx
     clstats.uplink_snr = stats.GetLastSnr();                          // ignored by EdgeTx

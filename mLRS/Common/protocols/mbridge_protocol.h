@@ -229,7 +229,7 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-    int16_t receiver_sensitivity;
+    int16_t receive_sensitivity;
 
     uint8_t has_status : 1; // 0 = invalid flags binding, connected, rx_LQ_low, tx_LQ_low
     uint8_t binding : 1;
