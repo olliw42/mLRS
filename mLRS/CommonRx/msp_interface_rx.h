@@ -499,7 +499,7 @@ tMspCommonSetMspRcLinkStats payload;
 
     payload.sublink_id = 0;
     payload.valid_link = 1;
-    payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiverSensitivity_dbm());
+    payload.uplink_rssi_perc = crsf_cvt_rssi_percent(stats.GetLastRssi(), sx.ReceiveSensitivity_dbm());
     payload.uplink_rssi = crsf_cvt_rssi_rx(stats.GetLastRssi());
     payload.downlink_link_quality = stats.received_LQ_serial;
     payload.uplink_link_quality = stats.GetLQ_rc();

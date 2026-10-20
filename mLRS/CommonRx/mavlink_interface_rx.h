@@ -1000,8 +1000,8 @@ uint16_t tx_ser_data_rate, rx_ser_data_rate;
 
     payload.tx_ser_data_rate = tx_ser_data_rate;
     payload.rx_ser_data_rate = rx_ser_data_rate;
-    payload.tx_receive_sensitivity = -sx.ReceiverSensitivity_dbm();
-    payload.rx_receive_sensitivity = -sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
+    payload.tx_receive_sensitivity = -sx.ReceiveSensitivity_dbm();
+    payload.rx_receive_sensitivity = -sx.ReceiveSensitivity_dbm(); // is equal for Tx and Rx
 
     if (autopilot.HasMlrsRadioLinkStats()) {
         fmav_msg_mlrs_radio_link_information_encode(

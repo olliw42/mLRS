@@ -419,6 +419,7 @@ typedef struct
 
 //-- Telemetry data frames
 
+// CRSF_FRAME_ID_GPS  0x02
 CRSF_PACKED(
 typedef struct
 {
@@ -433,6 +434,7 @@ typedef struct
 #define CRSF_GPS_LEN  15
 
 
+// CRSF_FRAME_ID_GPS_TIME  0x03
 CRSF_PACKED(
 typedef struct
 {
@@ -448,6 +450,7 @@ typedef struct
 #define CRSF_GPS_TIME_LEN  9
 
 
+// CRSF_FRAME_ID_VARIOMETER  0x07
 CRSF_PACKED(
 typedef struct
 {
@@ -457,6 +460,7 @@ typedef struct
 #define CRSF_VARIOMETER_LEN  2
 
 
+// CRSF_FRAME_ID_BATTERY  0x08
 CRSF_PACKED(
 typedef struct
 {
@@ -469,6 +473,7 @@ typedef struct
 #define CRSF_BATTERY_LEN  8
 
 
+// CRSF_FRAME_ID_ATTITUDE  0x1E
 CRSF_PACKED(
 typedef struct
 {
@@ -480,6 +485,7 @@ typedef struct
 #define CRSF_ATTITUDE_LEN  6
 
 
+// CRSF_FRAME_ID_FLIGHT_MODE  0x21
 CRSF_PACKED(
 typedef struct
 {
@@ -489,6 +495,7 @@ typedef struct
 #define CRSF_FLIGHT_MODE_LEN  16
 
 
+// CRSF_FRAME_ID_BARO_ALTITUDE  0x09
 CRSF_PACKED(
 typedef struct
 {
@@ -500,6 +507,7 @@ typedef struct
 #define CRSF_BARO_ALTITUDE_LEN  3 // 2
 
 
+// CRSF_FRAME_ID_AIRSPEED  0x0A
 CRSF_PACKED(
 typedef struct
 {
@@ -509,6 +517,7 @@ typedef struct
 #define CRSF_AIRSPEED_LEN  2
 
 
+// CRSF_FRAME_ID_TEMP  0x0D
 CRSF_PACKED(
 typedef struct
 {
@@ -519,6 +528,7 @@ typedef struct
 #define CRSF_TEMP_LEN  3
 
 
+// CRSF_FRAME_ID_BAROMETER  0x11
 CRSF_PACKED(
 typedef struct
 {

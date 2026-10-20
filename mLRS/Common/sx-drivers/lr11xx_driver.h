@@ -34,7 +34,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13200,
-      .ReceiverSensitivity = -111,
+      .ReceiveSensitivity = -111,
     },
     { .SpreadingFactor = LR11XX_LORA_SF6, // 900 MHz, 19 Hz
       .Bandwidth = LR11XX_LORA_BW_500,
@@ -45,7 +45,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 22560,
-      .ReceiverSensitivity = -112,
+      .ReceiveSensitivity = -112,
     },
     { .SpreadingFactor = LR11XX_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
@@ -56,7 +56,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
-      .ReceiverSensitivity = -105,
+      .ReceiveSensitivity = -105,
     },
     { .SpreadingFactor = LR11XX_LORA_SF6, // 2.4 GHz, 31 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
@@ -67,7 +67,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13418,
-      .ReceiverSensitivity = -108,
+      .ReceiveSensitivity = -108,
     },
     { .SpreadingFactor = LR11XX_LORA_SF7, // 2.4 GHz, 19 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
@@ -78,7 +78,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 23527,
-      .ReceiverSensitivity = -112,
+      .ReceiveSensitivity = -112,
     }
 };
 
@@ -96,7 +96,7 @@ const tSxGfskConfiguration Lr11xxGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
       .CRCType = LR11XX_GFSK_CRC_OFF,
       .Whitening = LR11XX_GFSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106, // this is a guess, data sheet is vague here
+      .ReceiveSensitivity = -106, // this is a guess, data sheet is vague here
     }
 };
 
@@ -372,13 +372,13 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
-    int16_t ReceiverSensitivity_dbm(void)
+    int16_t ReceiveSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
         if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiveSensitivity : gfsk_configuration->ReceiveSensitivity;
     }
 
     int8_t RfPower_dbm(void)

@@ -11,7 +11,11 @@
 // ESP Boards
 //-------------------------------------------------------
 
-//-- ELRS 868/915 MHz Generic Devices (SX127x)
+//-------------------------------------------------------
+//-- ESP Receivers
+//-------------------------------------------------------
+
+//-- 868/915 MHz ELRS Generic Devices (SX127x)
 
 #ifdef RX_ELRS_GENERIC_900_ESP8285
   #define DEVICE_NAME "GENERIC 900"
@@ -37,9 +41,9 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-//-- Generic 868/915 MHz ELRS devices with overlays or other variations
+//-- 868/915 MHz ESP devices (SX127x) with overlays or other variations
 
-#ifdef RX_ELRS_RADIOMASTER_BR3_900_ESP8285
+#ifdef RX_RADIOMASTER_BR3_900_ESP8285
   #define DEVICE_NAME "RM BR3 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
@@ -47,7 +51,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_ELRS_IFLIGHT_ELRS_TD_900_ESP32
+#ifdef RX_IFLIGHT_ELRS_TD_900_ESP32
   #define DEVICE_NAME "IFLIGHT 900 TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
@@ -55,7 +59,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-//-- ELRS 2.4 GHz Generic Devices (SX128x)
+//-- 2.4 GHz ELRS Generic Devices (SX128x)
 
 #ifdef RX_ELRS_GENERIC_2400_ESP8285
   #define DEVICE_NAME "GENERIC 2400"
@@ -85,30 +89,30 @@
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-//-- Generic 2.4 GHz ELRS devices with overlays or other variations
+//-- 2.4 GHz ESP devices (SX128x) with overlays or other variations
 
-#ifdef RX_ELRS_IFLIGHT_ELRS_TD_2400_ESP32
+#ifdef RX_IFLIGHT_ELRS_TD_2400_ESP32
   #define DEVICE_NAME "IFLIGHT 2400 TD"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_ELRS_IFLIGHT_ELRS_2400_ESP8285
+#ifdef RX_IFLIGHT_ELRS_2400_ESP8285
   #define DEVICE_NAME "IFLIGHT 2400"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_ELRS_FLYSKY_PR02_2400_TD_ESP32S3
+#ifdef RX_FLYSKY_PR02_2400_TD_ESP32S3
   #define DEVICE_NAME "Flysky PR02 2400"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-//-- ELRS 2.4 GHz & 868/915 MHz Generic Devices (LR1121)
+//-- 2.4 GHz & 868/915 MHz ELRS Generic Devices (LR1121)
 
 #ifdef RX_ELRS_GENERIC_LR1121_TD_ESP32
   #define DEVICE_NAME "GENERIC LR1121 TD"
@@ -128,9 +132,9 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-//-- Generic LR1121 ELRS devices with overlays or other variations
+//-- 2.4 GHz & 868/915 MHz ESP devices (LR1121) with overlays or other variations
 
-#ifdef RX_ELRS_BAYCK_UR1000_LR1121_ESP32C3
+#ifdef RX_BAYCK_UR1000_LR1121_ESP32C3
   #define DEVICE_NAME "BAYCK UR1000"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_LR11xx
@@ -140,9 +144,9 @@
 #endif
 
 
-//-- ELRS Selected Receivers
+//-- ESP Selected Receivers
 
-#ifdef RX_ELRS_BAYCK_NANO_PRO_900_ESP8285
+#ifdef RX_BAYCK_NANO_PRO_900_ESP8285
   #define DEVICE_NAME "BAYCK NANO PRO 900"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
@@ -150,28 +154,28 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_ELRS_SPEEDYBEE_NANO_2400_ESP8285
+#ifdef RX_SPEEDYBEE_NANO_2400_ESP8285
   #define DEVICE_NAME "SPEEDYBEE NANO 2.4G"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_ELRS_BETAFPV_SUPERD_2400_ESP32
+#ifdef RX_BETAFPV_SUPERD_2400_ESP32
   #define DEVICE_NAME "BetaFPV SuperD 2.4G"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_RP4TD_2400_ESP32
+#ifdef RX_RADIOMASTER_RP4TD_2400_ESP32
   #define DEVICE_NAME "RM RP4TD 2.4G"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_XR4_ESP32
+#ifdef RX_RADIOMASTER_XR4_ESP32
   #define DEVICE_NAME "RM XR4"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_LR11xx
@@ -180,7 +184,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef RX_ELRS_RADIOMASTER_XR1_ESP32C3
+#ifdef RX_RADIOMASTER_XR1_ESP32C3
   #define DEVICE_NAME "RM XR1"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_LR11xx
@@ -190,23 +194,25 @@
 #endif
 
 
-//-- ELRS Tx Modules (external)
+//-------------------------------------------------------
+//-- ESP Tx Modules (external)
+//-------------------------------------------------------
 
-#ifdef TX_ELRS_RADIOMASTER_RP4TD_2400_ESP32 // receiver used as Tx module, SiK only
+#ifdef TX_RADIOMASTER_RP4TD_2400_ESP32 // receiver used as Tx module, SiK only
   #define DEVICE_NAME "RM RP4TD 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_BETAFPV_MICRO_1W_2400_ESP32
+#ifdef TX_BETAFPV_MICRO_1W_2400_ESP32
   #define DEVICE_NAME "BetaFPV Micro1W 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_BANDIT_MICRO_900_ESP32
+#ifdef TX_RADIOMASTER_BANDIT_MICRO_900_ESP32
   #define DEVICE_NAME "RM Bandit Micro 900"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
@@ -214,7 +220,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#ifdef TX_RADIOMASTER_BANDIT_900_ESP32
   #define DEVICE_NAME "RM Bandit 900"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
@@ -222,14 +228,14 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_RANGER_2400_ESP32
+#ifdef TX_RADIOMASTER_RANGER_2400_ESP32
   #define DEVICE_NAME "RM Ranger 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_NOMAD_ESP32
+#ifdef TX_RADIOMASTER_NOMAD_ESP32
   #define DEVICE_NAME "RM Nomad"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
@@ -239,16 +245,18 @@
 #endif
 
 
-//-- ELRS Internal Tx Modules
+//-------------------------------------------------------
+//-- ESP Internal Tx Modules
+//-------------------------------------------------------
 
-#ifdef TX_ELRS_JUMPER_INTERNAL_2400_ESP32
+#ifdef TX_JUMPER_INTERNAL_2400_ESP32
   #define DEVICE_NAME "Jumper Int 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_JUMPER_INTERNAL_900_ESP32
+#ifdef TX_JUMPER_INTERNAL_900_ESP32
   #define DEVICE_NAME "Jumper Int 900"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
@@ -256,7 +264,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_JUMPER_INTERNAL_LR1121_ESP32
+#ifdef TX_JUMPER_INTERNAL_LR1121_ESP32
   #define DEVICE_NAME "Jumper Int LR1121"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
@@ -265,21 +273,21 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_2400_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_2400_ESP32
   #define DEVICE_NAME "RM Int 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_BOXER_2400_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_BOXER_2400_ESP32
   #define DEVICE_NAME "RM Int Boxer 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX15_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_TX15_ESP32
   #define DEVICE_NAME "RadioMaster Int TX15"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
@@ -288,7 +296,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_GX12_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_GX12_ESP32
   #define DEVICE_NAME "RadioMaster Int GX12"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
@@ -297,14 +305,14 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_GX15_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_GX15_ESP32
   #define DEVICE_NAME "RadioMaster Int GX15"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_TX16SMK3_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_TX16SMK3_ESP32
   #define DEVICE_NAME "RM Int TX16S MK3"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
@@ -313,7 +321,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_RADIOMASTER_INTERNAL_AX12_ESP32
+#ifdef TX_RADIOMASTER_INTERNAL_AX12_ESP32
   #define DEVICE_NAME "RadioMaster Int AX12"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR11xx
@@ -322,7 +330,7 @@
   #define FREQUENCY_BAND_915_MHZ_FCC
 #endif
 
-#ifdef TX_ELRS_FLYSKY_INTERNAL_PA01_2400_ESP32S3
+#ifdef TX_FLYSKY_INTERNAL_PA01_2400_ESP32S3
   #define DEVICE_NAME "Flysky Int PA01 2.4G"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX128x
