@@ -32,10 +32,6 @@ local bindEndAt = 0
 
 local hasUnsavedChanges = false
 
--- RX presence tracking (latched)
-local rxPresent = nil
-local lastRxProbeAt = 0
-
 local linkActive = false
 local lastLinkActive = nil
 
@@ -363,7 +359,6 @@ local function doReload()
   statusMsg = "Reloading…"
   bindActive = false
   bindEndAt = 0
-  rxPresent = nil
 
   -- force structural rebuild back to loading view
   ui.built = false
@@ -393,7 +388,6 @@ local function reloadFromModuleOnLinkUp()
   statusMsg = "Link active — refreshing…"
   bindActive = false
   bindEndAt = 0
-  rxPresent = nil
 
   -- force structural rebuild back to loading view (then params view after re-load)
   ui.built = false
@@ -597,7 +591,7 @@ local function buildParamsForm()
               local f = form.addNumberField(line, nil, min, max, getter, setter)
               ui.param[p.idx0] = f
               ui.paramGroup[p.idx0] = grp
-              f:enable(grp ~= "rx" or rxPresent == true)              
+              f:enable(grp ~= "rx" or isRxPresent())              
 
               safeCall(f, "minimum", min)
               safeCall(f, "maximum", max)
@@ -682,20 +676,27 @@ local function wakeup(_)
   if not api then return end
   api:processQueue(24)
 
-  linkActive = crsfLinkPresent() and true or false
+  local tlmActive = crsfLinkPresent() and true or false
 
-  -- If link state toggled, rebuild entire form (structure changes: RX panel/fields)
+  -- If telemetry state toggled, rebuild entire form (structure changes: RX panel/fields)
   if lastLinkActive == nil then
-    lastLinkActive = linkActive
-  elseif lastLinkActive ~= linkActive then
-    local becameTrue = (not lastLinkActive) and linkActive
-    lastLinkActive = linkActive
+    lastLinkActive = tlmActive
+  elseif lastLinkActive ~= tlmActive then
+    local becameTrue = (not lastLinkActive) and tlmActive
+    lastLinkActive = tlmActive
     -- Always rebuild structure on any toggle
     dirtyForm = true
     -- But if link just became active, re-query everything from the module
     if becameTrue then
       reloadFromModuleOnLinkUp()
     end
+  end
+
+  -- RX panel also shows when mLRS reports a receiver, even if Ethos telemetry isn't active
+  local rxShown = (tlmActive or isRxPresent()) and true or false
+  if rxShown ~= linkActive then
+    linkActive = rxShown
+    dirtyForm = true
   end
 
 
