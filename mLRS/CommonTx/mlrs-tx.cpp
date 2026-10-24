@@ -181,8 +181,10 @@ tTxDisp disp;
 //-------------------------------------------------------
 
 #include "esp-wifi-bridge.h"
+#include "ota_relay_tx.h"
 
 tTxEspWifiBridge espbridge;
+tTxOtaRelay ota_relay;
 
 #include "hc04-bridge.h"
 
@@ -457,6 +459,9 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
     case LINK_TASK_TX_STORE_RX_PARAMS:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_STORE_RX_PARAMS);
         transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
+        break;
+    case LINK_TASK_TX_RX_OTA_ENTER:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_RX_OTA_ENTER); // is repeated until the relay starts
         break;
     }
 }
@@ -842,6 +847,7 @@ INITCONTROLLER_END
             fan.SetPower(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()));
             fan.Tick_ms();
             espbridge.Tick_ms();
+            ota_relay.Tick_ms();
 
             if (!tick_1hz) {
                 dbg.puts(".");
@@ -1123,6 +1129,12 @@ IF_SX2(
             GOTO_RESTARTCONTROLLER;
         }
 
+        // relay for the receiver's OTA update
+        if (ota_relay.Ready()) {
+            ota_relay.Run(Config.FrameSyncWord);
+            GOTO_RESTARTCONTROLLER;
+        }
+
 //dbg.puts((valid_frame_received) ? "\nvalid" : "\ninval");
 
         return; // link state might have changed, process immediately
@@ -1245,6 +1257,14 @@ IF_IN(
     case TASK_BIND_START: bind.StartBind(); break;
     case TASK_BIND_STOP: bind.StopBind(); break;
     case TASK_SYSTEM_BOOT: enter_system_bootloader(); break;
+    case TASK_RX_OTA:
+        if (!ota_relay.Start(Serials.com)) break;
+        // a receiver which is in its ota update already isn't connected, so go ahead in any case
+        if (connected()) {
+            link_task_reset();
+            link_task_set(LINK_TASK_TX_RX_OTA_ENTER);
+        }
+        break;
     case TASK_CHANGE_CONFIG_ID: config_id.Change(tasks.GetConfigIdValue()); break;
     }
     espbridge.HandleTask(tx_task, tasks.GetEspBridgeStr());

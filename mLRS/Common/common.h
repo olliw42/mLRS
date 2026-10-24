@@ -231,6 +231,11 @@ void tSerialPorts::Init(uint8_t serial_port, uint32_t baud, uint8_t serial_port2
         com = com_port();
     }
 
+#ifdef USE_COM_ON_SERIAL
+    // uartb is idle if neither serial nor serial2 use it, so give it to com, no button needed
+    if (serial != &uartb_port && serial_port2 != TX_SERIAL_PORT2_SERIAL) { com = &uartb_port; }
+#endif
+
     switch (serial_port2) {
     case TX_SERIAL_PORT2_SERIAL:
         serial2 = &uartb_port;
