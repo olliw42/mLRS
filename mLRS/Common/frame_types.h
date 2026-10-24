@@ -250,6 +250,8 @@ typedef enum {
     FRAME_CMD_NONE = 0,
 //not used    FRAME_CMD_RX_REBOOT,  // tx -> rx, rx reboots
 //not used    FRAME_CMD_RX_BIND,    // tx -> rx, rx goes into bind mode
+    FRAME_CMD_RX_OTA_ENTER, // tx -> rx, rx goes into its ota update
+
     // some of these commands have additional data
     FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata
     FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
