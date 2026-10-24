@@ -31,23 +31,32 @@
 #include "soc/spi_reg.h"
 #include "esp_flash.h"
 
+// idf internals (spi_flash/cache_utils.c, in iram), not in a public header
+// stall the other cpu, mask non-iram interrupts and turn the flash cache off/on
 extern "C" void spi_flash_disable_interrupts_caches_and_other_cpu(void);
 extern "C" void spi_flash_enable_interrupts_caches_and_other_cpu(void);
 
 // switches code execution from flash to qio, must run from ram with the cache off
+// IRAM_ATTR + noinline keep it out of flash, config_readmode is a mask rom function (esp32.rom.spiflash.ld)
 IRAM_ATTR __attribute__((noinline)) void esp_flash_qio_exec_init(void)
 {
     spi_flash_disable_interrupts_caches_and_other_cpu();
-    esp_rom_spiflash_config_readmode(ESP_ROM_SPIFLASH_QIO_MODE);
+    esp_rom_spiflash_config_readmode(ESP_ROM_SPIFLASH_QIO_MODE); // sets spi0 (cache) read mode to qio
     spi_flash_enable_interrupts_caches_and_other_cpu();
 }
 
+// runs from the idf startup global ctors, i.e. after the flash driver init and before setup() and nvs
+// scheduler not yet started, so the app cpu spins in iram and disabling the cache for it is safe
 __attribute__((constructor)) void esp_flash_qio_pins_init(void)
 {
+    // rom: route the wp/hd pins to the flash, a dio bootloader leaves them as gpio
+    // pins from the efuse spi config (0 = default), wp pin from bootloader_support for custom pin maps
     esp_rom_spiflash_select_qio_pins(bootloader_flash_get_wp_pin(), ets_efuse_get_spiconfig());
 
+    // esp_flash_default_chip is the idf main flash driver instance (esp_flash.h), set up before the ctors
+    // its read_mode comes from sdkconfig, esp_flash_is_quad_mode() is an inline check of it
     if (!esp_flash_default_chip || !esp_flash_is_quad_mode(esp_flash_default_chip)) return; // quad enable bit not set
-    if (REG_READ(SPI_CTRL_REG(0)) & SPI_FREAD_QIO) return; // already qio
+    if (REG_READ(SPI_CTRL_REG(0)) & SPI_FREAD_QIO) return; // already qio, spi0 is the controller the cache reads through
     esp_flash_qio_exec_init();
 }
 #endif
