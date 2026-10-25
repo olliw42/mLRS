@@ -36,6 +36,11 @@ local rxPanelShown = false
 -- Edge detector for the Ethos telemetry-active source
 local lastTlmActive = nil
 
+-- Oldest firmware this script talks to (same as the EdgeTX script)
+local REQUIRED_TX_VERSION_INT = 10303 -- v1.3.03
+local REQUIRED_RX_VERSION_INT = 10303
+local layoutWarn = nil -- Tx/Rx parameter layout mismatch, shown next to the status
+
 local function now() return os.clock() end
 local function fmt(x) return (x == nil) and "---" or tostring(x) end
 
@@ -79,7 +84,18 @@ local function statusText()
   if errMsg and errMsg ~= "" then
     return "ERR: " .. errMsg
   end
-  return statusMsg or ""
+  local s = statusMsg or ""
+  if layoutWarn then s = s .. " | " .. layoutWarn end
+  -- while params load, append progress "(done/total)" like the EdgeTX script
+  if api then
+    local done, total = api:loadProgress()
+    if done then
+      s = s .. " (" .. tostring(done)
+      if total and total > 0 then s = s .. "/" .. tostring(total) end
+      s = s .. ")"
+    end
+  end
+  return s
 end
 
 local function updateStatusWidgets()
@@ -167,7 +183,7 @@ end
 -- Bind helpers
 ------------------------------------------------------------
 local function doBindStart()
-  if not api then return end
+  if not api or not loadedParams then return end
   setErr(nil)
   setStatus("Starting bind…")
   api:bindStart(function(res)
@@ -205,6 +221,9 @@ local function updateBindWidgets()
   if bindActive then
     local left = math.max(0, bindEndAt - now())
     safeCall(ui.bindStatus, "value", "ACTIVE (auto-stop in " .. string.format("%.0f", left) .. "s)")
+  elseif info and info.has_status == 1 and info.binding == 1 then
+    -- module reports it is binding (e.g. started from its button)
+    safeCall(ui.bindStatus, "value", "ACTIVE (module)")
   else
     safeCall(ui.bindStatus, "value", "Idle")
   end
@@ -215,10 +234,37 @@ end
 ------------------------------------------------------------
 local requestAllParams -- defined below, used by the basics chain
 
+-- Firmware version gate and Tx/Rx layout check, mirroring the EdgeTX script
+local function checkDeviceVersions()
+  layoutWarn = nil
+  local tx = dev and dev.tx
+  local rx = dev and dev.rx
+  if tx and tx.version_int and tx.version_int < REQUIRED_TX_VERSION_INT then
+    setErr("Tx version not supported by this script")
+    return false
+  end
+  if rx and isRxPresent() and rx.version_int and rx.version_int < REQUIRED_RX_VERSION_INT then
+    setErr("Rx version not supported by this script")
+    return false
+  end
+  if tx and rx and isRxPresent() and (tx.setuplayout_int > 515 or rx.setuplayout_int > 515) then
+    if tx.setuplayout_int < rx.setuplayout_int then
+      layoutWarn = "Tx param version older than Rx, update Tx firmware"
+    elseif rx.setuplayout_int < tx.setuplayout_int then
+      layoutWarn = "Rx param version older than Tx, update Rx firmware"
+    end
+  end
+  return true
+end
+
 local function onBasicsReady()
   updateHeaderWidgets()
   bindActive = false
   bindEndAt = 0
+  if not checkDeviceVersions() then
+    setStatus("Error")
+    return
+  end
   requestAllParams()
 end
 
@@ -336,7 +382,7 @@ end
 -- Actions
 ------------------------------------------------------------
 local function doSave()
-  if not api then return end
+  if not api or not loadedParams then return end
   if not hasUnsavedChanges then
     setStatus("No pending changes")
     return
@@ -353,6 +399,32 @@ local function doSave()
     hasUnsavedChanges = false
     updateSaveWidgets()
     setStatus("Saved")
+  end)
+end
+
+local function doBoot()
+  if not api or not loadedParams then return end
+  setErr(nil)
+  api:bootloader(function(res)
+    if not res.ok then
+      setErr("Boot: " .. fmt(res.err))
+      setStatus("Error")
+      return
+    end
+    setStatus("In System Bootloader")
+  end)
+end
+
+local function doFlashEsp()
+  if not api or not loadedParams then return end
+  setErr(nil)
+  api:flashEsp(function(res)
+    if not res.ok then
+      setErr("FlashEsp: " .. fmt(res.err))
+      setStatus("Error")
+      return
+    end
+    setStatus("In Flash ESP")
   end)
 end
 
@@ -383,7 +455,7 @@ local function doReload()
 end
 
 -- When link comes back, force a re-query from the module so RX/TX/device/params are fresh.
-local function reloadFromModuleOnLinkUp()
+local function reloadFromModuleOnLinkUp(msg)
   if not api then return end
 
   api:reset()
@@ -394,7 +466,7 @@ local function reloadFromModuleOnLinkUp()
 
   dev, info, params = nil, nil, nil
   errMsg = nil
-  statusMsg = "Link active — refreshing…"
+  statusMsg = msg or "Link active — refreshing…"
   bindActive = false
   bindEndAt = 0
 
@@ -607,6 +679,24 @@ local function buildParamsForm()
           end
         end 
       end
+    end
+  end
+
+  -- Tools panel (System Bootloader / Flash ESP), as on the EdgeTX Tools page
+  do
+    local tools_panel = form.addExpansionPanel("Tools")
+    tools_panel:open(false)
+    local bline = tools_panel:addLine("")
+    if form.addButton then
+      form.addButton(bline, nil, { text = "System Bootloader", press = doBoot })
+    else
+      form.addTextButton(bline, nil, "System Bootloader", doBoot)
+    end
+    local eline = tools_panel:addLine("")
+    if form.addButton then
+      form.addButton(eline, nil, { text = "Flash ESP", press = doFlashEsp })
+    else
+      form.addTextButton(eline, nil, "Flash ESP", doFlashEsp)
     end
   end
 

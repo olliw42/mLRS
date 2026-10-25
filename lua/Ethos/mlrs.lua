@@ -27,6 +27,7 @@ local CMD_BIND_START          = 14
 local CMD_BIND_STOP           = 15
 local CMD_MODELID_SET         = 16
 local CMD_SYSTEM_BOOTLOADER   = 17
+local CMD_FLASH_ESP           = 18
 
 -- types
 local T_UINT8, T_INT8, T_UINT16, T_INT16, T_LIST, T_STR6 = 0, 1, 2, 3, 4, 5
@@ -249,6 +250,7 @@ local function decode_info(payload)
   local flags5 = u8(payload, 5)
   local tx_config_id = u8(payload, 6)
   local div = u8(payload, 7)
+  local param_num = u8(payload, 8)
 
   return {
     receiver_sensitivity = receiver_sensitivity,
@@ -260,6 +262,7 @@ local function decode_info(payload)
     tx_config_id = tx_config_id,
     tx_diversity = div & 0x0F,
     rx_diversity = (div >> 4) & 0x0F,
+    param_num = param_num,     -- 0 if the module doesn't report it
   }
 end
 
@@ -274,9 +277,18 @@ local function on_PARAM_ITEM(model, payload)
     return
   end
 
+  local name = mb_str(payload, 2, 16)
+
+  -- Rx params form the tail of the list; without a receiver skip them, like the EdgeTX script
+  local rxAvailable = model.info and model.info.rx_available == 1
+  if not rxAvailable and name:sub(1, 2) == "Rx" then
+    model.paramsComplete = true
+    return
+  end
+
   local p = ensureParam(model, idx0)
   p.typ = u8(payload, 1)
-  p.name = mb_str(payload, 2, 16)
+  p.name = name
   p.value = mb_value_or_str6(payload, 18, p.typ)
 
   -- defaults
@@ -488,6 +500,15 @@ function M.getAllParams(self, cb, opts)
   })
 end
 
+-- Progress of an in-flight GET_ALL_PARAMS: params complete so far and total (0 if unknown).
+-- Returns nil when no param load is active.
+function M.loadProgress(self)
+  local req = activeReq(self)
+  if not req or req.type ~= "GET_ALL_PARAMS" then return nil end
+  local total = (self.model.info and self.model.info.param_num) or 0
+  return req.nextIdx0 or 0, total
+end
+
 function M.getParam(self, idx0, cb, opts)
   -- backwards compatible: getParam(idx0, cb)
   opts = opts or {}
@@ -518,6 +539,10 @@ end
 
 function M.bootloader(self, cb)
   return enqueue(self, { type = "BOOT", cb = cb, deadline = now() + 6.0 })
+end
+
+function M.flashEsp(self, cb)
+  return enqueue(self, { type = "FLASH_ESP", cb = cb, deadline = now() + 6.0 })
 end
 
 -- ---------- request primitives ----------
@@ -664,6 +689,16 @@ end
   if req.type == "BOOT" then
     if not req.sent then
       pushMB(self.sensor, CMD_SYSTEM_BOOTLOADER, {})
+      req.sent = true
+      finish(req, true, { sent = true })
+    end
+    return true
+  end
+
+  -- ---- FLASH_ESP ----
+  if req.type == "FLASH_ESP" then
+    if not req.sent then
+      pushMB(self.sensor, CMD_FLASH_ESP, {})
       req.sent = true
       finish(req, true, { sent = true })
     end
