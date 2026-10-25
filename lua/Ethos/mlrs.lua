@@ -187,9 +187,9 @@ local function newModel()
     lastRxAt = nil,
 
     lastInfoReqAt = nil,
-    lastDeviceReqAt = nil,
     lastListReqAt = nil,
     lastIndexReqAt = nil,
+    lastIndexReq = nil,       -- idx0 of the most recent by-index request
   }
 end
 
@@ -425,10 +425,9 @@ local function finish(req, ok, dataOrErr)
 end
 
 local function activeReq(self)
-  for i = 1, #self.queue do
-    if not self.queue[i].done then return self.queue[i] end
-  end
-  return nil
+  local q = self.queue
+  while #q > 0 and q[1].done do table.remove(q, 1) end
+  return q[1]
 end
 
 local function enqueue(self, req)
@@ -446,7 +445,7 @@ function M.new(opts)
     queue = {},
     nextReqId = 1,
 
-    settleS = (opts and opts.settleS) or 1.5,
+    settleS = (opts and opts.settleS) or 0.2,
     createdAt = now(),
 
     -- by_index uses REQUEST_CMD {PARAM_ITEM, idx}
@@ -522,25 +521,14 @@ function M.bootloader(self, cb)
 end
 
 -- ---------- request primitives ----------
+-- REQUEST_INFO makes the module send DEVICE_ITEM_TX, DEVICE_ITEM_RX and INFO.
+-- While connected it also refetches RX setup data over the air, so send it sparingly.
 local function maybeRequestInfo(self)
   local m = self.model
   local t = now()
-  if m.gotInfo then return end
   if (not m.lastInfoReqAt) or (t - m.lastInfoReqAt > 1.0) then
     pushMB(self.sensor, CMD_REQUEST_INFO, {})
     m.lastInfoReqAt = t
-  end
-end
-
-local function maybeRequestDeviceItems(self)
-  -- In mLRS, REQUEST_INFO triggers DEVICE_ITEM_TX, DEVICE_ITEM_RX, and INFO (per pasted script).
-  -- So we just re-use REQUEST_INFO, but gate frequency.
-  local m = self.model
-  local t = now()
-  if m.txItem and m.rxItem then return end
-  if (not m.lastDeviceReqAt) or (t - m.lastDeviceReqAt > 1.0) then
-    pushMB(self.sensor, CMD_REQUEST_INFO, {})
-    m.lastDeviceReqAt = t
   end
 end
 
@@ -554,55 +542,42 @@ local function requestParamList(self)
   end
 end
 
+local INDEX_RETRY_S = 0.3
+
+-- A new index is requested at once. Re-requesting the same index is a retry, which
+-- restarts the item sequence on the module, so wait until no item arrived for a while.
 local function requestParamByIndex(self, idx0)
   local m = self.model
   local t = now()
-  -- keep this modest; the upstream script drives ~30Hz (33 * 10ms)
-  if (not m.lastIndexReqAt) or (t - m.lastIndexReqAt > 0.10) then
+  if idx0 ~= m.lastIndexReq then
+    pushMB(self.sensor, CMD_REQUEST_CMD, { CMD_PARAM_ITEM, idx0 & 0xFF })
+    m.lastIndexReq = idx0
+    m.lastIndexReqAt = t
+    return
+  end
+  local quietSince = math.max(m.lastIndexReqAt or 0, m.lastParamRxAt or 0)
+  if t - quietSince > INDEX_RETRY_S then
     pushMB(self.sensor, CMD_REQUEST_CMD, { CMD_PARAM_ITEM, idx0 & 0xFF })
     m.lastIndexReqAt = t
   end
 end
 
--- ---------- pump ----------
-function M.processQueue(self, maxFrames)
-  maxFrames = maxFrames or 24
-
-  -- settle window
-  if (now() - self.createdAt) < self.settleS then return end
-
-  -- after store deadtime (avoid hammering while device reboots / re-enumerates)
-  if self.lastStoreAt and (now() - self.lastStoreAt) < self.saveDeadS then
-    -- still read frames though
-  end
-
-  -- RX: consume frames
-  for _ = 1, maxFrames do
-    local cmd, data = self.sensor:popFrame(130)
-    if not cmd then break end
-    handleFrame(self.model, cmd, data)
-  end
-
-  local req = activeReq(self)
-  if not req then return end
-
+-- ---------- dispatch ----------
+-- Advance one request. Returns true when it finished, so the caller can
+-- move on to the next queued request in the same pump.
+local function dispatch(self, req)
   if now() > (req.deadline or 0) then
     finish(req, false, "timeout")
-    return
-  end
-
-  -- deadtime blocks TX-side requests, but allows RX consumption
-  if self.lastStoreAt and (now() - self.lastStoreAt) < self.saveDeadS then
-    return
+    return true
   end
 
   -- ---- GET_INFO ----
   if req.type == "GET_INFO" then
     if self.model.gotInfo and self.model.info then
       finish(req, true, { info = self.model.info })
-    else
-      maybeRequestInfo(self)
+      return true
     end
+    maybeRequestInfo(self)
     return
   end
 
@@ -617,10 +592,9 @@ function M.processQueue(self, maxFrames)
 
     if haveTx and (haveRx or rxAvail == 0) then
       finish(req, true, { tx = self.model.txItem, rx = self.model.rxItem, info = self.model.info })
-    else
-      maybeRequestDeviceItems(self)
-      maybeRequestInfo(self)
+      return true
     end
+    maybeRequestInfo(self)
     return
   end
 
@@ -650,7 +624,7 @@ function M.processQueue(self, maxFrames)
     req.sent = true
     finish(req, true, { sent = true })
   end
-  return
+  return true
 end
 
 
@@ -663,7 +637,7 @@ end
       -- After store, your UI can enqueue a reload/getAllParams later
       finish(req, true, { sent = true })
     end
-    return
+    return true
   end
 
   -- ---- BIND ----
@@ -673,7 +647,7 @@ end
       req.sent = true
       finish(req, true, { sent = true })
     end
-    return
+    return true
   end
 
   -- ---- BIND_STOP ----
@@ -683,7 +657,7 @@ end
       req.sent = true
       finish(req, true, { sent = true })
     end
-    return
+    return true
   end
 
   -- ---- BOOT ----
@@ -693,7 +667,7 @@ end
       req.sent = true
       finish(req, true, { sent = true })
     end
-    return
+    return true
   end
 
   -- ---- GET_PARAM ----
@@ -701,7 +675,7 @@ end
     local p = self.model.params[(req.idx0 or 0) + 1]
     if param_is_ready(p, req.full) then
       finish(req, true, { param = p })
-      return
+      return true
     end
 
     if self.strategy == "by_index" then
@@ -719,7 +693,7 @@ end
   if req.type == "GET_ALL_PARAMS" then
     if self.model.paramsComplete then
       finish(req, true, { params = self.model.params, complete = true })
-      return
+      return true
     end
 
     if self.strategy == "by_index" then
@@ -732,7 +706,7 @@ end
         if req.nextIdx0 > 255 then
           -- safety (normally complete triggered by idx0==255 item)
           finish(req, true, { params = self.model.params, complete = true })
-          return
+          return true
         end
       end
 
@@ -741,6 +715,33 @@ end
       requestParamList(self)
     end
     return
+  end
+end
+
+-- ---------- pump ----------
+function M.processQueue(self, maxFrames)
+  maxFrames = maxFrames or 24
+
+  -- settle window
+  if (now() - self.createdAt) < self.settleS then return end
+
+  -- RX: consume frames
+  for _ = 1, maxFrames do
+    local cmd, data = self.sensor:popFrame(130)
+    if not cmd then break end
+    handleFrame(self.model, cmd, data)
+  end
+
+  -- deadtime after STORE blocks TX-side requests, but frames above are still consumed
+  if self.lastStoreAt and (now() - self.lastStoreAt) < self.saveDeadS then
+    return
+  end
+
+  -- Chain through requests that complete immediately (e.g. device items -> params)
+  for _ = 1, 8 do
+    local req = activeReq(self)
+    if not req then return end
+    if not dispatch(self, req) then return end
   end
 end
 

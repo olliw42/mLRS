@@ -18,7 +18,6 @@ local icon = lcd and lcd.loadMask and lcd.loadMask(BASE .. "/icon.png") or nil
 local api
 local requested = false
 local loadedParams = false
-local paramsRequested = false
 
 local statusMsg = "Starting…"
 local errMsg
@@ -214,6 +213,15 @@ end
 ------------------------------------------------------------
 -- MLRS request chain
 ------------------------------------------------------------
+local requestAllParams -- defined below, used by the basics chain
+
+local function onBasicsReady()
+  updateHeaderWidgets()
+  bindActive = false
+  bindEndAt = 0
+  requestAllParams()
+end
+
 local function requestBasics()
   if requested or not api then return end
   requested = true
@@ -228,6 +236,12 @@ local function requestBasics()
     dev = res.data
     if dev and dev.info then info = dev.info end
 
+    -- REQUEST_INFO already delivers INFO alongside the device items; only ask again if it is missing
+    if info then
+      onBasicsReady()
+      return
+    end
+
     setStatus("Requesting INFO…")
     api:getInfo(function(res2)
       if not res2.ok then
@@ -235,18 +249,13 @@ local function requestBasics()
         setStatus("Error")
         return
       end
-
       info = res2.data and res2.data.info or info
-
-      setStatus("Ready")
-
-      -- Update header in-place if form already exists
-      updateHeaderWidgets()
+      onBasicsReady()
     end)
   end)
 end
 
-local function requestAllParams()
+requestAllParams = function()
   if not api then return end
   setStatus("Loading params…")
   setErr(nil)
@@ -353,7 +362,6 @@ local function doReload()
 
   requested = false
   loadedParams = false
-  paramsRequested = false
   hasUnsavedChanges = false
 
   dev, info, params = nil, nil, nil
@@ -382,7 +390,6 @@ local function reloadFromModuleOnLinkUp()
 
   requested = false
   loadedParams = false
-  paramsRequested = false
   hasUnsavedChanges = false
 
   dev, info, params = nil, nil, nil
@@ -644,13 +651,12 @@ end
 ------------------------------------------------------------
 local function create()
   if not api then
-    api = mlrs.new({ settleS = 1.5, strategy = "by_index", saveDeadS = 3.0 })
+    api = mlrs.new({ settleS = 0.2, strategy = "by_index", saveDeadS = 3.0 })
     setmetatable(api, { __index = mlrs })
   end
 
   requested = false
   loadedParams = false
-  paramsRequested = false
   hasUnsavedChanges = false
 
   dev, info, params = nil, nil, nil
@@ -709,14 +715,6 @@ local function wakeup(_)
     doBindStop()
   end
 
-  -- Start param load exactly once after basics are ready
-  if requested and not paramsRequested and not loadedParams and not errMsg and statusMsg == "Ready" then
-    paramsRequested = true
-    requestAllParams()
-    bindActive = false
-    bindEndAt = 0
-  end
-
   -- In-place “dynamic” UI updates (no rebuild)
   updateStatusWidgets()
   updateHeaderWidgets()
@@ -734,7 +732,6 @@ local function close(_)
 
   requested = false
   loadedParams = false
-  paramsRequested = false
   hasUnsavedChanges = false
 
   dev, info, params = nil, nil, nil
