@@ -32,8 +32,10 @@ local bindEndAt = 0
 
 local hasUnsavedChanges = false
 
-local linkActive = false
-local lastLinkActive = nil
+-- Receiver panel is built only while mLRS reports a receiver (see isRxPresent)
+local rxPanelShown = false
+-- Edge detector for the Ethos telemetry-active source
+local lastTlmActive = nil
 
 local function now() return os.clock() end
 local function fmt(x) return (x == nil) and "---" or tostring(x) end
@@ -487,7 +489,7 @@ local function buildParamsForm()
   end
 
   local rx_panel = nil
-  if linkActive then
+  if rxPanelShown then
     rx_panel = form.addExpansionPanel("Receiver")
     rx_panel:open(false)
 
@@ -591,7 +593,6 @@ local function buildParamsForm()
               local f = form.addNumberField(line, nil, min, max, getter, setter)
               ui.param[p.idx0] = f
               ui.paramGroup[p.idx0] = grp
-              f:enable(grp ~= "rx" or isRxPresent())              
 
               safeCall(f, "minimum", min)
               safeCall(f, "maximum", max)
@@ -665,6 +666,10 @@ local function create()
   ui.bindStatus, ui.bindButton = nil, nil
   ui.saveHint, ui.saveButton = nil, nil
 
+  -- Edge trackers outlive close(); clear them so the first wakeup() doesn't see a stale edge
+  lastTlmActive = nil
+  rxPanelShown = false
+
   dirtyForm = true
 
   requestBasics()
@@ -676,29 +681,24 @@ local function wakeup(_)
   if not api then return end
   api:processQueue(24)
 
+  -- Ethos telemetry going active means the module (re)appeared: re-query everything
   local tlmActive = crsfLinkPresent() and true or false
-
-  -- If telemetry state toggled, rebuild entire form (structure changes: RX panel/fields)
-  if lastLinkActive == nil then
-    lastLinkActive = tlmActive
-  elseif lastLinkActive ~= tlmActive then
-    local becameTrue = (not lastLinkActive) and tlmActive
-    lastLinkActive = tlmActive
-    -- Always rebuild structure on any toggle
-    dirtyForm = true
-    -- But if link just became active, re-query everything from the module
+  if lastTlmActive == nil then
+    lastTlmActive = tlmActive
+  elseif lastTlmActive ~= tlmActive then
+    local becameTrue = (not lastTlmActive) and tlmActive
+    lastTlmActive = tlmActive
     if becameTrue then
       reloadFromModuleOnLinkUp()
     end
   end
 
-  -- RX panel also shows when mLRS reports a receiver, even if Ethos telemetry isn't active
-  local rxShown = (tlmActive or isRxPresent()) and true or false
-  if rxShown ~= linkActive then
-    linkActive = rxShown
+  -- Receiver panel visibility follows what mLRS reports, not the Ethos telemetry state
+  local showRx = isRxPresent()
+  if showRx ~= rxPanelShown then
+    rxPanelShown = showRx
     dirtyForm = true
   end
-
 
   -- Build structure if needed
   ensureForm()
