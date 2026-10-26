@@ -1,7 +1,7 @@
 --[[
   Copyright (C) 2025 Rob Thomson
   GPLv3 — https://www.gnu.org/licenses/gpl-3.0.en.html
-  version 10. Oct. 2027
+  version 26. Oct. 2026
 ]]--
 
 local SYSTEM_TOOL = false  -- set to true to force system tool registration

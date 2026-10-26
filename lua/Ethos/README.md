@@ -36,12 +36,9 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 
 ## 💾 Saving Settings
 
-- After editing values, tap **Save** at the bottom of the form to write the changes to the mLRS devices and make them permanent.
-- The script will:
-1. Send the `PARAM_STORE` command to mLRS.
-2. Keep the progress loader open while the module reboots.
-3. Automatically reconnect and reload the parameters.
-- The loader text will change from “Writing…” → “Reconnecting…” → “Complete” once ready.
+- Each edit is sent to the module straight away, but is only kept until the module reloads its settings. The line above the **Save Params** button shows “Pending changes” until you save.
+- Tap **Save Params** to make the changes permanent. The status changes from “Saving…” to “Saved”.
+- Tap **Reload** to read all parameters from the module again. This discards unsaved changes, because the module reloads its stored settings.
 
 ---
 
@@ -51,9 +48,8 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 Wait a few seconds — some metadata arrives after the main list.  
 If persistent, ensure your CRSF link is stable and firmware up to date.
 
-- **Progress dialog flickers or closes early?**  
-This version uses a *persistent loader* that stays visible through save → reboot → reconnect.  
-If you still see flicker, verify that your Ethos version supports `form.openProgressDialog()` properly.
+- **No Receiver section?**  
+The Receiver section is only shown while a receiver is connected. If you powered the receiver after opening the script, tap **Reload**.
 
 - **No mLRS detected?**  
 Make sure the module is powered and connected via CRSF UART.
