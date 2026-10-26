@@ -15,6 +15,9 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 - 🧭 **Automatic discovery** of both Tx module and receiver parameters and metadata.
 - ⚙️ **Auto-reconnect** after module reboot or power cycle.
 - 🧱 **Fully dynamic UI** — fields are built automatically from mLRS parameter descriptors.
+- 🔗 **Binding** — start and stop bind mode; bind mode started from the module's button is shown as well.
+- 🛠️ **Tools** — put the Tx module into its System Bootloader or Flash ESP mode, as on the EdgeTX Tools page.
+- ✅ **Version check** — refuses Tx/Rx firmware older than v1.3.03 and warns when the Tx and Rx parameter layouts differ.
 
 ---
 
@@ -45,11 +48,17 @@ This script allows you to **view, edit, and save mLRS parameters** directly from
 ## 🧠 Troubleshooting
 
 - **Not all parameters appear?**  
-Wait a few seconds — some metadata arrives after the main list.  
+Wait for the load to finish — the status line shows the progress, e.g. “Loading params… (12/45)”.  
 If persistent, ensure your CRSF link is stable and firmware up to date.
 
 - **No Receiver section?**  
-The Receiver section is only shown while a receiver is connected. If you powered the receiver after opening the script, tap **Reload**.
+Receiver parameters are only loaded while a receiver is connected. If you powered the receiver after opening the script, tap **Reload**.
+
+- **“Tx version not supported” or “Rx version not supported”?**  
+Update the firmware of that device to v1.3.03 or newer.
+
+- **“param version older than …” next to the status?**  
+The Tx and Rx firmware use different parameter layouts. Update the device the message names.
 
 - **No mLRS detected?**  
 Make sure the module is powered and connected via CRSF UART.
