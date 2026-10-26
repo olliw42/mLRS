@@ -402,47 +402,35 @@ local function doSave()
   end)
 end
 
-local function doBoot()
+-- Tools panel command: send it, then report the module's new mode
+local function sendToolCmd(method, errLabel, doneMsg)
   if not api or not loadedParams then return end
   setErr(nil)
-  api:bootloader(function(res)
+  api[method](api, function(res)
     if not res.ok then
-      setErr("Boot: " .. fmt(res.err))
+      setErr(errLabel .. ": " .. fmt(res.err))
       setStatus("Error")
       return
     end
-    setStatus("In System Bootloader")
+    setStatus(doneMsg)
   end)
 end
 
-local function doFlashEsp()
-  if not api or not loadedParams then return end
-  setErr(nil)
-  api:flashEsp(function(res)
-    if not res.ok then
-      setErr("FlashEsp: " .. fmt(res.err))
-      setStatus("Error")
-      return
-    end
-    setStatus("In Flash ESP")
-  end)
-end
+local function doBoot() sendToolCmd("bootloader", "Boot", "In System Bootloader") end
+local function doFlashEsp() sendToolCmd("flashEsp", "FlashEsp", "In Flash ESP") end
 
-local function doReload()
-  if not api then return end
-  api:reset()
-
+-- Forget everything known about the module and force a rebuild back to the loading view
+local function resetState(msg)
   requested = false
   loadedParams = false
   hasUnsavedChanges = false
 
   dev, info, params = nil, nil, nil
   errMsg = nil
-  statusMsg = "Reloading…"
+  statusMsg = msg
   bindActive = false
   bindEndAt = 0
 
-  -- force structural rebuild back to loading view
   ui.built = false
   ui.builtLoading = false
   ui.param = {}
@@ -450,43 +438,30 @@ local function doReload()
   ui.bindStatus, ui.bindButton = nil, nil
   ui.saveHint, ui.saveButton = nil, nil
   dirtyForm = true
-
-  requestBasics()
 end
 
 -- When link comes back, force a re-query from the module so RX/TX/device/params are fresh.
 local function reloadFromModuleOnLinkUp(msg)
   if not api then return end
-
   api:reset()
-
-  requested = false
-  loadedParams = false
-  hasUnsavedChanges = false
-
-  dev, info, params = nil, nil, nil
-  errMsg = nil
-  statusMsg = msg or "Link active — refreshing…"
-  bindActive = false
-  bindEndAt = 0
-
-  -- force structural rebuild back to loading view (then params view after re-load)
-  ui.built = false
-  ui.builtLoading = false
-  ui.param = {}
-  ui.status, ui.tx, ui.rx = nil, nil, nil
-  ui.bindStatus, ui.bindButton = nil, nil
-  ui.saveHint, ui.saveButton = nil, nil
-  dirtyForm = true
-
+  resetState(msg or "Link active — refreshing…")
   requestBasics()
 end
+
+local function doReload() reloadFromModuleOnLinkUp("Reloading…") end
 
 ------------------------------------------------------------
 -- Form building (structure)
 ------------------------------------------------------------
-local function addButtonLine(label, buttonText, pressFn)
-  local line = form.addLine(label or "")
+local function addLineTo(parent, label)
+  if parent and parent.addLine then
+    return parent:addLine(label)
+  end
+  return form.addLine(label)
+end
+
+local function addButtonLine(label, buttonText, pressFn, parent)
+  local line = addLineTo(parent, label or "")
   if form.addButton then
     return form.addButton(line, nil, { text = buttonText, press = pressFn })
   end
@@ -537,13 +512,6 @@ local function paramGroupByPrefix(name)
   if name:match("^[Rr][Xx]%f[%A]") then return "rx" end
 
   return "general"
-end
-
-local function addLineTo(parent, label)
-  if parent and parent.addLine then
-    return parent:addLine(label)
-  end
-  return form.addLine(label)
 end
 
 local function buildParamsForm()
@@ -686,18 +654,8 @@ local function buildParamsForm()
   do
     local tools_panel = form.addExpansionPanel("Tools")
     tools_panel:open(false)
-    local bline = tools_panel:addLine("")
-    if form.addButton then
-      form.addButton(bline, nil, { text = "System Bootloader", press = doBoot })
-    else
-      form.addTextButton(bline, nil, "System Bootloader", doBoot)
-    end
-    local eline = tools_panel:addLine("")
-    if form.addButton then
-      form.addButton(eline, nil, { text = "Flash ESP", press = doFlashEsp })
-    else
-      form.addTextButton(eline, nil, "Flash ESP", doFlashEsp)
-    end
+    addButtonLine("", "System Bootloader", doBoot, tools_panel)
+    addButtonLine("", "Flash ESP", doFlashEsp, tools_panel)
   end
 
   -- Save / Reload footer
@@ -745,28 +703,11 @@ local function create()
     setmetatable(api, { __index = mlrs })
   end
 
-  requested = false
-  loadedParams = false
-  hasUnsavedChanges = false
-
-  dev, info, params = nil, nil, nil
-  errMsg = nil
-  statusMsg = "Starting…"
-  bindActive = false
-  bindEndAt = 0
-
-  ui.built = false
-  ui.builtLoading = false
-  ui.param = {}
-  ui.status, ui.tx, ui.rx = nil, nil, nil
-  ui.bindStatus, ui.bindButton = nil, nil
-  ui.saveHint, ui.saveButton = nil, nil
+  resetState("Starting…")
 
   -- Edge trackers outlive close(); clear them so the first wakeup() doesn't see a stale edge
   lastTlmActive = nil
   rxPanelShown = false
-
-  dirtyForm = true
 
   requestBasics()
   ensureForm()
@@ -820,15 +761,7 @@ local function close(_)
     api:reset()
   end
 
-  requested = false
-  loadedParams = false
-  hasUnsavedChanges = false
-
-  dev, info, params = nil, nil, nil
-  errMsg = nil
-  statusMsg = "Closed"
-  bindActive = false
-  bindEndAt = 0
+  resetState("Closed")
 
   api = nil
   collectgarbage("collect")

@@ -588,6 +588,14 @@ local function requestParamByIndex(self, idx0)
 end
 
 -- ---------- dispatch ----------
+-- Requests that only send one command and finish
+local SEND_ONCE_CMD = {
+  BIND_START = CMD_BIND_START,
+  BIND_STOP = CMD_BIND_STOP,
+  BOOT = CMD_SYSTEM_BOOTLOADER,
+  FLASH_ESP = CMD_FLASH_ESP,
+}
+
 -- Advance one request. Returns true when it finished, so the caller can
 -- move on to the next queued request in the same pump.
 local function dispatch(self, req)
@@ -665,40 +673,11 @@ end
     return true
   end
 
-  -- ---- BIND ----
-  if req.type == "BIND_START" then
+  -- ---- BIND_START / BIND_STOP / BOOT / FLASH_ESP ----
+  local sendCmd = SEND_ONCE_CMD[req.type]
+  if sendCmd then
     if not req.sent then
-      pushMB(self.sensor, CMD_BIND_START, {})
-      req.sent = true
-      finish(req, true, { sent = true })
-    end
-    return true
-  end
-
-  -- ---- BIND_STOP ----
-  if req.type == "BIND_STOP" then
-    if not req.sent then
-      pushMB(self.sensor, CMD_BIND_STOP, {})
-      req.sent = true
-      finish(req, true, { sent = true })
-    end
-    return true
-  end
-
-  -- ---- BOOT ----
-  if req.type == "BOOT" then
-    if not req.sent then
-      pushMB(self.sensor, CMD_SYSTEM_BOOTLOADER, {})
-      req.sent = true
-      finish(req, true, { sent = true })
-    end
-    return true
-  end
-
-  -- ---- FLASH_ESP ----
-  if req.type == "FLASH_ESP" then
-    if not req.sent then
-      pushMB(self.sensor, CMD_FLASH_ESP, {})
+      pushMB(self.sensor, sendCmd, {})
       req.sent = true
       finish(req, true, { sent = true })
     end
