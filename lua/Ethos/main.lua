@@ -1,7 +1,7 @@
 --[[
   Copyright (C) 2025 Rob Thomson
   GPLv3 — https://www.gnu.org/licenses/gpl-3.0.en.html
-  version 26. Oct. 2026
+  version 28. Oct. 2026
 ]]--
 
 local SYSTEM_TOOL = false  -- set to true to force system tool registration
@@ -280,24 +280,8 @@ local function requestBasics()
       return
     end
     dev = res.data
-    if dev and dev.info then info = dev.info end
-
-    -- REQUEST_INFO already delivers INFO alongside the device items; only ask again if it is missing
-    if info then
-      onBasicsReady()
-      return
-    end
-
-    setStatus("Requesting INFO…")
-    api:getInfo(function(res2)
-      if not res2.ok then
-        setErr("Info: " .. fmt(res2.err))
-        setStatus("Error")
-        return
-      end
-      info = res2.data and res2.data.info or info
-      onBasicsReady()
-    end)
+    info = dev and dev.info -- REQUEST_INFO delivers INFO together with the device items
+    onBasicsReady()
   end)
 end
 

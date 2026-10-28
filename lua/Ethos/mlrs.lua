@@ -1,7 +1,7 @@
 --[[
   Copyright (C) 2025 Rob Thomson
   GPLv3 — https://www.gnu.org/licenses/gpl-3.0.en.html
-  version 26. Oct. 2026
+  version 28. Oct. 2026
 ]]--
 -- mlrs.lua
 -- Lightweight queued API for mLRS modules (Ethos / CRSF sensor frames)
@@ -267,9 +267,16 @@ local function decode_info(payload)
 end
 
 -- ---------- decode PARAM items ----------
+-- By-index loading: an item that isn't for the index last requested is a late
+-- reply to an earlier request (or a previous load) and must not touch the model.
+local function is_stale_item(model, idx0)
+  return model.lastIndexReq ~= nil and idx0 ~= model.lastIndexReq
+end
+
 local function on_PARAM_ITEM(model, payload)
   local idx0 = payload[1]
   if idx0 == nil then return end
+  if idx0 ~= 255 and is_stale_item(model, idx0) then return end
   model.lastParamRxAt = now()
 
   if idx0 == 255 then
@@ -290,6 +297,10 @@ local function on_PARAM_ITEM(model, payload)
   p.typ = u8(payload, 1)
   p.name = name
   p.value = mb_value_or_str6(payload, 18, p.typ)
+
+  -- a repeated ITEM (retry) restarts the ITEM2/3/4 sequence, so forget earlier enrichment
+  p._gotItem2, p._needItem3, p._gotItem3, p._needItem4, p._gotItem4 = false, false, false, false, false
+  p._optBytes = nil
 
   -- defaults
   p.min = p.min or 0
@@ -313,6 +324,7 @@ end
 local function on_PARAM_ITEM2(model, payload)
   local idx0 = payload[1]
   if idx0 == nil or idx0 == 255 then return end
+  if is_stale_item(model, idx0) then return end
   model.lastParamRxAt = now()
 
   local p = model.params[idx0 + 1]
@@ -351,7 +363,6 @@ local function on_PARAM_ITEM3(model, payload)
   -- supports "ITEM4" encoding via index>=128 (same trick as pasted script)
   local rawIndex = payload[1]
   if rawIndex == nil then return end
-  model.lastParamRxAt = now()
 
   local is_item4 = false
   local idx0 = rawIndex
@@ -359,6 +370,8 @@ local function on_PARAM_ITEM3(model, payload)
     idx0 = idx0 - 128
     is_item4 = true
   end
+  if is_stale_item(model, idx0) then return end
+  model.lastParamRxAt = now()
 
   local p = model.params[idx0 + 1]
   if not p or p.typ ~= T_LIST then return end
@@ -616,14 +629,13 @@ local function dispatch(self, req)
 
   -- ---- GET_DEVICE_ITEMS ----
   if req.type == "GET_DEVICE_ITEMS" then
-    -- IMPORTANT:
-    -- Some setups legitimately have no RX (or it's offline).
-    -- Use INFO.rx_available to decide whether RX is expected.
+    -- REQUEST_INFO answers with DEVICE_ITEM_TX, DEVICE_ITEM_RX (empty if no Rx) and INFO, in
+    -- that order. Wait for INFO too, so the caller never has to send a second REQUEST_INFO.
     local haveTx = (self.model.txItem ~= nil)
     local haveRx = (self.model.rxItem ~= nil)
     local rxAvail = (self.model.info and self.model.info.rx_available) -- 1 or 0 or nil
 
-    if haveTx and (haveRx or rxAvail == 0) then
+    if haveTx and self.model.gotInfo and (haveRx or rxAvail == 0) then
       finish(req, true, { tx = self.model.txItem, rx = self.model.rxItem, info = self.model.info })
       return true
     end
@@ -705,14 +717,17 @@ end
 
   -- ---- GET_ALL_PARAMS ----
   if req.type == "GET_ALL_PARAMS" then
+    if self.strategy == "by_index" and req.nextIdx0 == nil then
+      req.nextIdx0 = 0
+      self.model.paramsComplete = false -- a stale end-of-list frame must not end this load
+    end
+
     if self.model.paramsComplete then
       finish(req, true, { params = self.model.params, complete = true })
       return true
     end
 
     if self.strategy == "by_index" then
-      if req.nextIdx0 == nil then req.nextIdx0 = 0 end
-
       -- When current index is fully ready, advance to next.
       local p = self.model.params[req.nextIdx0 + 1]
       if param_is_ready(p, req.full) then
@@ -746,13 +761,12 @@ function M.processQueue(self, maxFrames)
     handleFrame(self.model, cmd, data)
   end
 
-  -- deadtime after STORE blocks TX-side requests, but frames above are still consumed
-  if self.lastStoreAt and (now() - self.lastStoreAt) < self.saveDeadS then
-    return
-  end
-
   -- Chain through requests that complete immediately (e.g. device items -> params)
   for _ = 1, 8 do
+    -- deadtime after STORE blocks TX-side requests, but frames above are still consumed
+    if self.lastStoreAt and (now() - self.lastStoreAt) < self.saveDeadS then
+      return
+    end
     local req = activeReq(self)
     if not req then return end
     if not dispatch(self, req) then return end
