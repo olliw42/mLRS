@@ -1,9 +1,9 @@
 # Receiver OTA Architecture
 
-This document describes how mLRS updates ESP32 and ESP8285 receivers over the air. The receiver pulls the image, the Tx module relays, and a host tool on the PC answers the receiver's requests.
+This document describes how mLRS updates ESP32, ESP8285 and STM32 receivers over the air. The receiver pulls the image, the Tx module relays, and a host tool on the PC answers the receiver's requests.
 
 ```
- Host (PC)                  Tx module                      Receiver (ESP32 / ESP8285)
+ Host (PC)                  Tx module                      Receiver (ESP32 / ESP8285 / STM32)
  tools/run_rx_ota.py ─USB── ota_relay_tx.h ───LoRa──────── ota_rx.h
  answers requests           bridge, no protocol state      asks, owns all timing
 ```
@@ -14,19 +14,21 @@ This document describes how mLRS updates ESP32 and ESP8285 receivers over the ai
 |---|---|
 | `Common/ota/ota_protocol.h` | App info, packet structs, commands |
 | `Common/ota/ota_link.h` | LoRa link settings and DIO polling, shared by Tx and Rx |
-| `CommonRx/ota_rx.h` | `tRxOta`: the request loop and storage for ESP32 / ESP8266 |
+| `CommonRx/ota_rx.h` | `tRxOta`: the request loop and storage for ESP32 / ESP8266 and the STM32 loader, the STM32 loader's state |
+| `CommonRx/ota_loader.cpp` | The STM32 loader, in place of `mlrs-rx.cpp` |
 | `CommonTx/ota_relay_tx.h` | `tTxOtaRelay`: the radio ↔ com bridge |
 | `tools/run_rx_ota.py` | Host tool |
 
 When OTA isn't built, both classes compile as empty dummies, so `mlrs-tx.cpp` and `mlrs-rx.cpp` need no `#ifdef`s. `USE_RX_OTA` is defined for:
 - all transmitters;
-- all ESP32 and ESP8266 receivers.
+- all ESP32 and ESP8266 receivers;
+- STM32 receivers with `DEVICE_HAS_OTA_LOADER`, for now the Matek mR900-30(C), mR24-30(C) and mR900-22 (WLE5CC).
 
 ## Starting an update
 
 1. The host opens the Tx's com port, checks that the CLI answers `v`, and sends `rxota`.
 2. If the link is up, the Tx repeats `FRAME_CMD_RX_OTA_ENTER` in its command frames. One second later it starts the relay.
-3. When the receiver gets the command, it leaves its main loop and calls `tRxOta::Run()`. This doesn't reboot.
+3. When the receiver gets the command, it leaves its main loop and calls `tRxOta::Run()`. On ESP this doesn't reboot. On STM32 the app hands over to the loader, see below.
 4. The host switches to relay framing and waits for the receiver's first request.
 
 ## Radio link
@@ -39,7 +41,7 @@ The update uses LoRa with explicit header and the radio CRC on, on a fixed frequ
 | Sub-GHz | SF5, BW500, CR 4/5 |
 | Sub-GHz, 19 Hz 7x | SF7, BW500, CR 4/5. An SX127x can only be on the other side in this mode, and SF7 is its lowest SF with explicit header. |
 
-LR20xx (LR2021) uses the same settings, with BW812 at 2.4 GHz. LR2021 Tx modules can relay, but no LR2021 receiver has OTA yet, as none is ESP.
+LR20xx (LR2021) uses the same settings, with BW812 at 2.4 GHz. LR2021 Tx modules can relay, but no LR2021 receiver has OTA yet: none is ESP, and the STM32 ones have no loader.
 
 The `session_id` (= `Config.FrameSyncWord`) is in every packet, so that only the paired Tx and Rx talk to each other.
 
@@ -80,7 +82,7 @@ INFO -> DATA (repeat until all received) -> RESULT -> DONE -> restart
 | No answer at all | 5 s, then leave |
 | Waiting for the host to appear | 10 s (the relay and tool need a moment to start) |
 
-On ESP, leaving always means a restart. If the update didn't complete, the receiver restarts on its previous firmware.
+On ESP, leaving always means a restart. If the update didn't complete, the receiver restarts on its previous firmware. On STM32 the loader decides what comes next, see below.
 
 ### Storage
 
@@ -88,10 +90,54 @@ On ESP, leaving always means a restart. If the update didn't complete, the recei
 |---|---|---|
 | ESP32 / C3 / S3 | `esp_ota_*` writes into the inactive app partition; the bootloader switches over | deflate (zlib), inflated with the ROM miniz |
 | ESP8266 / ESP8285 | Updater writes into the free flash behind the app; eboot unpacks it over the app at the next reset | gzip, stored as received |
+| STM32 | the loader writes the app to its place | none |
 
-- **CRC check:** the receiver checks a CRC over everything transferred before it finalizes. For ESP8266 this is the only check, since eboot doesn't verify the stream. It is CRC-32/MPEG-2, as the platforms have it already: the ESP32 ROM (`esp_rom_crc32_be()`) and the ESP8266 core (`crc32()`).
-- **Compression:** ESP receivers are always sent a compressed image.
+- **CRC check:** the receiver checks a CRC over everything transferred before it finalizes. For ESP8266 this is the only check, since eboot doesn't verify the stream. It is CRC-32/MPEG-2, as the platforms have it already: the ESP32 ROM (`esp_rom_crc32_be()`), the ESP8266 core (`crc32()`) and the STM32 CRC unit in its default setup.
+- **Compression:** ESP receivers are always sent a compressed image. STM32 receivers advertise no compression and are sent the raw image.
 - **Params are untouched:** they live in NVS, which the update never writes.
+
+## STM32 loader
+
+STM32 receivers can't hold a second app, so a loader in front of the app receives the update. The loader is built from the same sources as the app: the CubeMX `main.cpp`, HAL, the device hal, the sx driver, `ota_link.h` and the request loop of `ota_rx.h`. Only `CommonRx/ota_loader.cpp` takes the place of `mlrs-rx.cpp`. It is built first, into `ota_loader.bin`, by `tools/run_make_firmwares.py` when the `.ld` has `mlrs_ota_app`, and in CubeIDE by `CommonRx/ota_loader.mk`, which the project's `makefile.targets` includes into its makefile. In the app's build `ota_loader.cpp` `.incbin`s it into the `.ota_loader` section, which the `.ld` places at the flash start, so the app's `.elf` and `.hex` have both, also when flashed or debugged from CubeIDE. The host tool takes that `.hex` and sends the app part of it.
+
+| G431, 128 kB | |
+|---|---|
+| `0x08000000` | loader, 14 kB (12.3 kB used) |
+| `0x08003800` | loader state, one 2 kB page |
+| `0x08004000` | app, up to the EE pages, 104 kB |
+| `0x0801E000` | EE pages, powerup counter page, untouched |
+
+The WLE5CC (256 kB, mR900-22) has the same layout, loader 12.7 kB used, app 224 kB, EE pages at `0x0803C000`.
+
+The `.ld` has the `.ota_loader` section and one changed line, in the style of the ELRS bootloader targets: `DEFINED(mlrs_ota_app)` moves the app behind the loader, `DEFINED(mlrs_ota_loader)` limits the loader to 14 kB. An `ASSERT` fails the app's link if the loader's image is not in, as it would be with a stale CubeIDE `objects.list`. The loader sets `VTOR` and starts the app with the clocks and peripherals deinitialized by the HAL, so the app starts as after a reset.
+
+### Loader state
+
+The state page is a list of records (16 bytes, the type word is written last), which are only appended; the last one counts.
+
+| Record | Written by | Meaning |
+|---|---|---|
+| LINK | app | please update; frequency, session id, band and mode for the link |
+| DONE | loader | the request was served, with an update or without |
+
+At boot the loader starts the app, unless:
+- the last record is LINK: the app asked for an update;
+- the app is invalid: its first double word holds the stack pointer, and is written last, after the crc check over the flash. A half-written app is never started.
+
+In these cases it waits for an update, with the link from the last LINK record, until one comes. When the update loop returns, it writes DONE and starts the app if it is valid, else it keeps waiting. Without a LINK record it doesn't know the link; it blinks red, and only flashing by wire helps.
+
+A new app which is valid is always started. There is no fallback into the loader for an app which runs but never connects, as that would also catch a receiver which is powered a few times without its Tx, e.g. on the bench.
+
+### Measured
+
+Matek mR900-30C (G431, SX1262) from the Nomad (115200 UART), 915 FCC 31 Hz, 77.7 kB raw: 21.6 s, 314 requests, no repeats.
+
+- Update cut off half way, then reset: the loader waits, a second run without a connected receiver completes.
+
+### Open
+
+- A power loss right while a record is written can leave an ECC error in the state page, and reading it gives an NMI.
+- Other STM32 families: only G4 and WL are set up. The state records have a word variant, but the app is written in double words (G4, L4, WL), and F1 needs its own crc, since its CRC unit has no initial value.
 
 ## Tx relay
 
@@ -130,6 +176,7 @@ All runs used the compressed image (~216–224 kB for ESP32, 247 kB for ESP8285)
 | Generic 900 (ESP8285, SX1276) | Nomad | 915 19 Hz 7x → SF7 | 141.4 s | 997 |
 | Generic 900 | Bandit 900 (SX1276) | 915 19 Hz 7x → SF7 | 141.3 s | 1004 |
 | XR4 | Matek mR900-30C (G431, SX1262), native USB | 915 31 Hz → SF5 | 39.9 s | 901 |
+| Matek mR900-22 (WLE5CC), 63.4 kB raw | Nomad | 915 31 Hz → SF5 | 18.2 s | 262 |
 
 - **Repeated requests:** 0–7 per run.
 - **Cross-chip pairs:** SX1281 ↔ LR1121 at 2.4 GHz and LR1121 ↔ SX1276 at SF7 work with explicit header.
