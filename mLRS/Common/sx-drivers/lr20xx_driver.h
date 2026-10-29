@@ -604,8 +604,9 @@ class Lr20xxDriver : public Lr20xxDriverCommon
 
     void SpiDeselect(void) override
     {
-        delay_ns(50);
+        delay_ns(65); // datasheet says tCHSH = 65 ns, SCK rising edge to NSS rising edge
         spi_deselect();
+        delay_ns(125); // datasheet says tSH = 125 ns, NSS high time, BUSY can be low right after a read
     }
 
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
@@ -732,8 +733,9 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
 
     void SpiDeselect(void) override
     {
-        delay_ns(50);
+        delay_ns(65); // datasheet says tCHSH = 65 ns, SCK rising edge to NSS rising edge
         spib_deselect();
+        delay_ns(125); // datasheet says tSH = 125 ns, NSS high time, BUSY can be low right after a read
     }
 
 #ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
