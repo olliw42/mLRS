@@ -7,7 +7,7 @@
  ******************************************************
  run_flash_stm32_linux.py
  Linux or MacOS flash utility for STM32 mLRS targets
- uses STM32CubeProgrammer CLI when available, else dfu-util (DFU) or st-flash (SWD)
+ uses STM32CubeProgrammer CLI when available, else dfu-util (DFU), st-flash (SWD) or stm32flash (UART)
  version 12.08.2026
 ********************************************************
 '''
@@ -101,7 +101,9 @@ def hex_to_bin(hex_path):
 
 #-- STM32CubeProgrammer
 
-no_cubeprog = False # set by --no-cubeprog, forces the dfu-util / st-flash fallbacks
+no_cubeprog = False # set by --no-cubeprog, forces the dfu-util / st-flash / stm32flash fallbacks
+uart_port = None # set by --port, for the uart method
+uart_baud = 115200 # set by --baud, for the uart method
 
 
 def find_cubeprog():
@@ -178,9 +180,30 @@ def flash_swd(hex_path, target=None):
     return subprocess.call(cmd)
 
 
+def flash_uart(hex_path, target=None):
+    # flash via the system (ROM) bootloader on a uart, e.g. a USB-serial adapter; board must be in bootloader mode
+    if uart_port is None:
+        print('ERROR: the uart method needs --port, e.g. --port /dev/cu.SLAB_USBtoUART')
+        return 1
+    cli = find_cubeprog()
+    if cli is not None:
+        # no -rst, reset is only available on the JTAG/SWD interface, -g starts the firmware instead
+        cmd = [cli, '-c', 'port='+uart_port, 'br=%d' % uart_baud, 'P=EVEN', '-w', hex_path, '-v', '-g', '0x%08X' % STM32_FLASH_BASE]
+        print('flashing (cubeprogrammer):', ' '.join(cmd))
+        return subprocess.call(cmd)
+    if shutil.which('stm32flash') is None:
+        print('ERROR: neither STM32CubeProgrammer CLI nor stm32flash found')
+        print('       install STM32CubeProgrammer, or set STM32_PROGRAMMER_CLI, or e.g. brew install stm32flash')
+        return 1
+    cmd = ['stm32flash', '-b', str(uart_baud), '-w', hex_path, '-v', '-g', '0x%08X' % STM32_FLASH_BASE, uart_port]
+    print('flashing (uart):', ' '.join(cmd))
+    return subprocess.call(cmd)
+
+
 FLASH_METHODS = {
     'dfu': flash_dfu,
     'swd': flash_swd,
+    'uart': flash_uart,
 }
 
 
@@ -195,11 +218,15 @@ def main():
     parser.add_argument('-d', '--define', action='append', default=[], metavar='DEFINE',
         help='extra -D define forwarded to the build (repeatable)')
     parser.add_argument('--no-cubeprog', action='store_true',
-        help='do not use STM32CubeProgrammer, force the dfu-util (DFU) / st-flash (SWD) fallbacks')
+        help='do not use STM32CubeProgrammer, force the dfu-util (DFU) / st-flash (SWD) / stm32flash (UART) fallbacks')
+    parser.add_argument('-p', '--port', help='serial port for the uart method, e.g. /dev/cu.SLAB_USBtoUART')
+    parser.add_argument('-b', '--baud', type=int, default=115200, help='baud rate for the uart method (default: 115200)')
     args = parser.parse_args()
 
-    global no_cubeprog
+    global no_cubeprog, uart_port, uart_baud
     no_cubeprog = args.no_cubeprog
+    uart_port = args.port
+    uart_baud = args.baud
 
     ret = build_target(args.target, args.define)
     if ret != 0:
