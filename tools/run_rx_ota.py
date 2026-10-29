@@ -53,15 +53,34 @@ def crc32_mpeg2(data, crc=0xFFFFFFFF): # = ota_crc() of the receiver
     return crc
 
 
-# the image which goes to the receiver, the .bin of the build
+# the image which goes to the receiver
+# ESP: the .bin of the build
+# STM32: the .hex of the build has the OTA loader and the app, the app goes, it's the part with the app info
 def load_image(path):
-    with open(path, 'rb') as F: return F.read()
+    with open(path, 'rb') as F: content = F.read()
+    if not path.lower().endswith('.hex'): return content
+    segments, base = [], 0 # [address, bytearray], the alignment gaps between sections are filled, bigger ones split
+    for line in content.decode(errors='replace').split():
+        if line[:1] != ':': continue
+        rec = bytes.fromhex(line[1:])
+        n, adr, typ, data = rec[0], (rec[1] << 8) | rec[2], rec[3], rec[4:4 + rec[0]]
+        if typ == 4: base = ((data[0] << 8) | data[1]) << 16
+        if typ != 0: continue
+        adr += base
+        if segments and 0 <= adr - (segments[-1][0] + len(segments[-1][1])) < 32:
+            segments[-1][1] += b'\xFF' * (adr - (segments[-1][0] + len(segments[-1][1]))) + data
+        else:
+            segments.append([adr, bytearray(data)])
+    for adr, data in segments:
+        if data.find(struct.pack('<I', OTA_APP_INFO_MAGIC)) >= 0: return bytes(data)
+    return b''
 
 
 # the receiver's device name, and its firmware version, from the app info in the image
 def image_info(image):
     is_esp = len(image) >= 16 and image[0] == ESP_IMAGE_MAGIC
-    if not is_esp: return None
+    is_stm32 = len(image) >= 16 and (struct.unpack_from('<I', image)[0] & 0xFFF00000) == 0x20000000 # stack pointer
+    if not is_esp and not is_stm32: return None
     pos = image.find(struct.pack('<I', OTA_APP_INFO_MAGIC))
     if pos < 0 or image.find(struct.pack('<I', OTA_APP_INFO_MAGIC), pos + 4) >= 0: return None
     magic, version, name = struct.unpack_from('<II21s', image, pos)
@@ -121,7 +140,7 @@ def status_str(status):
 def main():
     parser = argparse.ArgumentParser(description='updates a receiver over the air, via the CLI of the tx module')
     parser.add_argument('port', help='com port of the tx module')
-    parser.add_argument('firmware', help='the .bin of the build')
+    parser.add_argument('firmware', help='the .bin of the build, the .hex for STM32')
     parser.add_argument('--baud', type=int, default=115200)
     parser.add_argument('--timeout', type=float, default=300.0, help='seconds the update may take')
     parser.add_argument('--no-cli', action='store_true', help="don't send the rxota CLI command, the tx is in relay mode already")

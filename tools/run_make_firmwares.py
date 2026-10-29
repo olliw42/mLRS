@@ -15,6 +15,7 @@
 import os
 import pathlib
 import shutil
+import copy
 import re
 import sys
 import subprocess
@@ -452,6 +453,19 @@ if os.path.isdir(os.path.join(MLRS_DIR, _dronecan_src_dir)):
 MLRS_SOURCES_RX = [
     os.path.join('CommonRx','mlrs-rx.cpp'),
     os.path.join('CommonRx','out.cpp'),
+    os.path.join('CommonRx','ota_loader.cpp'), # in the app it brings in the OTA loader's image
+    ]
+
+# the rx OTA loader, the rest of the app is not needed, keep in sync with CommonRx/ota_loader.mk
+MLRS_SOURCES_OTA_LOADER = [
+    os.path.join('modules','sx12xx-lib','src','sx126x.cpp'),
+    os.path.join('modules','sx12xx-lib','src','sx127x.cpp'),
+    os.path.join('modules','sx12xx-lib','src','sx128x.cpp'),
+    os.path.join('modules','sx12xx-lib','src','lr11xx.cpp'),
+    os.path.join('modules','sx12xx-lib','src','lr20xx.cpp'),
+    os.path.join('modules','stm32ll-lib','src','stdstm32.c'),
+    os.path.join('Common','libs','utils.cpp'),
+    os.path.join('CommonRx','ota_loader.cpp'),
     ]
 
 MLRS_SOURCES_TX = [
@@ -497,6 +511,7 @@ class cTarget:
         self.extra_D_list = extra_D_list
         self.build_dir = build_dir
         self.elf_name = elf_name
+        self.ota_loader_dir = '' # where the app finds ota_loader.bin
 
         self.mcu_family = ''
         if 'F1' in self.mcu_D and 'F1' in self.mcu_HAL:
@@ -621,6 +636,8 @@ def mlrs_compile_file(target, file):
         cmd += '-ffunction-sections -fdata-sections -Wall -fstack-usage '
         if is_cpp:
             cmd += '-fno-exceptions -fno-rtti -fno-use-cxa-atexit '
+        if is_cpp and target.ota_loader_dir != '':
+            cmd += '-Wa,-I"'+target.ota_loader_dir+'" ' # for the .incbin in ota_loader.cpp
     else:
         cmd += '-x assembler-with-cpp '
 
@@ -645,7 +662,7 @@ def mlrs_compile_file(target, file):
     subprocess.call(cmd, shell=True) # subprocess, not os.system, so parallel compiles aren't serialized
 
 
-def mlrs_link_target(target):
+def mlrs_link_target(target, use_cube_objlist=True):
     # generate object list from actually created .o files
     objlist = []
     for path, subdirs, files in os.walk(os.path.join(MLRS_BUILD_DIR,target.build_dir)):
@@ -656,7 +673,7 @@ def mlrs_link_target(target):
 
     # check for a STM32CubeIDE object list
     objlist_cube_file = os.path.join(MLRS_DIR,target.target,'Release','objects.list')
-    if not os.path.exists(objlist_cube_file):
+    if not use_cube_objlist or not os.path.exists(objlist_cube_file):
         # generate object list
         printWarning('WARNING: no objects.list found, use generated objects.list')
         F = open(os.path.join(MLRS_BUILD_DIR,target.build_dir,'objects.list'), mode='w')
@@ -726,6 +743,11 @@ def mlrs_build_target(target, cmdline_D_list):
     #erase_dir(buildpath)
     create_clean_dir(buildpath)
 
+    # the app sits behind the OTA loader and has its image, so the loader goes first, see CommonRx/ota_loader.cpp
+    with open(os.path.join(MLRS_DIR,target.target,target.linker_script)) as F: has_ota_loader = F.read().find('mlrs_ota_app') >= 0
+    if has_ota_loader:
+        mlrs_build_ota_loader(target)
+
 #    mlrs_compile_file(target, MLRS_SOURCES_MODULES[0])
 #    return
 #    mlrs_compile_file(target, os.path.join(target.target,MLRS_SOURCES_HAL_STM32F1[0]))
@@ -786,6 +808,37 @@ def mlrs_build_target(target, cmdline_D_list):
         )
 
     print('------------------------------------------------------------')
+
+
+def mlrs_build_ota_loader(target):
+    loader = copy.copy(target)
+    loader.build_dir = target.build_dir+'-ota-loader'
+    loader.elf_name = target.elf_name+'-ota-loader'
+    loader.extra_D_list = target.extra_D_list + ['MLRS_OTA_LOADER_BUILD']
+    print('ota loader')
+
+    buildpath = os.path.join(MLRS_BUILD_DIR,loader.build_dir)
+    create_clean_dir(buildpath)
+
+    files = [os.path.join(target.target,'Core','Startup',target.startup_script)]
+    for file in target.MLRS_SOURCES_HAL + target.MLRS_SOURCES_CORE:
+        files.append(os.path.join(target.target,file))
+    files += MLRS_SOURCES_OTA_LOADER
+
+    for file in files:
+        create_dir(os.path.join(buildpath,os.path.dirname(file)))
+    with ThreadPoolExecutor(max_workers=os.cpu_count()) as pool:
+        pool.map(lambda file: mlrs_compile_file(loader, file), files)
+
+    mlrs_link_target(loader, use_cube_objlist=False)
+    loader_elf = os.path.join(buildpath,loader.elf_name+'.elf')
+    if not os.path.exists(loader_elf):
+        printError('ERROR: ota loader not built')
+        exit(1)
+    os.system(os.path.join(GCC_DIR,'arm-none-eabi-size')+' '+loader_elf)
+
+    os.system(os.path.join(GCC_DIR,'arm-none-eabi-objcopy')+' -O binary '+loader_elf+' '+os.path.join(buildpath,'ota_loader.bin'))
+    target.ota_loader_dir = buildpath
 
 
 #-- mcu family generic targets

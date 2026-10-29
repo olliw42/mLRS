@@ -20,6 +20,9 @@
 #if defined DEVICE_IS_RECEIVER && (defined ESP32 || defined ESP8266)
   #define USE_RX_OTA
 #endif
+#if defined DEVICE_IS_RECEIVER && defined DEVICE_HAS_OTA_LOADER // STM32, the app sits behind the OTA loader
+  #define USE_RX_OTA
+#endif
 
 
 #define OTA_PROTOCOL_VERSION      1
@@ -60,7 +63,7 @@ typedef struct
 //          host: -
 //
 // length is what is transferred, image_length what it becomes in flash, they differ only with compression
-// crc is CRC-32/MPEG-2 over what is transferred, as the ESP32 rom and the ESP8266 core do it
+// crc is CRC-32/MPEG-2 over what is transferred, as the ESP32 rom, the ESP8266 core and the STM32 crc unit do it
 
 #define OTA_PACKET_LEN_MAX        255 // a LoRa frame
 #define OTA_PACKET_HEADER_LEN     3
