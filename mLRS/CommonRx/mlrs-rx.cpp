@@ -132,8 +132,10 @@ tRxMsp msp;
 tRxSxSerial sx_serial;
 
 #include "dronecan_interface_rx.h"
+#include "ota_rx.h"
 
 tRxDroneCan dronecan;
+tRxOta ota;
 
 
 //-------------------------------------------------------
@@ -231,6 +233,7 @@ void link_task_init(void)
     transmit_frame_type = TRANSMIT_FRAME_TYPE_NORMAL;
 
     doParamsStore = false;
+    ota.Init();
 }
 
 
@@ -278,6 +281,10 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         crypto.SetSessionKeyFromEncryptedRandomBuf(&frame->payload[1]);
         Config.SessionRandom = crypto.SessionRandom(); // only for reporting
         link_task_set(LINK_TASK_RX_SEND_RX_SETUPDATA);
+        break;
+    case FRAME_CMD_RX_OTA_ENTER:
+        // the ota link is not encrypted, so not with privacy on
+        if (Setup.Common[Config.ConfigId].Privacy == PRIVACY_NONE) ota.Enter();
         break;
     }
 }
@@ -1004,6 +1011,12 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         leds.SetToParamStore();
         setup_store_to_EEPROM();
         GOTO_RESTARTCONTROLLER;
+    }
+
+    //-- OTA update
+
+    if (ota.EnterRequested()) {
+        ota.Run(Config.FrameSyncWord); // does not return
     }
 
 }//end of main_loop

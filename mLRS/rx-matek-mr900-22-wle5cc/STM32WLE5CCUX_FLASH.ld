@@ -46,12 +46,22 @@ MEMORY
 {
   RAM    (xrw)   : ORIGIN = 0x20000000, LENGTH = 64K
   RAM2   (xrw)   : ORIGIN = 0x10000000, LENGTH = 32K
-  FLASH   (rx)   : ORIGIN = 0x08000000, LENGTH = 256K
+  /* OTA: loader 14K, its state 2K, app up to the EE pages, see CommonRx/ota_rx.h */
+  FLASH   (rx)   : ORIGIN = DEFINED(mlrs_ota_app) ? 0x08004000 : 0x08000000, LENGTH = DEFINED(mlrs_ota_app) ? 224K : DEFINED(mlrs_ota_loader) ? 14K : 256K
+  OTA_LOADER (rx) : ORIGIN = 0x08000000, LENGTH = 14K
 }
 
 /* Sections */
 SECTIONS
 {
+  /* OTA: the loader in front of the app, the app build has its image, see CommonRx/ota_loader.cpp */
+  .ota_loader :
+  {
+    KEEP(*(.ota_loader))
+  } >OTA_LOADER
+  /* the app build must have the loader's image, a stale objects.list would leave it out */
+  ASSERT(!DEFINED(mlrs_ota_app) || SIZEOF(.ota_loader) > 0, "OTA loader missing, see CommonRx/ota_loader.cpp")
+
   /* The startup code into "FLASH" Rom type memory */
   .isr_vector :
   {

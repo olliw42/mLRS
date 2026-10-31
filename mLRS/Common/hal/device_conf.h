@@ -36,6 +36,7 @@ The default selection of frequency bands can be overruled by feature defines.
 #ifdef RX_MATEK_MR24_30_G431KB
   #define DEVICE_NAME "Matek mR24-30"
   #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_OTA_LOADER // the app sits behind the OTA loader, see CommonRx/ota_loader.cpp
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
@@ -50,6 +51,7 @@ The default selection of frequency bands can be overruled by feature defines.
 #ifdef RX_MATEK_MR900_30_G431KB
   #define DEVICE_NAME "Matek mR900-30"
   #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_OTA_LOADER // the app sits behind the OTA loader, see CommonRx/ota_loader.cpp
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
@@ -66,6 +68,7 @@ The default selection of frequency bands can be overruled by feature defines.
 #ifdef RX_MATEK_MR900_22_WLE5CC
   #define DEVICE_NAME "Matek mR900-22"
   #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_OTA_LOADER // the app sits behind the OTA loader, see CommonRx/ota_loader.cpp
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
@@ -74,6 +77,7 @@ The default selection of frequency bands can be overruled by feature defines.
 #ifdef RX_MATEK_MR24_30C_G431KB
   #define DEVICE_NAME "Matek mR24-30C"
   #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_OTA_LOADER // the app sits behind the OTA loader, see CommonRx/ota_loader.cpp
   #define DEVICE_HAS_SX128x
   #define FREQUENCY_BAND_2P4_GHZ
 #endif
@@ -81,6 +85,7 @@ The default selection of frequency bands can be overruled by feature defines.
 #ifdef RX_MATEK_MR900_30C_G431KB
   #define DEVICE_NAME "Matek mR900-30C"
   #define DEVICE_IS_RECEIVER
+  #define DEVICE_HAS_OTA_LOADER // the app sits behind the OTA loader, see CommonRx/ota_loader.cpp
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
@@ -90,7 +95,11 @@ The default selection of frequency bands can be overruled by feature defines.
 //-- FrsKy R9 system
 
 #ifdef RX_R9MX_868_L433CB
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+  #define DEVICE_NAME "Frsky R9MX ELRS BL"
+#else
   #define DEVICE_NAME "Frsky R9MX"
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
@@ -99,7 +108,11 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef RX_R9M_868_F103C8
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+  #define DEVICE_NAME "Frsky R9M ELRS BL"
+#else
   #define DEVICE_NAME "Frsky R9M"
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
@@ -108,7 +121,11 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef RX_R9MM_868_F103RB
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+  #define DEVICE_NAME "Frsky R9MM ELRS BL"
+#else
   #define DEVICE_NAME "Frsky R9MM"
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
@@ -127,7 +144,11 @@ The default selection of frequency bands can be overruled by feature defines.
 
 
 #ifdef TX_R9M_868_F103C8
+#ifdef MLRS_FEATURE_ELRS_BOOTLOADER
+  #define DEVICE_NAME "Frsky R9M ELRS BL"
+#else
   #define DEVICE_NAME "Frsky R9M"
+#endif
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
@@ -170,7 +191,19 @@ The default selection of frequency bands can be overruled by feature defines.
 //-- EByte MBL Evaluation Kits
 
 #ifdef RX_E77_MBLKIT_WLE5CC
-  #define DEVICE_NAME "E77 MBL Kit WLE5CC"
+#ifdef MLRS_FEATURE_433_MHZ
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "E77 MBL Kit 400 XTAL"
+#else
+  #define DEVICE_NAME "E77 MBL Kit 400 TCXO"
+#endif
+#else
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "E77 MBL Kit 900 XTAL"
+#else
+  #define DEVICE_NAME "E77 MBL Kit 900 TCXO"
+#endif
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
@@ -181,7 +214,19 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef TX_E77_MBLKIT_WLE5CC
-  #define DEVICE_NAME "E77 MBL Kit WLE5CC"
+#ifdef MLRS_FEATURE_433_MHZ
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "E77 MBL Kit 400 XTAL"
+#else
+  #define DEVICE_NAME "E77 MBL Kit 400 TCXO"
+#endif
+#else
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "E77 MBL Kit 900 XTAL"
+#else
+  #define DEVICE_NAME "E77 MBL Kit 900 TCXO"
+#endif
+#endif
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
@@ -283,7 +328,19 @@ The default selection of frequency bands can be overruled by feature defines.
 //-- DIY "easy-to-solder" Boards
 
 #ifdef RX_DIY_E77_E22_WLE5CC
-  #define DEVICE_NAME "DIY E77 E22"
+#ifdef MLRS_FEATURE_DIVERSITY
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E22 Div XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E22 Div TCXO"
+#endif
+#else
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E22 XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E22 TCXO"
+#endif
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
@@ -294,7 +351,19 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef TX_DIY_E77_E22_WLE5CC
-  #define DEVICE_NAME "DIY E77 E22"
+#ifdef MLRS_FEATURE_DIVERSITY
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E22 Div XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E22 Div TCXO"
+#endif
+#else
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E22 XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E22 TCXO"
+#endif
+#endif
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
@@ -303,7 +372,11 @@ The default selection of frequency bands can be overruled by feature defines.
 
 
 #ifdef RX_DIY_E77_E28_DUALBAND_WLE5CC
-  #define DEVICE_NAME "DIY E77 E28 DualBand"
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E28 DB XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E28 DB TCXO"
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
   #define FREQUENCY_BAND_868_MHZ
@@ -312,7 +385,11 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef TX_DIY_E77_E28_DUALBAND_WLE5CC
-  #define DEVICE_NAME "DIY E77 E28 DualBand"
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E28 DB XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E28 DB TCXO"
+#endif
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_DUAL_SX126x_SX128x // implies sx = SX126x and sx2 = SX128x
   #define FREQUENCY_BAND_868_MHZ
@@ -322,7 +399,11 @@ The default selection of frequency bands can be overruled by feature defines.
 
 
 #ifdef RX_DIY_E77_E22_DUALBAND_WLE5CC
-  #define DEVICE_NAME "DIY E77 E22 DualBand"
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E22 DB XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E22 DB TCXO"
+#endif
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_DUAL_SX126x_SX126x // implies sx = SX126x @ 868/915 MHz and sx2 = SX126x @ 400 MHz
   #define FREQUENCY_BAND_868_MHZ
@@ -331,7 +412,11 @@ The default selection of frequency bands can be overruled by feature defines.
 #endif
 
 #ifdef TX_DIY_E77_E22_DUALBAND_WLE5CC
-  #define DEVICE_NAME "DIY E77 E22 DualBand"
+#ifdef MLRS_FEATURE_E77_XTAL
+  #define DEVICE_NAME "DIY E77 E22 DB XTAL"
+#else
+  #define DEVICE_NAME "DIY E77 E22 DB TCXO"
+#endif
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_DUAL_SX126x_SX126x // implies sx = SX126x @ 868/915 MHz and sx2 = SX126x @ 400 MHz
   #define FREQUENCY_BAND_868_MHZ
