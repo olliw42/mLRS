@@ -67,7 +67,7 @@ void dc_hal_rx_flush(void) {}
 #define DRONECAN_BUF_SIZE  512 // needs to be larger than the largest DroneCAN frame size
 
 CanardInstance canard;
-uint8_t canard_memory_pool[CANARD_POOL_SIZE];
+uint8_t canard_memory_pool[CANARD_POOL_SIZE] ALIGNED8_ATTR; // uses uint64_t and _Alignof(uint64_t) is 8
 
 
 void dronecan_uid(uint8_t uid[DC_UNIQUE_ID_LEN])
