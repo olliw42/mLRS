@@ -10,6 +10,12 @@
  generate wireless bridge firmware files with arduino-cli
  copies files into firmware/wirelessbridge, updates its README.md
  version 26.10.2026
+
+ Requires arduino-cli, which is a separate install, it does not come with PlatformIO or Python:
+   Windows, Linux: https://arduino.github.io/arduino-cli/latest/installation/
+   Mac: brew install arduino-cli
+ Arduino IDE 2 bundles a copy, but not on the PATH, set the ARDUINO_CLI env var to use that one.
+ On the first run add -u, this installs the esp32 and esp8266 cores.
 ********************************************************
 '''
 import os
@@ -166,7 +172,7 @@ def mlrs_bridge_write_readme(dates, core_versions):
     s += '## Notes for Devs ##\n\n'
     s += 'The binaries are built with tools/run_make_bridge_firmwares.py, which needs arduino-cli with the cores below.\n'
     s += 'Use -t <name> to build only one target, -u to first install or update the cores.\n'
-    s += 'Install arduino-cli: Mac brew install arduino-cli, Windows winget install ArduinoSA.CLI, Linux see https://arduino.github.io/arduino-cli/latest/installation/.\n\n'
+    s += 'Install arduino-cli: Windows, Linux see https://arduino.github.io/arduino-cli/latest/installation/, Mac brew install arduino-cli.\n\n'
     for target in TARGETS:
         s += '- '+target['name']+': '+target['note']+', '+target['module']+', core '+target['core']+' '+core_versions.get(target['core'], '?')+'\n'
     F = open(os.path.join(MLRS_BRIDGE_FIRMWARE_DIR, 'README.md'), mode='w', encoding='utf-8', newline='\n')
