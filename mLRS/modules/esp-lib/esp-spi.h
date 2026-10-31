@@ -18,7 +18,37 @@
 
 //-- select functions
 
-#ifdef SPI_CS_IO
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+
+// both sx share the bus, so a transfer must not be interrupted by the other sx's dio isr
+// the gpio isr is pending while irqs are off, and runs right after deselect
+static portMUX_TYPE spi_mux = portMUX_INITIALIZER_UNLOCKED;
+
+IRAM_ATTR void spi_select(void)
+{
+    portENTER_CRITICAL_SAFE(&spi_mux);
+    gpio_low(SPI_CS_IO);
+}
+
+IRAM_ATTR void spi_deselect(void)
+{
+    gpio_high(SPI_CS_IO);
+    portEXIT_CRITICAL_SAFE(&spi_mux);
+}
+
+IRAM_ATTR void spib_select(void)
+{
+    portENTER_CRITICAL_SAFE(&spi_mux);
+    gpio_low(SX2_CS_IO);
+}
+
+IRAM_ATTR void spib_deselect(void)
+{
+    gpio_high(SX2_CS_IO);
+    portEXIT_CRITICAL_SAFE(&spi_mux);
+}
+
+#elif defined SPI_CS_IO
 
 IRAM_ATTR void spi_select(void)
 {
