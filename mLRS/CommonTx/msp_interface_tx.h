@@ -69,8 +69,8 @@ void tTxMsp::Init(void)
     case TX_SERIAL_PORT_COM:
         ser = Serials.serial; // already sorted out in serialports.Init()
         break;
-    case TX_SERIAL_PORT_MBRIDGE:
-        ser = nullptr; // MSP is not supported over mBridge, set ser to nullptr to effectively disable it
+    case TX_SERIAL_PORT_CRSF_BRIDGE:
+        ser = nullptr; // MSP is not supported over CRSF bridge, set ser to nullptr to effectively disable it
         break;
     default:
         while(1){} // must not happen

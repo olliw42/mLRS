@@ -75,6 +75,8 @@
 #define SX_DIO                    IO_P37
 #define SX_BUSY                   IO_P36
 
+#define SX_USE_RFSW_CTRL  {15, 0, 4, 12, 12, 2, 0, 1}
+
 #define SX_USE_REGULATOR_MODE_DCDC
 
 IRQHANDLER(void SX_DIO_EXTI_IRQHandler(void);)
@@ -138,7 +140,6 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 #define SX_USE_LP_PA  // AX12 uses the low power amplifier for the 900 side, radio_rfo_hf option
-#define SX_USE_RFSW_CTRL  {15, 0, 4, 12, 12, 2, 0, 1}
 
 void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)
 {

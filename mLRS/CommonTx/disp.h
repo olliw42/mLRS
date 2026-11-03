@@ -651,6 +651,22 @@ char s[32];
 // Page Draw routines
 //-------------------------------------------------------
 
+const uint8_t key12 [] = { // 1; 11, 5,  2:  14, 5
+    0b00111000, 0b00100100,
+    0b01000100, 0b00100100,
+    0b10000011, 0b11111100,
+    0b01000100, 0b00000000,
+    0b00111000, 0b00000000,
+};
+const uint8_t key3 [] = { // 17, 5
+    0b00111000, 0b00100100, 0b10000000,
+    0b01000100, 0b00100100, 0b10000000,
+    0b10000011, 0b11111111, 0b10000000,
+    0b01000100, 0b00000000, 0b00000000,
+    0b00111000, 0b00000000, 0b00000000,
+};
+
+
 void tTxDisp::draw_page_startup(void)
 {
     if (!page_modified) return;
@@ -765,7 +781,7 @@ char s[32];
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
-    stoBCDstr(SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm()), s);
+    stoBCDstr(SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm()), s);
     gdisp_puts(s);
     gdisp_puts(" dB");
 
@@ -843,6 +859,12 @@ if (page_modified) {
 
     gdisp_setcurXY(70, 4 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Bps");
+
+    switch (Setup.Common[Config.ConfigId].Privacy) {
+        case 1: gdisp_drawbitmap(57, 40, key12, 11, 5, 1); break;
+        case 2: gdisp_drawbitmap(56, 40, key12, 14, 5, 1); break;
+        case 3: gdisp_drawbitmap(55, 40, key3, 17, 5, 1); break;
+    }
 }
     // now the part which is frequently updated
     gdisp_setfontbackground();
@@ -966,8 +988,8 @@ void tTxDisp::draw_page_common(void)
 
     char except_str[8];
     if (except_str_from_bindphrase(except_str, Setup.Common[Config.ConfigId].BindPhrase, Config.FrequencyBand)) {
-        gdisp_setcurXY(0, 4 * 10 + DISP_CONTENT_Y_BASE); // last line
-        gdisp_puts("except ");
+        gdisp_setcurXY(91, 6);
+        gdisp_puts("e:");
         gdisp_puts(except_str);
     }
 }

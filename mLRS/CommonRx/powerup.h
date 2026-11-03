@@ -115,7 +115,9 @@ void tPowerupCounter::Init(void)
     // we couldn't find a useable adr, so erase page
     if (!cur_adr) {
         __disable_irq();
+        ee_hal_unlock(); // the erase fails silently if flash is locked
         ee_hal_erasepage(POWERUPCNT_EE_PAGE_ADDRESS, POWERUPCNT_EE_PAGE);
+        ee_hal_lock();
         __enable_irq();
         cur_adr = POWERUPCNT_EE_PAGE_ADDRESS; // let's assume erase was successful
     }

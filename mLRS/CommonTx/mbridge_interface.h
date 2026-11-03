@@ -15,7 +15,6 @@
 
 #include "../Common/libs/fifo.h"
 #include "setup_tx.h"
-#include "jr_pin5_interface.h"
 #include "../Common/protocols/mbridge_protocol.h"
 
 
@@ -29,183 +28,84 @@ extern tStats stats;
 //-------------------------------------------------------
 // Interface Implementation
 
-typedef enum {
-    TXBRIDGE_SEND_LINK_STATS = 0,
-    TXBRIDGE_SEND_CMD,
-} TXMBRIDGE_SEND_ENUM;
-
-
-class tMBridge : public tPin5BridgeBase, public tSerialBase
+class tMBridge
 {
   public:
-    using tSerialBase::Init; // tMBridge redefines Init(), incompatible with tSerialBase's Init()
-    void Init(bool enable_flag, bool crsf_emulation_flag);
-    bool ChannelsUpdated(tRcData* const rc);
-    bool TelemetryUpdate(uint8_t* const task);
+    void Init(bool enable_flag);
 
-    bool CommandReceived(uint8_t* const cmd);
+    bool CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len);
+    void HandleRequestCmd(uint8_t* const payload);
+    void HandleRequestCmd(uint8_t cmd) { HandleRequestCmd(&cmd); } // when only the cmd byte is needed
     uint8_t* GetPayloadPtr(void);
     uint8_t GetModelId(void);
-    void SendCommand(uint8_t cmd, uint8_t* const payload);
-    bool CommandInFifo(uint8_t* const cmd);
     void Lock(uint8_t cmd);
     void Unlock(void);
-    void HandleRequestCmd(uint8_t* const payload);
-    void HandleCmd(uint8_t cmd);
+
+    void send_command(uint8_t cmd, uint8_t* const payload);
+    void send_Info(void);
+    void send_DeviceItemTx(void);
+    void send_DeviceItemRx(void);
+    void send_ParamItem(void);
+    void start_ParamRequestByIndex(uint8_t idx);
+    bool command_in_fifo(void);
 
     void ParseCrsfFrame(uint8_t* const crsf, uint8_t len);
-    bool CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len);
-
-    // helper
-    void fill_rcdata(tRcData* const rc);
-
-    // for in-isr processing
-    void parse_nextchar(uint8_t c) override;
-    bool transmit_start(void) override; // returns true if transmission should be started
-    uint8_t send_serial(void);
-    void send_command(void);
+    bool CommandReceived(uint8_t* const cmd);
+    void parse_nextchar(uint8_t c);
 
     bool enabled;
-    bool crsf_emulation;
 
-    volatile bool channels_received;
-    tMBridgeChannelBuffer channels;
+    typedef enum {
+        STATE_IDLE = 0,
+        STATE_RECEIVE_STX2,
+        STATE_RECEIVE_LEN,
+        STATE_RECEIVE_SERIALPACKET,
+        STATE_RECEIVE_CHANNELPACKET,
+        STATE_RECEIVE_COMMANDPACKET,
+        STATE_RECEIVE_COMPLETED,
+        STATE_RECEIVE_ERROR,
+    } STATE_ENUM;
+
+    uint8_t state;
+    uint8_t len;
+    uint8_t cnt;
 
     uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
     volatile bool cmd_received;
 
-    volatile bool tx_free; // to signal that the tx buffer can be filled
     uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
     volatile uint8_t cmd_m2r_available;
-
-    // front end to communicate with mBridge
-    // provides serial interface to the main code
-    void putbuf(uint8_t* const buf, uint16_t len) override { tx_fifo.PutBuf(buf, len); }
-    bool available(void) override { return rx_fifo.Available(); }
-    char getc(void) override { return rx_fifo.Get(); }
-    void flush(void) override { rx_fifo.Flush(); }
-
-    // backend
-    // fills/reads the fifos with the mBridge uart
-    void serial_putc(char c) { rx_fifo.Put(c); }
-    bool serial_rx_available(void) { return tx_fifo.Available(); }
-    char serial_getc(void) { return tx_fifo.Get(); }
-
-    tFifo<char,TX_MBRIDGE_TXBUFSIZE> tx_fifo; // TODO: how large do they really need to be?
-    tFifo<char,TX_MBRIDGE_RXBUFSIZE> rx_fifo;
 
     // for communication
     tFifo<uint8_t,128> cmd_fifo; // TODO: how large does it really need to be?
     uint8_t cmd_in_process;
     uint32_t cmd_processed_tlast_ms;
-    uint8_t ack_cmd;
-    bool ack_ok;
-
-    // momentarily for debug, detect discarded bytes
-#ifdef USE_DEBUG
-    uint16_t discarded = 0;
-#endif
 };
 
 tMBridge mbridge;
 
 
 //-------------------------------------------------------
-// MBridge half-duplex interface, used for radio <-> mLRS tx module
-
-// to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
-void mbridge_pin5_rx_callback(uint8_t c) { mbridge.pin5_rx_callback(c); }
-void mbridge_pin5_tc_callback(void) { mbridge.pin5_tc_callback(); }
-
-
-// is called in isr context
-bool tMBridge::transmit_start(void)
-{
-    if (crsf_emulation) while(1){}; // must not happen
-
-    tx_free = true; // tell external code that next slot can be filled
-
-    if (cmd_m2r_available) {
-        send_command(); // uses cmd_m2r_available
-        cmd_m2r_available = 0;
-        return true;
-    }
-
-    if (!serial_rx_available()) { // nothing to do
-        return false;
-    }
-
-    send_serial();
-
-    return true;
-}
-
-
-// is called in isr context
-// we can assume that there is at least one byte available
-// send in one chunk to help ensure it is transmitted with no gaps
-uint8_t tMBridge::send_serial(void)
-{
-    uint8_t buf[MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX + 1];
-    uint8_t cnt = 0;
-    buf[cnt++] = 0x00; // we can send anything we want which is not a command, send 0x00 so it is easy to recognize
-    while (serial_rx_available() && cnt < (MBRIDGE_M2R_SERIAL_PAYLOAD_LEN_MAX + 1)) {
-        buf[cnt++] = serial_getc();
-    }
-    pin5_putbuf(buf, cnt);
-    return 1;
-}
-
-
-// is called in isr context
-void tMBridge::send_command(void)
-{
-    pin5_putbuf(cmd_m2r_frame, cmd_m2r_available);
-}
-
+// MBridge parser
 
 #define MBRIDGE_TMO_US  250
 
 
-// is called in isr context, or in ParseCrsfFrame() in case of CRSF emulation
+// called in ParseCrsfFrame()
 void tMBridge::parse_nextchar(uint8_t c)
 {
-    uint16_t tnow_us = micros16();
-
-    if (state != STATE_IDLE) {
-        uint16_t dt = tnow_us - tlast_us;
-        if (dt > MBRIDGE_TMO_US) state = STATE_IDLE; // timeout error
-    }
-
-    tlast_us = tnow_us;
-
     switch (state) {
     case STATE_IDLE:
-        if (c == MBRIDGE_STX1) {
-            state = STATE_RECEIVE_MBRIDGE_STX2;
-#ifdef USE_DEBUG
-            if (discarded) {
-                if (discarded > 1) {
-                    dbg.puts(u16toBCD_s(discarded));
-                    dbg.puts(" bytes lost!\n");
-                }
-                discarded = 0;
-            }
-        } else {
-            discarded++;
-#endif
-        }
+        if (c == MBRIDGE_STX1) state = STATE_RECEIVE_STX2;
         break;
-
-    case STATE_RECEIVE_MBRIDGE_STX2:
-        if (c == MBRIDGE_STX2) state = STATE_RECEIVE_MBRIDGE_LEN; else state = STATE_IDLE; // error
+    case STATE_RECEIVE_STX2:
+        if (c == MBRIDGE_STX2) state = STATE_RECEIVE_LEN; else state = STATE_RECEIVE_ERROR; // error
         break;
-    case STATE_RECEIVE_MBRIDGE_LEN:
+    case STATE_RECEIVE_LEN:
         cnt = 0;
         if (c == MBRIDGE_CHANNELPACKET_STX) {
             len = MBRIDGE_CHANNELPACKET_SIZE;
-            state = STATE_RECEIVE_MBRIDGE_CHANNELPACKET;
-            if (crsf_emulation) state = STATE_IDLE; // we don't allow it // TODO, we could?
+            state = STATE_RECEIVE_CHANNELPACKET;
         } else
         if (c >= MBRIDGE_COMMANDPACKET_STX) {
             uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
@@ -213,198 +113,72 @@ void tMBridge::parse_nextchar(uint8_t c)
             len = mbridge_cmd_payload_len(cmd);
             if (len == 0) {
                 cmd_received = true;
-                state = STATE_TRANSMIT_START;
+                state = STATE_RECEIVE_COMPLETED;
             } else {
-                state = STATE_RECEIVE_MBRIDGE_COMMANDPACKET;
+                state = STATE_RECEIVE_COMMANDPACKET;
             }
         } else
         if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
-            state = STATE_IDLE; // error
+            state = STATE_RECEIVE_ERROR; // error
         } else
         if (c > 0) {
             len = c;
-            state = STATE_RECEIVE_MBRIDGE_SERIALPACKET;
-            if (crsf_emulation) state = STATE_IDLE; // we don't allow it // TODO, we could?
+            state = STATE_RECEIVE_SERIALPACKET;
         } else {
-            state = STATE_TRANSMIT_START; // tx_len = 0, no payload
+            state = STATE_RECEIVE_COMPLETED; // tx_len = 0, no payload
         }
         break;
-    case STATE_RECEIVE_MBRIDGE_SERIALPACKET:
-        serial_putc(c);
+    case STATE_RECEIVE_SERIALPACKET:
         cnt++;
-        if (cnt >= len) state = STATE_TRANSMIT_START;
+        if (cnt >= len) state = STATE_RECEIVE_COMPLETED;
         break;
-    case STATE_RECEIVE_MBRIDGE_CHANNELPACKET:
-        channels.c[cnt++] = c;
+    case STATE_RECEIVE_CHANNELPACKET:
         if (cnt >= len) {
-            channels_received = true;
-            state = STATE_TRANSMIT_START;
+            state = STATE_RECEIVE_COMPLETED;
         }
         break;
-    case STATE_RECEIVE_MBRIDGE_COMMANDPACKET:
+    case STATE_RECEIVE_COMMANDPACKET:
         cmd_r2m_frame[cnt++] = c;
         if (cnt >= len + 1) {
             cmd_received = true;
-            state = STATE_TRANSMIT_START;
+            state = STATE_RECEIVE_COMPLETED;
         }
         break;
     }
-}
-
-
-//-------------------------------------------------------
-// miscellaneous
-
-// mBridge: ch0-15    11 bits, 1 .. 1024 .. 2047 for +-120%
-//          ch16-17:  1 bit, 0 .. 1
-// rcData:            11 bit, 1 .. 1024 .. 2047 for +-120%
-
-void tMBridge::fill_rcdata(tRcData* const rc)
-{
-    rc->ch[0] = channels.ch0;
-    rc->ch[1] = channels.ch1;
-    rc->ch[2] = channels.ch2;
-    rc->ch[3] = channels.ch3;
-    rc->ch[4] = channels.ch4;
-    rc->ch[5] = channels.ch5;
-    rc->ch[6] = channels.ch6;
-    rc->ch[7] = channels.ch7;
-    rc->ch[8] = channels.ch8;
-    rc->ch[9] = channels.ch9;
-    rc->ch[10] = channels.ch10;
-    rc->ch[11] = channels.ch11;
-    rc->ch[12] = channels.ch12;
-    rc->ch[13] = channels.ch13;
-    rc->ch[14] = channels.ch14;
-    rc->ch[15] = channels.ch15;
-    rc->ch[16] = (channels.ch16) ? 1876 : 172; // +-100%
-    rc->ch[17] = (channels.ch17) ? 1876 : 172; // +-100%
-}
-
-
-//-------------------------------------------------------
-// CRSF MBridge emulation
-
-void tMBridge::ParseCrsfFrame(uint8_t* const crsf, uint8_t len)
-{
-    if (!crsf_emulation) return;
-
-// UUUPPPS: state is used also in isr! parse_nextchar() is not reentrant, is synchronized through tx_free variable
-
-    state = STATE_IDLE; // to start the parser, also resets time gap check
-
-    for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i]);
-
-    state = STATE_IDLE; // this is to suppress that mBridge sends
-    channels_received = false; // this should not have happened, but let's play it safe
-
-    // we should have now a good cmd in cmd_r2m_frame[]
-    // mbridge.ChannelsUpdated() should not trigger
-    // mbridge.TelemetryUpdate() should not trigger, since mbridge.TelemetryStart() not called
-    // mbridge.CommandReceived() should however trigger and should be called"
-}
-
-
-bool tMBridge::CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len)
-{
-    if (!crsf_emulation) return false;
-
-    if (cmd_m2r_available) {
-        *buf = cmd_m2r_frame;
-        *len = cmd_m2r_available;
-        cmd_m2r_available = 0;
-        return true;
-    }
-
-    return false;
 }
 
 
 //-------------------------------------------------------
 // MBridge user interface
 
-void tMBridge::Init(bool enable_flag, bool crsf_emulation_flag)
+void tMBridge::Init(bool enable_flag)
 {
     enabled = enable_flag;
-    crsf_emulation = crsf_emulation_flag;
-    if (crsf_emulation) enabled = true;
 
     if (!enabled) return;
 
-    tx_free = false;
-    channels_received = false;
     cmd_received = false;
     cmd_m2r_available = 0;
-
-    tx_fifo.Init();
-    rx_fifo.Init();
 
     cmd_fifo.Init();
     cmd_in_process = 0;
     cmd_processed_tlast_ms = 0;
-
-    if (!crsf_emulation) {
-        uart_rx_callback_ptr = &mbridge_pin5_rx_callback;
-        uart_tc_callback_ptr = &mbridge_pin5_tc_callback;
-
-        tPin5BridgeBase::Init();
-        tSerialBase::Init();
-    }
 }
 
 
-// polled in main loop
-bool tMBridge::ChannelsUpdated(tRcData* const rc)
+// called in tTxCrsf::CommandReceived(), which is polled in main loop
+void tMBridge::ParseCrsfFrame(uint8_t* const crsf, uint8_t len)
 {
-    if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
+    if (!enabled) return;
 
-    if (!enabled) return false;
+    state = STATE_IDLE; // start the parser
+    for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i]);
 
-    CheckAndRescue();
-
-    if (!channels_received) return false;
-    channels_received = false;
-
-    fill_rcdata(rc);
-    return true;
+    // we should have now a good cmd in cmd_r2m_frame[]
 }
 
 
-// polled in main loop
-bool tMBridge::TelemetryUpdate(uint8_t* const task)
-{
-    if (crsf_emulation) return false; // CRSF: just don't ever do it, should not happen
-
-    if (!enabled) return false;
-
-    // check if we can handle the next slot
-    if (!tx_free) return false;
-    tx_free = false;
-
-    // check if we should restart telemetry sequence
-    if (telemetry_start_next_tick) {
-        telemetry_start_next_tick = false;
-        telemetry_state = 0;
-    }
-
-    // next slot
-    uint8_t curr_telemetry_state = telemetry_state;
-    telemetry_state++;
-
-    switch (curr_telemetry_state) {
-    case 1:
-        *task = TXBRIDGE_SEND_LINK_STATS;
-        return true;
-    case 5: case 9:
-        *task = TXBRIDGE_SEND_CMD;
-        return true;
-    }
-
-    return false;
-}
-
-
-// polled in main loop
+// called in tTxCrsf::CommandReceived(), which is polled in main loop
 bool tMBridge::CommandReceived(uint8_t* const cmd)
 {
     if (!enabled) return false;
@@ -413,6 +187,8 @@ bool tMBridge::CommandReceived(uint8_t* const cmd)
     cmd_received = false;
 
     *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
+
+    if (*cmd > MBRIDGE_CMD_MAX) return false; // something went wrong, reject it
 
     return true;
 }
@@ -430,50 +206,6 @@ uint8_t tMBridge::GetModelId(void)
 }
 
 
-/* void tMBridge::GetCommand(uint8_t* cmd, uint8_t* payload)
-{
-    *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
-
-    uint8_t payload_len = mbridge_cmd_payload_len(*cmd);
-    memcpy(payload, &(cmd_r2m_frame[1]), payload_len);
-} */
-
-
-void tMBridge::SendCommand(uint8_t cmd, uint8_t* const payload)
-{
-    memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
-
-    uint8_t payload_len = mbridge_cmd_payload_len(cmd);
-
-    cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
-    memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
-
-    cmd_m2r_available = payload_len + 1;
-}
-
-
-bool tMBridge::CommandInFifo(uint8_t* const cmd)
-{
-    if (cmd_in_process) return false;
-
-    if (!cmd_fifo.Available()) return false;
-
-    // before this was attempted by do_cnt in the main loop
-    // cleaner and more precise so now
-    // on F4 radios seems not to be needed anymore since lua was changed to request-response
-    // on H7 EdgeTx radios, without lua has startup problems (errors out with CRSF not 400k)
-    uint32_t tnow_ms = millis32();
-    if (crsf_emulation && (cmd_processed_tlast_ms - tnow_ms < 10)) return false; // don't do too fast
-    cmd_processed_tlast_ms = tnow_ms;
-
-    cmd_in_process = 0;
-
-    *cmd = cmd_fifo.Get();
-
-    return true;
-}
-
-
 void tMBridge::Lock(uint8_t cmd = 0xFF)
 {
     cmd_in_process = cmd;
@@ -487,10 +219,55 @@ void tMBridge::Unlock(void)
 
 
 //-------------------------------------------------------
+
+void tMBridge::send_command(uint8_t cmd, uint8_t* const payload)
+{
+    memset(cmd_m2r_frame, 0, MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX);
+
+    uint8_t payload_len = mbridge_cmd_payload_len(cmd);
+
+    cmd_m2r_frame[0] = MBRIDGE_COMMANDPACKET_STX + (cmd & (~MBRIDGE_COMMANDPACKET_MASK));
+    memcpy(&(cmd_m2r_frame[1]), payload, payload_len);
+
+    cmd_m2r_available = payload_len + 1;
+}
+
+
+bool tMBridge::CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len)
+{
+    if (!enabled) return false;
+
+    // check if command in fifo
+    if (cmd_in_process) return false;
+
+    if (!cmd_fifo.Available()) return false;
+
+    uint32_t tnow_ms = millis32();
+    if ((tnow_ms - cmd_processed_tlast_ms) < 10) return false; // don't do too fast
+    cmd_processed_tlast_ms = tnow_ms;
+
+    cmd_in_process = 0;
+
+    // process command
+    uint8_t mbcmd = cmd_fifo.Get();
+    switch (mbcmd) {
+        case MBRIDGE_CMD_INFO:           send_Info();         break;
+        case MBRIDGE_CMD_DEVICE_ITEM_TX: send_DeviceItemTx(); break;
+        case MBRIDGE_CMD_DEVICE_ITEM_RX: send_DeviceItemRx(); break;
+        case MBRIDGE_CMD_PARAM_ITEM:     send_ParamItem();    break;
+    }
+
+    if (!cmd_m2r_available) return false; // this should not happen, only commands with response are put in fifo!
+
+    *buf = cmd_m2r_frame;
+    *len = cmd_m2r_available;
+    cmd_m2r_available = 0; // not needed, play it nice
+    return true;
+}
+
+
+//-------------------------------------------------------
 // handler
-
-void mbridge_start_ParamRequestByIndex(uint8_t idx);
-
 
 void tMBridge::HandleRequestCmd(uint8_t* const payload)
 {
@@ -500,87 +277,31 @@ tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
     case MBRIDGE_CMD_DEVICE_ITEM_TX:
         cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
         break;
-
     case MBRIDGE_CMD_DEVICE_ITEM_RX:
         cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
         break;
-
     case MBRIDGE_CMD_INFO:
         cmd_fifo.Put(MBRIDGE_CMD_INFO);
         break;
-
     case MBRIDGE_CMD_REQUEST_INFO:
         cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_TX);
         cmd_fifo.Put(MBRIDGE_CMD_DEVICE_ITEM_RX);
         cmd_fifo.Put(MBRIDGE_CMD_INFO);
         break;
-
     case MBRIDGE_CMD_PARAM_ITEM: {
         uint8_t idx = request->param_item.index;
         //if (request->name[0] != 0) { // name is specified, so search for index of parameter
         //}
-        mbridge_start_ParamRequestByIndex(idx);
+        start_ParamRequestByIndex(idx);
         break; }
     }
-}
-
-
-void tMBridge::HandleCmd(uint8_t cmd)
-{
-    // this is somewhat dirty, since just the first byte of tMBridgeRequestCmd, but does the job :)
-    HandleRequestCmd(&cmd);
 }
 
 
 //-------------------------------------------------------
 // convenience helper
 
-void mbridge_send_LinkStats(void)
-{
-tMBridgeLinkStats lstats = {};
-
-    lstats.LQ_serial = stats.GetLQ_serial(); // = LQ_valid_received; // number of valid packets received on transmitter side
-    lstats.rssi1_instantaneous = stats.last_rssi1;
-    lstats.rssi2_instantaneous = stats.last_rssi2;
-    lstats.snr_instantaneous = stats.GetLastSnr();
-    lstats.receive_antenna = stats.last_antenna;
-    lstats.transmit_antenna = stats.last_transmit_antenna;
-    lstats.rx1_valid = stats.rx1_valid;
-    lstats.rx2_valid = stats.rx2_valid;
-
-    // receiver side of things
-
-    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc(); // valid_crc1_received, number of rc data packets received on receiver side
-    lstats.receiver_LQ_serial = stats.received_LQ_serial; // valid_frames_received, number of completely valid packets received on receiver side
-    lstats.receiver_rssi_instantaneous = stats.received_rssi;
-    lstats.receiver_receive_antenna = stats.received_antenna;
-    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
-
-    // further stats acquired on transmitter side
-
-    lstats.LQ_fresh_serial_packets_transmitted = stats.serial_data_transmitted.GetLQ();
-    lstats.bytes_per_sec_transmitted = stats.GetTransmitBandwidthUsage();
-
-    lstats.LQ_valid_received = stats.valid_frames_received.GetLQ(); // number of completely valid packets received per sec
-    lstats.LQ_fresh_serial_packets_received = stats.serial_data_received.GetLQ();
-    lstats.bytes_per_sec_received = stats.GetReceiveBandwidthUsage();
-
-    //lstats.__LQ_received = stats.frames_received.GetLQ(); // number of packets received per sec, pretty useless, so deprecated
-    lstats.mavlink_packet_LQ_received = stats.GetMavlinkLQ();
-
-    lstats.fhss_curr_i = stats.fhss_curr_i;
-    lstats.fhss_cnt = fhss.Cnt();
-
-    lstats.vehicle_state = mavlink_vehicle_state(); // 3 = invalid
-
-    lstats.link_state_connected = connected();
-    lstats.link_state_binding = bind.IsInBind();
-
-    mbridge.SendCommand(MBRIDGE_CMD_TX_LINK_STATS, (uint8_t*)&lstats);
-}
-
-
-void mbridge_send_Info(void)
+void tMBridge::send_Info(void)
 {
 tMBridgeInfo info = {};
 
@@ -588,11 +309,11 @@ tMBridgeInfo info = {};
 
     if (!TRANSMIT_USE_ANTENNA1) {
         // Config.Diversity = DIVERSITY_ANTENNA2, DIVERSITY_R_ENABLED_T_ANTENNA2
-        info.receiver_sensitivity = sx2.ReceiverSensitivity_dbm();
+        info.receive_sensitivity = sx2.ReceiveSensitivity_dbm();
         info.tx_actual_power_dbm = sx2.RfPower_dbm();
     } else {
         // Config.Diversity = DIVERSITY_DEFAULT, DIVERSITY_ANTENNA1, DIVERSITY_R_ENABLED_T_ANTENNA1
-        info.receiver_sensitivity = sx.ReceiverSensitivity_dbm(); // is equal for Tx and Rx
+        info.receive_sensitivity = sx.ReceiveSensitivity_dbm(); // is equal for Tx and Rx
         info.tx_actual_power_dbm = sx.RfPower_dbm();
     }
     info.tx_actual_diversity = Config.Diversity;
@@ -612,22 +333,22 @@ tMBridgeInfo info = {};
 
     info.param_num = SETUP_PARAMETER_NUM; // non-zero if known
 
-    mbridge.SendCommand(MBRIDGE_CMD_INFO, (uint8_t*)&info);
+    send_command(MBRIDGE_CMD_INFO, (uint8_t*)&info);
 }
 
 
-void mbridge_send_DeviceItemTx(void)
+void tMBridge::send_DeviceItemTx(void)
 {
 tMBridgeDeviceItem item = {};
 
     item.firmware_version_u16 = version_to_u16(VERSION);
     item.setup_layout_u16 = version_to_u16(SETUPLAYOUT);
     strbufstrcpy(item.device_name_20, DEVICE_NAME, 20);
-    mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
+    send_command(MBRIDGE_CMD_DEVICE_ITEM_TX, (uint8_t*)&item);
 }
 
 
-void mbridge_send_DeviceItemRx(void)
+void tMBridge::send_DeviceItemRx(void)
 {
 tMBridgeDeviceItem item = {};
 
@@ -640,7 +361,7 @@ tMBridgeDeviceItem item = {};
         item.setup_layout_u16 = 0;
         strbufstrcpy(item.device_name_20, "", 20);
     }
-    mbridge.SendCommand(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
+    send_command(MBRIDGE_CMD_DEVICE_ITEM_RX, (uint8_t*)&item);
 }
 
 
@@ -705,22 +426,22 @@ dbg.puts("\n->      ");dbg.puts(out);*/
 }
 
 
-void mbridge_start_ParamRequestByIndex(uint8_t idx)
+void tMBridge::start_ParamRequestByIndex(uint8_t idx)
 {
     param_idx = idx;
     param_itemtype_to_send = MB_PARAM_ITEM;
 
-    mbridge.cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out
+    cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out
 }
 
 
-void mbridge_send_ParamItem(void)
+void tMBridge::send_ParamItem(void)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) {
         // we send a mBridge message, but don't put a MBRIDGE_CMD_PARAM_ITEM into the fifo, this stops it
         tMBridgeParamItem item = {};
         item.index = UINT8_MAX; // indicates end of list
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
+        send_command(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
         return;
     }
 
@@ -746,7 +467,7 @@ void mbridge_send_ParamItem(void)
         }
         strbufstrcpy(item.name_16, SetupParameter[param_idx].name, 16);
 
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
+        send_command(MBRIDGE_CMD_PARAM_ITEM, (uint8_t*)&item);
 
         param_get_opt_shortened_str(param_optstr, param_idx); // set it for the next items
 
@@ -776,7 +497,7 @@ void mbridge_send_ParamItem(void)
             break;
         }
 
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM2, (uint8_t*)&item2);
+        send_command(MBRIDGE_CMD_PARAM_ITEM2, (uint8_t*)&item2);
 
         if (param_itemtype_to_send == MB_PARAM_ITEM) { // done with this parameter
             // next param item
@@ -795,7 +516,7 @@ void mbridge_send_ParamItem(void)
         strbufstrcpy(item3.options2_23, param_optstr + 21, 23);
         if (strlen(param_optstr) >= 21+23) param_itemtype_to_send = MB_PARAM_ITEM4; // we need to send a 4th ParamItem
 
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3_4, (uint8_t*)&item3);
+        send_command(MBRIDGE_CMD_PARAM_ITEM3_4, (uint8_t*)&item3);
 
         if (param_itemtype_to_send == MB_PARAM_ITEM) { // done with this parameter
             // next param item
@@ -816,7 +537,7 @@ void mbridge_send_ParamItem(void)
         // we would have to match MAVLink4OpenTx code
         // to avoid this let's play foul: set highest bit of index
         item4.index += 128;
-        mbridge.SendCommand(MBRIDGE_CMD_PARAM_ITEM3_4, (uint8_t*)&item4);
+        send_command(MBRIDGE_CMD_PARAM_ITEM3_4, (uint8_t*)&item4);
 
         // next param item
         param_idx++;
@@ -824,7 +545,7 @@ void mbridge_send_ParamItem(void)
         return; // last param item, so stop
     }
 
-    mbridge.cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
+    cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
 }
 
 
@@ -850,34 +571,13 @@ tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
 }
 
 
-void mbridge_send_cmd(uint8_t cmd)
-{
-    switch (cmd) {
-    case MBRIDGE_CMD_DEVICE_ITEM_TX:
-        mbridge_send_DeviceItemTx();
-        break;
-    case MBRIDGE_CMD_DEVICE_ITEM_RX:
-        mbridge_send_DeviceItemRx();
-        break;
-    case MBRIDGE_CMD_PARAM_ITEM:
-        mbridge_send_ParamItem();
-        break;
-    case MBRIDGE_CMD_INFO:
-        mbridge_send_Info();
-        break;
-    }
-}
-
-
 #else
 
-class tMBridge : public tSerialBase
+class tMBridge
 {
   public:
-    using tSerialBase::Init; // would be hidden by Init(bool,bool) otherwise
-    void Init(bool enable_flag, bool crsf_emulation_flag) {}
+    void Init(bool enable_flag) {}
     void TelemetryStart(void) {}
-    void TelemetryTick_ms(void) {}
     void Lock(void) {}
     void Unlock(void) {}
 };

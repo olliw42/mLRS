@@ -11,8 +11,8 @@
 #pragma once
 
 
-#define VERSION             10403 // leading zero makes it octal!
-#define VERSIONONLYSTR      "v1.4.03"
+#define VERSION             10405 // leading zero makes it octal!
+#define VERSIONONLYSTR      "v1.4.05"
 #define SETUPLAYOUT         10401 // this should be changed then Setup struct and/or serial changes
 
 // Note: The setup layout version does not need to be changed when parameter option lists
@@ -48,10 +48,10 @@
 #define DIVERSITY                       0
 
 
-#define SETUP_TX_SERIAL_PORT            0 // 0: serial port, 1: wbridge (BT/ESP) port, 2: serial2, 3: com, 4: mBridge
-#define SETUP_TX_SERIAL_PORT2           0 // 0: none, 1: serial port, 2: wbridge (BT/ESP) port, 3: serial2
+#define SETUP_TX_SERIAL_PORT            0 // 0: serial port, 1: wbridge (BT/ESP) port, 2: serial2, 3: com, 4: crsfbridge
+#define SETUP_TX_SERIAL_PORT2           0 // 0: none, 1: serial port, 2: wbridge (BT/ESP) port, 3: serial2, 4: crsfbridge
 
-#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1), 3: mBridge (pin5)
+#define SETUP_TX_CHANNELS_SOURCE        1 // 0: none, 1: Crsf (pin5), 2: In (In or pin1)
 
 #define SETUP_TX_CHANNEL_ORDER          CHANNEL_ORDER_AETR
 
@@ -95,17 +95,15 @@
 
 #define BIND_PHRASE                     "mlrs.0" // string of 6 characters, allowed are 'a'-'z','0'-'9','_','-','#','.'
 
-
 #define SETUP_MODE                      MODE_50HZ
 //#define SETUP_MODE                      MODE_31HZ
 //#define SETUP_MODE                      MODE_19HZ
 
-
 //#define SETUP_RF_BAND                   SETUP_FREQUENCY_BAND_915_MHZ_FCC
 #define SETUP_RF_BAND                   SETUP_FREQUENCY_BAND_868_MHZ // that's my privilege :)
 
-
 #define SETUP_RF_ORTHO                  0 // 0: off, 1: 1/3, 2: 2/3, 3: 3/3
+#define SETUP_PRIVACY                   0 // 0: off, 1: lvl1, 2: lvl2, 3: lvl3
 
 
 //-------------------------------------------------------
@@ -153,8 +151,8 @@
 #define TX_SERIAL_TXBUFSIZE             512
 #define TX_SERIAL_RXBUFSIZE             2048 // MissionPlanner is really rude
 
-#define TX_MBRIDGE_TXBUFSIZE            512
-#define TX_MBRIDGE_RXBUFSIZE            2048 // MissionPlanner is really rude
+#define TX_CRSFBRIDGE_TXBUFSIZE         512
+#define TX_CRSFBRIDGE_RXBUFSIZE         2048 // MissionPlanner is really rude
 
 #define RX_SERIAL_BAUDRATE              57600 // will be overwritten by setup
 #define RX_SERIAL_TXBUFSIZE             1024

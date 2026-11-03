@@ -424,13 +424,9 @@ extern "C" { void delay_ms(uint16_t ms); }
 #endif
 
 #ifdef DEVICE_HAS_JRPIN5
-  #define IF_MBRIDGE(x)             if (Config.UseMbridge) { x; }
   #define IF_CRSF(x)                if (Config.UseCrsf) { x; }
-  #define IF_MBRIDGE_OR_CRSF(x)     if (Config.UseMbridge | Config.UseCrsf) { x; }
 #else
-  #define IF_MBRIDGE(x)
   #define IF_CRSF(x)
-  #define IF_MBRIDGE_OR_CRSF(x)
 #endif
 #ifdef USE_IN
   #define IF_IN(x)                  if (Config.UseIn) { x; }

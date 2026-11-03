@@ -18,6 +18,7 @@
 // len is the length including type, payload, crc8, so it is len(frame)-2
 // crc8 includes type, payload
 // maximal frame length is 64 bytes
+// maximal len value is thus 62 bytes
 // maximal payload length is thus 60 bytes
 //
 // baudrate:
@@ -74,7 +75,8 @@ typedef enum {
     CRSF_FRAME_ID_TEMP                  = 0x0D,
     CRSF_FRAME_ID_BAROMETER             = 0x11,
     CRSF_FRAME_ID_LINK_STATISTICS       = 0x14,
-    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx may add a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
+    CRSF_FRAME_ID_RC_CHANNELS           = 0x16, // Note: EdgeTx adds a 25th byte for arming state !! https://github.com/olliw42/mLRS/issues/297
+    CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED = 0x17,
     CRSF_FRAME_ID_LINK_STATISTICS_RX    = 0x1C,
     CRSF_FRAME_ID_LINK_STATISTICS_TX    = 0x1D,
     CRSF_FRAME_ID_ATTITUDE              = 0x1E,
@@ -155,18 +157,21 @@ typedef enum {
 
 // final crc8 included in payload or cmd_data, hence these fields are one byte longer
 CRSF_PACKED(
-typedef struct
+typedef union
 {
-    uint8_t address;
-    uint8_t len;
-    uint8_t frame_id;
-    CRSF_PACKED(union {
-        uint8_t payload[64 - 4 + 1]; // +1 for crc
-        CRSF_PACKED(struct {
-            uint8_t cmd_dest_adress;
-            uint8_t cmd_src_adress;
-            uint8_t cmd_id;
-            uint8_t cmd_data[64 - 4 - 3 + 1]; // +1 for crc
+    uint8_t c[64];
+    CRSF_PACKED(struct {
+        uint8_t address;  // [0]
+        uint8_t len;      // [1]
+        uint8_t frame_id; // [2]
+        CRSF_PACKED(union {
+            uint8_t payload[64 - 4 + 1];  // [3], +1 for crc
+            CRSF_PACKED(struct {
+                uint8_t cmd_dest_address; // [3]
+                uint8_t cmd_src_address;  // [4]
+                uint8_t cmd_id;           // [5]
+                uint8_t cmd_data[64 - 4 - 3 + 1]; // [6], +1 for crc
+            });
         });
     });
 }) tCrsfFrame;
@@ -177,33 +182,27 @@ typedef struct
 // #define TICKS_TO_US(x)  ((x - 992) * 5 / 8 + 1500)
 // #define US_TO_TICKS(x)  ((x - 1500) * 8 / 5 + 992)
 
-#define CRSF_RCCHANNELPACKET_SIZE  22
+CRSF_PACKED(
+typedef struct {
+    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t ch8  : 11;
+    uint16_t ch9  : 11;
+    uint16_t ch10 : 11;
+    uint16_t ch11 : 11;
+    uint16_t ch12 : 11;
+    uint16_t ch13 : 11;
+    uint16_t ch14 : 11;
+    uint16_t ch15 : 11;
+}) tCrsfRcChannelV1;
 
-typedef union
-{
-    uint8_t c[CRSF_RCCHANNELPACKET_SIZE];
-    CRSF_PACKED(
-    struct {
-        uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
-        uint16_t ch1  : 11;
-        uint16_t ch2  : 11;
-        uint16_t ch3  : 11;
-        uint16_t ch4  : 11;
-        uint16_t ch5  : 11;
-        uint16_t ch6  : 11;
-        uint16_t ch7  : 11;
-        uint16_t ch8  : 11;
-        uint16_t ch9  : 11;
-        uint16_t ch10 : 11;
-        uint16_t ch11 : 11;
-        uint16_t ch12 : 11;
-        uint16_t ch13 : 11;
-        uint16_t ch14 : 11;
-        uint16_t ch15 : 11;
-    });
-} tCrsfRcChannelBuffer;
-
-#define CRSF_RCCHANNELPACKET_LEN  22 // LEN vs SIZE style guide ??
+#define CRSF_RCCHANNEL_V1_LEN  22 // LEN vs SIZE style guide ??
 
 
 // frame: adr, len, frame id, data, crc
@@ -213,11 +212,95 @@ typedef struct
     uint8_t address;
     uint8_t len;
     uint8_t frame_id;
-    tCrsfRcChannelBuffer ch;
+    tCrsfRcChannelV1 ch;
     uint8_t crc;
-}) tCrsfRcChannelFrame;
+}) tCrsfRcChannelV1Frame;
 
-#define CRSF_RCCHANNELPACKET_FRAME_LEN  (CRSF_RCCHANNELPACKET_LEN + 4)
+#define CRSF_RCCHANNEL_V1_FRAME_LEN  (CRSF_RCCHANNEL_V1_LEN + 4)
+
+
+CRSF_PACKED(
+typedef struct {
+    uint16_t ch0  : 11; // 11 bits per channel * 16 channels = 22 bytes
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t ch8  : 11;
+    uint16_t ch9  : 11;
+    uint16_t ch10 : 11;
+    uint16_t ch11 : 11;
+    uint16_t ch12 : 11;
+    uint16_t ch13 : 11;
+    uint16_t ch14 : 11;
+    uint16_t ch15 : 11;
+    uint8_t status;
+    uint16_t ch16 : 11;
+    uint16_t ch17 : 11;
+    uint16_t ch18 : 11;
+    uint16_t ch19 : 11;
+    uint16_t ch20 : 11;
+    uint16_t ch21 : 11;
+    uint16_t ch22 : 11;
+    uint16_t ch23 : 11;
+    uint16_t ch24 : 11;
+    uint16_t ch25 : 11;
+    uint16_t ch26 : 11;
+    uint16_t ch27 : 11;
+    uint16_t ch28 : 11;
+    uint16_t ch29 : 11;
+    uint16_t ch30 : 11;
+    uint16_t ch31 : 11;
+}) tCrsfRcChannelV2;
+
+#define CRSF_RCCHANNEL_V2_LEN  (22 + 1 + 22)
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    tCrsfRcChannelV2 ch;
+    uint8_t crc;
+}) tCrsfRcChannelV2Frame;
+
+#define CRSF_RCCHANNEL_V2_FRAME_LEN  (CRSF_RCCHANNEL_V2_LEN + 4)
+
+
+//-- Subset RC Channels Packed frame
+// ArduPilot 0x17, 11 bit: pwm = x / 2 + 988
+//   => x =    0 for pwm = 988
+//      x = 1024 for pwm = 1500
+//      x = 2047 for pwm = 2011
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t starting_channel    : 5; // channel number of the first channel in the frame
+    uint8_t res_configuration   : 2; // configuration for the RC data resolution, 10 - 13 bits
+    uint8_t digital_switch_flag : 1; // configuration bit for digital channel
+    tCrsfRcChannelV1 ch_16x11bit;
+}) tCrsfSubsetRcChannelsPacked_16x11bit;
+
+#define CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN  (1 + 22)
+
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t address;
+    uint8_t len;
+    uint8_t frame_id;
+    tCrsfSubsetRcChannelsPacked_16x11bit ch;
+    uint8_t crc;
+}) tCrsfSubsetRcChannelsPackedFrame_16x11bit;
+
+#define CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_FRAME_LEN  (CRSF_SUBSET_RCCHANNELS_PACKED_16X11BIT_LEN + 4)
 
 
 //-- Link statistics frames
@@ -238,16 +321,16 @@ typedef struct
 CRSF_PACKED(
 typedef struct
 {
-    uint8_t uplink_rssi1;               // OpenTX -> "1RSS"
-    uint8_t uplink_rssi2;               // OpenTX -> "2RSS"
-    uint8_t uplink_LQ;                  // OpenTx -> "RQly"
-    int8_t uplink_snr;                  // OpenTx -> "RSNR"
-    uint8_t active_antenna;             // OpenTx -> "ANT"
-    uint8_t mode;                       // OpenTx -> "RFMD"
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPw2", in CRSF units
-    uint8_t downlink_rssi;              // OpenTx -> "TRSS"
-    uint8_t downlink_LQ;                // OpenTx -> "TQly"
-    int8_t downlink_snr;                // OpenTx -> "TSNR"
+    uint8_t uplink_rssi1;               // EdgeTx -> "1RSS"   dBm
+    uint8_t uplink_rssi2;               // EdgeTx -> "2RSS"   dBm
+    uint8_t uplink_LQ;                  // EdgeTx -> "RQly"   %
+    int8_t uplink_snr;                  // EdgeTx -> "RSNR"   dB
+    uint8_t active_antenna;             // EdgeTx -> "ANT"
+    uint8_t mode;                       // EdgeTx -> "RFMD"
+    uint8_t uplink_transmit_power;      // EdgeTx -> "TPWR"   mW    ?OpenTx -> "TPw2", in CRSF units
+    uint8_t downlink_rssi;              // EdgeTx -> "TRSS"   dBm
+    uint8_t downlink_LQ;                // EdgeTx -> "TQly"   %
+    int8_t downlink_snr;                // EdgeTx -> "TSNR"   dB
 }) tCrsfLinkStatistics;
 
 #define CRSF_LINK_STATISTICS_LEN  10
@@ -278,10 +361,10 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t downlink_rssi;
-    uint8_t downlink_rssi_percent;      // OpenTx -> "RRSP"
+    uint8_t downlink_rssi_percent;      // EdgeTx -> "RRSP"   %
     uint8_t downlink_LQ;
     int8_t downlink_snr;
-    uint8_t uplink_transmit_power;      // OpenTx -> "TPWR"
+    uint8_t uplink_transmit_power;      // EdgeTx -> "TPWR"   dBm   !duplicate name!
 }) tCrsfLinkStatisticsRx;
 
 #define CRSF_LINK_STATISTICS_RX_LEN  5
@@ -300,11 +383,11 @@ CRSF_PACKED(
 typedef struct
 {
     uint8_t uplink_rssi;
-    uint8_t uplink_rssi_percent;        // OpenTx -> "TRSP"
+    uint8_t uplink_rssi_percent;        // EdgeTx -> "TRSP"   %
     uint8_t uplink_LQ;
     int8_t uplink_snr;
-    uint8_t downlink_transmit_power;    // OpenTx -> "RPWR"
-    uint8_t uplink_fps;                 // OpenTx -> "TFPS"
+    uint8_t downlink_transmit_power;    // EdgeTx -> "RPWR"   dBm
+    uint8_t uplink_fps;                 // EdgeTx -> "TFPS"   Hz
 }) tCrsfLinkStatisticsTx;
 
 #define CRSF_LINK_STATISTICS_TX_LEN  6
@@ -336,6 +419,7 @@ typedef struct
 
 //-- Telemetry data frames
 
+// CRSF_FRAME_ID_GPS  0x02
 CRSF_PACKED(
 typedef struct
 {
@@ -350,6 +434,7 @@ typedef struct
 #define CRSF_GPS_LEN  15
 
 
+// CRSF_FRAME_ID_GPS_TIME  0x03
 CRSF_PACKED(
 typedef struct
 {
@@ -365,6 +450,7 @@ typedef struct
 #define CRSF_GPS_TIME_LEN  9
 
 
+// CRSF_FRAME_ID_VARIOMETER  0x07
 CRSF_PACKED(
 typedef struct
 {
@@ -374,6 +460,7 @@ typedef struct
 #define CRSF_VARIOMETER_LEN  2
 
 
+// CRSF_FRAME_ID_BATTERY  0x08
 CRSF_PACKED(
 typedef struct
 {
@@ -386,6 +473,7 @@ typedef struct
 #define CRSF_BATTERY_LEN  8
 
 
+// CRSF_FRAME_ID_ATTITUDE  0x1E
 CRSF_PACKED(
 typedef struct
 {
@@ -397,6 +485,7 @@ typedef struct
 #define CRSF_ATTITUDE_LEN  6
 
 
+// CRSF_FRAME_ID_FLIGHT_MODE  0x21
 CRSF_PACKED(
 typedef struct
 {
@@ -406,6 +495,7 @@ typedef struct
 #define CRSF_FLIGHT_MODE_LEN  16
 
 
+// CRSF_FRAME_ID_BARO_ALTITUDE  0x09
 CRSF_PACKED(
 typedef struct
 {
@@ -417,6 +507,7 @@ typedef struct
 #define CRSF_BARO_ALTITUDE_LEN  3 // 2
 
 
+// CRSF_FRAME_ID_AIRSPEED  0x0A
 CRSF_PACKED(
 typedef struct
 {
@@ -426,6 +517,7 @@ typedef struct
 #define CRSF_AIRSPEED_LEN  2
 
 
+// CRSF_FRAME_ID_TEMP  0x0D
 CRSF_PACKED(
 typedef struct
 {
@@ -436,6 +528,7 @@ typedef struct
 #define CRSF_TEMP_LEN  3
 
 
+// CRSF_FRAME_ID_BAROMETER  0x11
 CRSF_PACKED(
 typedef struct
 {
@@ -487,6 +580,38 @@ typedef struct
 }) tCrsfPassthroughMulti;
 
 #define CRSF_PASSTHROUGH_MULTI_COUNT_MAX  9
+
+
+//-- MAVLink envelope frame
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t total_chunks  : 4;  // zero-based last chunk index
+    uint8_t current_chunk : 4;  // zero-based current chunk index
+    uint8_t data_size;          // size of data (max 58)
+    uint8_t data[58];           // data array (58 bytes max)
+}) tCrsfMavlinkEnvelope;
+
+#define CRSF_MAVLINK_ENVELOPE_LEN_MAX  60
+#define CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX  58
+
+
+//-- 0x81/0x82 envelope frame
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t cmd;       // always 0x66
+    uint8_t seq : 4;
+    uint8_t spare : 4;
+    uint8_t data_size; // size of data (max 57)
+    uint8_t data[57];  // data array (57 bytes max)
+}) tCrsfMbEnvelope;
+
+#define CRSF_MB_ENVELOPE_CMD  0x66
+#define CRSF_MB_ENVELOPE_LEN_MAX  60
+#define CRSF_MB_ENVELOPE_DATA_LEN_MAX  57
 
 
 #endif // CRSF_PROTOCOL_H

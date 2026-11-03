@@ -51,6 +51,9 @@ extern volatile uint32_t millis32(void);
   // internal peripheral inverter method with Tx<->Rx swap, needs a diode from Rx to Tx
 #error JRPIN5_RX_TX_INVERT_SWAP_INTERNAL not suppoerted anymore. Use JRPIN5_FULL_INTERNAL_ON_TX/RX/TX_RX !
 #endif
+#if defined JRPIN5_DISABLE_TX_WHILE_RX
+#error JRPIN5_DISABLE_TX_WHILE_RX not suppoerted anymore !
+#endif
 
 
 //-------------------------------------------------------
@@ -116,6 +119,10 @@ class tPin5BridgeBase
     void pin5_init(void);
     void pin5_tx_start(void) { uart_tx_start(); }
     void pin5_putbuf(uint8_t* const buf, uint16_t len) { for (uint16_t i = 0; i < len; i++) uart_tx_putc_totxbuf(buf[i]); }
+#ifdef CRSF_AUTOBAUD
+    bool pin5_set_protocol(uint32_t baudrate, bool inverted);
+#endif
+    bool pin5_inverted; // CRSF is normally inverted, but some radios use normal polarity
 
     // for in-isr processing
     void pin5_tx_enable(void);
@@ -132,20 +139,13 @@ class tPin5BridgeBase
     typedef enum {
         STATE_IDLE = 0,
 
-        // mBridge receive states
-        STATE_RECEIVE_MBRIDGE_STX2,
-        STATE_RECEIVE_MBRIDGE_LEN,
-        STATE_RECEIVE_MBRIDGE_SERIALPACKET,
-        STATE_RECEIVE_MBRIDGE_CHANNELPACKET,
-        STATE_RECEIVE_MBRIDGE_COMMANDPACKET,
-
         // CRSF receive states
         STATE_RECEIVE_CRSF_LEN,
         STATE_RECEIVE_CRSF_PAYLOAD,
         STATE_RECEIVE_CRSF_CRC,
 
         // transmit states, used by all
-        STATE_TRANSMIT_START,
+        STATE_TRANSMIT_START = 100,
         STATE_TRANSMIT_PENDING, // waiting for TX delay timer
         STATE_TRANSMITING,
     } STATE_ENUM;
@@ -153,9 +153,6 @@ class tPin5BridgeBase
     // not used in this class, but required by the children, so just add them here
     // no need for volatile since used only in isr context
     uint8_t state;
-    uint8_t len;
-    uint8_t cnt;
-    uint16_t tlast_us;
 
     // check and rescue
     // the FRM303 can get stuck, whatever we tried, so brutal rescue
@@ -168,9 +165,6 @@ class tPin5BridgeBase
 void tPin5BridgeBase::Init(void)
 {
     state = STATE_IDLE;
-    len = 0;
-    cnt = 0;
-    tlast_us = 0;
 
     telemetry_start_next_tick = false;
     telemetry_state = 0;
@@ -180,6 +174,8 @@ void tPin5BridgeBase::Init(void)
     txclock.Init();
 
     pin5_init();
+
+ //   pin5_set_protocol(1870000, true); // 1843200 //921600 //400000
 }
 
 
@@ -195,6 +191,8 @@ void tPin5BridgeBase::TelemetryStart(void)
 
 void tPin5BridgeBase::pin5_init(void)
 {
+    pin5_inverted = true;
+
 // TX & RX XOR method, F103
 #if defined JRPIN5_TX_XOR && defined JRPIN5_RX_XOR
     gpio_init(JRPIN5_TX_XOR, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
@@ -252,15 +250,34 @@ void tPin5BridgeBase::pin5_init(void)
 }
 
 
+#ifdef CRSF_AUTOBAUD
+bool tPin5BridgeBase::pin5_set_protocol(uint32_t baudrate, bool inverted)
+{
+//    uart_rx_enableisr(DISABLE); // pin5_tx_enable(); // disables isr
+    uart_setbaudrate(baudrate);
+
+    pin5_inverted = inverted;
+#if defined JRPIN5_FULL_INTERNAL_ON_TX || defined JRPIN5_FULL_INTERNAL_ON_RX || defined JRPIN5_FULL_INTERNAL_ON_RX_TX
+    LL_USART_Disable(UART_UARTx);
+    LL_USART_SetTXPinLevel(UART_UARTx, (inverted) ? LL_USART_TXPIN_LEVEL_INVERTED : LL_USART_TXPIN_LEVEL_STANDARD);
+    LL_USART_SetRXPinLevel(UART_UARTx, (inverted) ? LL_USART_RXPIN_LEVEL_INVERTED : LL_USART_RXPIN_LEVEL_STANDARD);
+    LL_USART_Enable(UART_UARTx);
+    pin5_rx_enable(); // update pull to match idle level
+#endif
+    uart_tx_flush();
+    uart_rx_flush();
+//    pin5_rx_enable(); // enables isr
+    return true;
+}
+#endif
+
+
 void tPin5BridgeBase::pin5_tx_enable(void)
 {
     uart_rx_enableisr(DISABLE);
 
 #if defined JRPIN5_TX_OE
     JRPIN5_TX_OE_ENABLED;
-#endif
-#if defined JRPIN5_DISABLE_TX_WHILE_RX
-    uart_tx_enablepin(ENABLE);
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
     LL_USART_Disable(UART_UARTx);
@@ -286,23 +303,20 @@ void tPin5BridgeBase::pin5_rx_enable(void)
 #if defined JRPIN5_TX_OE
     JRPIN5_TX_OE_DISABLED;
 #endif
-#if defined JRPIN5_DISABLE_TX_WHILE_RX
-    uart_tx_enablepin(DISABLE);
-#endif
 #if defined JRPIN5_FULL_INTERNAL_ON_TX
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_SWAPPED);
     LL_USART_Enable(UART_UARTx);
-    gpio_change_af(UART_TX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
+    gpio_change_af(UART_TX_IO, (pin5_inverted) ? IO_MODE_INPUT_PD : IO_MODE_INPUT_PU, UART_IO_AF, IO_SPEED_VERYFAST); // Tx pin is now rx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX
     LL_USART_Disable(UART_UARTx);
     LL_USART_SetTXRXSwap(UART_UARTx, LL_USART_TXRX_STANDARD);
     LL_USART_Enable(UART_UARTx);
-    gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+    gpio_change_af(UART_RX_IO, (pin5_inverted) ? IO_MODE_INPUT_PD : IO_MODE_INPUT_PU, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
 #endif
 #if defined JRPIN5_FULL_INTERNAL_ON_RX_TX
-    gpio_change_af(UART_RX_IO, IO_MODE_INPUT_PD, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
+    gpio_change_af(UART_RX_IO, (pin5_inverted) ? IO_MODE_INPUT_PD : IO_MODE_INPUT_PU, UART_IO_AF, IO_SPEED_VERYFAST); // Rx pin is now rx
     gpio_change(UART_TX_IO, IO_MODE_INPUT_ANALOG, IO_SPEED_VERYFAST); // disable Tx pin
 #endif
 

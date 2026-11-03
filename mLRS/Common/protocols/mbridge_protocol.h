@@ -76,6 +76,7 @@ typedef enum {
     MBRIDGE_CMD_MODELID_SET           = 16,
     MBRIDGE_CMD_SYSTEM_BOOTLOADER     = 17, // len = 0
     MBRIDGE_CMD_FLASH_ESPBRIDGE       = 18, // len = 0
+    MBRIDGE_CMD_MAX                   = 99, // to enforce that mbridge cmds are smaller than TXCRSF_CMD_xxx
 } MBRIDGE_CMD_ENUM;
 
 
@@ -228,7 +229,7 @@ typedef struct
 MBRIDGE_PACKED(
 typedef struct
 {
-    int16_t receiver_sensitivity;
+    int16_t receive_sensitivity;
 
     uint8_t has_status : 1; // 0 = invalid flags binding, connected, rx_LQ_low, tx_LQ_low
     uint8_t binding : 1;

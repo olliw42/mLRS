@@ -52,7 +52,7 @@
 #include "stm32f3xx_hal_flash_ex.h"
 
 #endif
-#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G474xx
+#if defined STM32G431xx ||defined STM32G441xx || defined STM32G491xx || defined STM32G473xx || defined STM32G474xx
 
 #include "stm32g4xx_ll_bus.h"
 #include "stm32g4xx_ll_rcc.h"
@@ -64,6 +64,7 @@
 #include "stm32g4xx_ll_exti.h"
 #include "stm32g4xx_ll_lpuart.h"
 #include "stm32g4xx_ll_adc.h"
+#include "stm32g4xx_ll_rng.h"
 #include "stm32g4xx_hal.h"
 #include "stm32g4xx_hal_flash.h"
 #include "stm32g4xx_hal_flash_ex.h"
@@ -98,6 +99,7 @@
 #include "stm32wlxx_ll_exti.h"
 #include "stm32wlxx_ll_lpuart.h"
 #include "stm32wlxx_ll_adc.h"
+#include "stm32wlxx_ll_rng.h"
 #include "stm32wlxx_hal.h"
 #include "stm32wlxx_hal_flash.h"
 #include "stm32wlxx_hal_flash_ex.h"

@@ -124,6 +124,12 @@ uint16_t rc_from_crsf(uint16_t crsf_ch)
 }
 
 
+uint16_t rc_from_crsf_0x17_11bit(uint16_t crsf_ch)
+{
+    return clip_rc(crsf_ch);
+}
+
+
 uint16_t rc_to_sbus(uint16_t rc_ch)
 {
     return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 992;
@@ -133,6 +139,12 @@ uint16_t rc_to_sbus(uint16_t rc_ch)
 uint16_t rc_to_crsf(uint16_t rc_ch)
 {
     return (((int32_t)(rc_ch) - 1024) * 1920) / 2047 + 992;
+}
+
+
+uint16_t rc_to_crsf_0x17_11bit(uint16_t rc_ch)
+{
+    return rc_ch;
 }
 
 
@@ -202,11 +214,13 @@ uint8_t crsf_cvt_rssi_rx(int8_t rssi_i8)
 }
 
 
-// tx module side: OpenTx/EdgeTx radios can handle rssi as negative value, and this seems to be preferred
+// tx module side: EdgeTx/OpenTx radios can handle rssi as negative value, and this seems to be preferred
+// attention: -1 is treated by EdgeTx as invalid result, which makes it ignoreing it
 uint8_t crsf_cvt_rssi_tx(int8_t rssi_i8)
 {
     if (rssi_i8 == RSSI_INVALID) return 0;
-    if (rssi_i8 > RSSI_MAX) return RSSI_MAX; // limit to -1
+//    if (rssi_i8 > RSSI_MAX) return RSSI_MAX; // limit to -1
+    if (rssi_i8 > -2) return -2; // limit to -2
     return rssi_i8;
 }
 
@@ -485,17 +499,6 @@ void bindphrase_from_u32(char* const bindphrase, uint32_t bindphrase_u32)
 }
 
 
-void remove_leading_zeros(char* const s)
-{
-int16_t i, len; // int16 to avoid underflow in len -1
-
-    len = strlen(s);
-    for (i = 0; i < len - 1; i++) {
-        if (s[i] != '0') break;
-    }
-    memmove(&s[0], &s[i], len - i + 1);
-}
-
 
 void power_optstr_from_power_list(char* const Power_optstr, int16_t* const power_list, uint8_t num, uint8_t slen)
 {
@@ -625,41 +628,4 @@ char ss[32];
         }
     }
     return major * 10000 + minor * 100 + patch;
-}
-
-
-//-- auxiliary functions
-
-
-// copy a string into a buffer with max len chars
-void strbufstrcpy(char* const res, const char* const src, uint16_t len)
-{
-    memset(res, '\0', len);
-    for (uint16_t i = 0; i < len; i++) {
-        if (src[i] == '\0') return;
-        res[i] = src[i];
-    }
-}
-
-
-// copy a buffer into a string with max len chars (i.e. len + 1 size)
-void strstrbufcpy(char* const res, const char* const src, uint16_t len)
-{
-    memset(res, '\0', len + 1); // this ensures that res is terminated with a '\0'
-    for (uint16_t i = 0; i < len; i++) {
-        if (src[i] == '\0') return;
-        res[i] = src[i];
-    }
-}
-
-
-bool strbufeq(char* const s1, const char* const s2, uint16_t len)
-{
-    for (uint16_t i = 0; i < len; i++) {
-        if (s1[i] == '\0' && s2[i] == '\0') return true;
-        if (s1[i] == '\0') return false;
-        if (s2[i] == '\0') return false;
-        if (s1[i] != s2[i]) return false;
-    }
-    return true;
 }

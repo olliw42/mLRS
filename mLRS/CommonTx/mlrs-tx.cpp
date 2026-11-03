@@ -37,6 +37,7 @@
 #include "../modules/esp-lib/esp-mcu.h"
 //xx #include "../modules/esp-lib/esp-adc.h"
 #include "../modules/esp-lib/esp-stack.h"
+#include "../modules/esp-lib/esp-trng.h"
 #include "../Common/hal/hal.h"
 #include "../modules/esp-lib/esp-delay.h" // these are dependent on hal
 #include "../modules/esp-lib/esp-eeprom.h"
@@ -71,6 +72,7 @@
 #include "../modules/stm32ll-lib/src/stdstm32-adc.h"
 #include "../modules/stm32ll-lib/src/stdstm32-stack.h"
 #include "../Common/thirdparty/stdstm32-exti.h"
+#include "../Common/thirdparty/stdstm32-trng.h"
 #ifdef STM32WL
 #include "../modules/stm32ll-lib/src/stdstm32-subghz.h"
 #endif
@@ -114,6 +116,7 @@
 #include "../Common/channel_order.h"
 #include "../Common/diversity.h"
 #include "../Common/arq.h"
+#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -129,6 +132,7 @@
 tRDiversity rdiversity;
 tTDiversity tdiversity;
 tReceiveArq rarq;
+tCrypto crypto;
 tChannelOrder channelOrder(tChannelOrder::DIRECTION_TX_TO_MLRS);
 tConfigId config_id;
 tTxInfo info;
@@ -258,6 +262,7 @@ void init_hw(void)
     delay_init();
     systembootloader_init(); // after delay_init() since it may need delay
     timer_init();
+    trng_init();
 
     leds_init();
     button_init();
@@ -283,8 +288,8 @@ void init_hw(void)
     sx.Init(); // these take time
     sx2.Init();
 
-    mbridge.Init(Config.UseMbridge, Config.UseCrsf); // these affect peripherals, hence do here
-    crsf.Init(Config.UseCrsf);
+    mbridge.Init(Config.UseCrsf); // these affect peripherals, hence do here
+    crsf.Init(Config.UseCrsf, Config.UseCrsfBridge);
     in.Init(Config.UseIn);
 
     __enable_irq();
@@ -378,6 +383,7 @@ bool link_task_set(uint8_t task)
     switch (link_task) {
     case LINK_TASK_TX_GET_RX_SETUPDATA:
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
         SetupMetaData.rx_available = false;
         break;
     case LINK_TASK_TX_STORE_RX_PARAMS: // store rx parameters
@@ -424,7 +430,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         link_task_reset();
 #ifdef DEVICE_HAS_JRPIN5
         switch (mbridge.cmd_in_process) {
-        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO); break;
+        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleRequestCmd(MBRIDGE_CMD_REQUEST_INFO); break;
         }
         mbridge.Unlock();
 #endif
@@ -441,6 +447,9 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
         break;
     case LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD:
         pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_WRELOAD);
+        break;
+    case LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP:
+        pack_txcmdframe_cmd(frame, frame_stats, rc, FRAME_CMD_GET_RX_SETUPDATA_STARTUP);
         break;
     case LINK_TASK_TX_SET_RX_PARAMS:
         pack_txcmdframe_setrxparams(frame, frame_stats, rc);
@@ -460,12 +469,13 @@ void pack_txcmdframe(tTxFrame* const frame, tFrameStats* const frame_stats, tRcD
 //           -> pack_txframe(...) or pack_txcmdframe(...)
 //   -> do_transmit_send(antenna)
 // receive
-//   isr:        -> irq2_status
+//   isr:        -> irq_status
 //   isr loop:   -> do_receive(antenna)
 //               -> link_rx1_status
 //   post loop:  -> handle_receive(antenna) or handle_receive_none()
 //                  if valid -> process_received_frame(do_payload, frame)
-//                               -> process_received_rxcmdframe(frame)
+//                               -> decrypt_rxframe(frame)
+//                                  process_received_rxcmdframe(frame)
 
 void prepare_transmit_frame(uint8_t antenna, uint8_t fhss1_curr_i, uint8_t fhss2_curr_i)
 {
@@ -475,7 +485,7 @@ uint8_t payload_len = 0;
     if (transmit_frame_type == TRANSMIT_FRAME_TYPE_NORMAL) {
         // read data from serial port
         if (connected()) {
-            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN; i++) {
+            for (uint8_t i = 0; i < FRAME_TX_PAYLOAD_LEN - crypto.NonceLen(); i++) {
                 if (!sx_serial.available()) break;
                 uint8_t c = sx_serial.getc();
                 payload[payload_len++] = c;
@@ -534,7 +544,7 @@ void process_received_frame(bool do_payload, tRxFrame* const frame)
     if (!accept_payload) return; // frame has no fresh payload
 
     // handle cmd frame
-    if (frame->status.frame_type == FRAME_TYPE_TX_RX_CMD) {
+    if (frame->status.frame_type == FRAME_TYPE_CMD) {
         process_received_rxcmdframe(frame);
         return;
     }
@@ -573,6 +583,7 @@ void do_transmit_send(uint8_t antenna) // we send a TX frame to receiver
 }
 
 
+// called in isr loop
 uint8_t do_receive(uint8_t antenna) // we receive a RX frame from receiver
 {
 uint8_t res;
@@ -587,12 +598,14 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     sxReadFrame(antenna, &rxFrame, &rxFrame2, FRAME_TX_RX_LEN);
     res = (antenna == ANTENNA_1) ? check_rxframe(&rxFrame) : check_rxframe(&rxFrame2);
 
-    if (res) {
+    if (res != CHECK_OK) {
         DBG_MAIN(dbg.puts("fail ");dbg.putc('\n');)
 //dbg.puts("fail a");dbg.putc(antenna+'0');dbg.puts(" ");dbg.puts(u8toHEX_s(res));dbg.putc('\n');
     }
 
     if (res == CHECK_ERROR_SYNCWORD) return RX_STATUS_INVALID; // must not happen !
+
+    // can be CHECK_ERROR_HEADER, CHECK_ERROR_CRC, CHECK_OK
 
     if (res == CHECK_OK) {
         rx_status = RX_STATUS_VALID;
@@ -601,11 +614,12 @@ uint8_t rx_status = RX_STATUS_INVALID; // this also signals that a frame was rec
     // we want to have the rssi,snr stats even if it's a bad packet
     sxGetPacketStatus(antenna, &stats);
 
-    return rx_status;
+    return rx_status; // INVALID, VALID
 }
 
 
-void handle_receive(uint8_t antenna) // RX_STATUS_INVALID, RX_STATUS_VALID
+// called in doPreTransmit loop
+bool handle_receive(uint8_t antenna) // called if INVALID, VALID
 {
 uint8_t rx_status;
 tRxFrame* frame;
@@ -620,15 +634,23 @@ tRxFrame* frame;
 
     if (bind.IsInBind()) {
         bind.handle_receive(antenna, rx_status);
-        return;
+        return true;
     }
 
-    if (rx_status < RX_STATUS_INVALID) { // must not happen
+    // can be INVALID, VALID (NONE is handled elsewhere)
+
+    if (rx_status < RX_STATUS_INVALID) { // = RX_STATUS_NONE, must not happen
         FAIL_WSTATE(BLINK_4, "rx_status failure", 0,0, link_rx1_status, link_rx2_status);
     }
 
+    // check decrypt_rxframe()
+    bool decrypt_ok = false;
+    if (rx_status > RX_STATUS_INVALID) {
+        decrypt_ok = decrypt_rxframe(frame); // don't do for INVALID, payload is nonsense
+    }
+
     // handle receive ARQ, must come before process_received_frame()
-    if (rx_status == RX_STATUS_VALID) {
+    if (rx_status == RX_STATUS_VALID && decrypt_ok) { // we have valid information on ack
         rarq.Received(frame->status.seq_no);
     } else {
         rarq.FrameMissed();
@@ -639,15 +661,15 @@ tRxFrame* frame;
         msp.FrameLost();
     }
 
-    if (rx_status > RX_STATUS_INVALID) { // RX_STATUS_VALID
+    if (rx_status > RX_STATUS_INVALID && decrypt_ok) { // = RX_STATUS_VALID
 
         bool do_payload = true; // has no rc data, so do_payload is always
 
         process_received_frame(do_payload, frame);
 
-        stats.doValidFrameReceived(); // should we count valid payload only if rx frame ?
+        stats.doValidFrameReceived(); // counts both rx and cmd frames, but cmd frames are rare, so no worry
 
-    } else { // RX_STATUS_INVALID
+    } else { // RX_STATUS_INVALID or !decrypt_ok
     }
 
     // we set it for all received frames
@@ -655,10 +677,13 @@ tRxFrame* frame;
 
     // we count all received frames
     stats.doFrameReceived();
+
+    return decrypt_ok;
 }
 
 
-void handle_receive_none(void) // RX_STATUS_NONE
+// called in doPreTransmit loop
+void handle_receive_none(void) // called if RX_STATUS_NONE
 {
     rarq.FrameMissed();
 }
@@ -745,17 +770,23 @@ RESTARTCONTROLLER
     link_rx1_status = link_rx2_status = RX_STATUS_NONE;
     link_tx_status = TX_STATUS_NONE;
     link_task_init();
-    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA); // we start with wanting to get rx setup data
+    link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP); // we start with wanting to get rx setup data
 
     stats.Init(Config.LQAveragingPeriod, Config.frame_rate_hz, Config.frame_rate_ms);
     rdiversity.Init();
     tdiversity.Init(Config.frame_rate_ms);
     rarq.Init();
+    crypto.Init(tCrypto::TX,
+        Setup.Common[Config.ConfigId].BindPhrase,
+        Config.Uid, Setup.peer_uid[Config.ConfigId], Setup.tx_random[Config.ConfigId],
+        Setup.Common[Config.ConfigId].Privacy);
+    crypto.SetSessionKey(Config.SessionRandom);
 
+    rcData.Init();
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
-    mavlink.Init(&mbridge); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
+    mavlink.Init(&crsf); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
     msp.Init(); // serial port selected by SerialPort
-    sx_serial.Init(&mbridge); // serial port selected by SerialPort, ChannelsSource
+    sx_serial.Init(&crsf); // serial port selected by SerialPort, ChannelsSource
     cli.Init();
     espbridge.Init();
     hc04bridge.Init();
@@ -956,18 +987,20 @@ IF_SX2(
             frame_received = (link_rx2_status > RX_STATUS_NONE);
             valid_frame_received = (link_rx2_status > RX_STATUS_INVALID);
         } else { // use antenna1
-            frame_received = (link_rx1_status > RX_STATUS_NONE);
-            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID);
+            frame_received = (link_rx1_status > RX_STATUS_NONE);          // INVALID, VALID
+            valid_frame_received = (link_rx1_status > RX_STATUS_INVALID); // VALID
         }
 
         if (frame_received) { // frame received
+            uint8_t antenna = ANTENNA_1;
             if (USE_ANTENNA1 && USE_ANTENNA2) {
-                uint8_t antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
-                handle_receive(antenna);
+                antenna = rdiversity.Antenna(link_rx1_status, link_rx2_status, stats.last_rssi1, stats.last_rssi2);
             } else if (USE_ANTENNA2) {
-                handle_receive(ANTENNA_2);
-            } else { // use antenna1
-                handle_receive(ANTENNA_1);
+                antenna = ANTENNA_2;
+            }
+            bool decrypt_ok = handle_receive(antenna);
+            if (!decrypt_ok) { // if decrypt fails, count it as invalid
+                valid_frame_received = false;
             }
         } else {
             handle_receive_none();
@@ -981,7 +1014,7 @@ IF_SX2(
             tdiversity.SetAntenna(ANTENNA_1);
         }
 
-        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_TX_RX_CMD && sx_serial.IsEnabled()
+        // serial data is received if !IsInBind() && RX_STATUS_VALID && !FRAME_TYPE_CMD && sx_serial.IsEnabled()
         // valid_frame/frame lost logic is modified by ARQ
 #ifndef USE_ARQ
         if (!valid_frame_received) {
@@ -989,10 +1022,6 @@ IF_SX2(
             msp.FrameLost();
         }
 #endif
-
-        stats.fhss_curr_i = fhss.CurrI_4mBridge();
-        stats.rx1_valid = (link_rx1_status > RX_STATUS_INVALID);
-        stats.rx2_valid = (link_rx2_status > RX_STATUS_INVALID);
 
         if (valid_frame_received) { // valid frame received
             switch (connect_state) {
@@ -1023,8 +1052,10 @@ IF_SX2(
                     if (!connect_occured_once) {
                         stats.JustConnected();
                     }
-                    connect_state = CONNECT_STATE_CONNECTED;
-                    connect_occured_once = true;
+                    if (crypto.ValidKeys()) { // allow connect only if also crypto allows
+                        connect_state = CONNECT_STATE_CONNECTED;
+                        connect_occured_once = true;
+                    }
                 }
                 break;
             }
@@ -1045,14 +1076,17 @@ IF_SX2(
         }
 
         link_state = LINK_STATE_TRANSMIT;
-        link_rx1_status = RX_STATUS_NONE;
-        link_rx2_status = RX_STATUS_NONE;
+        link_rx1_status = link_rx2_status = RX_STATUS_NONE;
 
         if (!connected()) rarq.Disconnected();
 
         if (connect_state == CONNECT_STATE_LISTEN) {
             link_task_reset(); // to ensure that the following set is enforced
-            link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            if (connect_occured_once && crypto.IsAuthenticated()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA);
+            } else {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_STARTUP);
+            }
         }
 
         DECc(tick_1hz_commensurate, Config.frame_rate_hz);
@@ -1075,7 +1109,9 @@ IF_SX2(
             connect_state = CONNECT_STATE_LISTEN;
             // link_state was set to LINK_STATE_TRANSMIT already
             break;
-        case BIND_TASK_TX_RESTART_CONTROLLER: GOTO_RESTARTCONTROLLER; break;
+        case BIND_TASK_TX_RESTART_CONTROLLER:
+            doParamsStore = true;
+            break;
         }
 
         // store parameters
@@ -1094,76 +1130,12 @@ IF_SX2(
 
     //-- Update channels, MBridge handling, Crsf handling, In handling, etc
 
-IF_MBRIDGE(
-    // mBridge sends channels in regular 20 ms intervals, this we can use as sync
-    if (mbridge.ChannelsUpdated(&rcData)) {
-        // update channels, do only if we use mBridge also as channels source
-        // note: mBridge is used when either CHANNEL_SOURCE_MBRIDGE or SERIAL_DESTINATION_MBRDIGE, so need to check here
-        if (Setup.Tx[Config.ConfigId].ChannelsSource == CHANNEL_SOURCE_MBRIDGE) {
-            rc_data_updated = true;
-        }
-        // when we receive channels packet from transmitter, we send link stats to transmitter
-        mbridge.TelemetryStart();
-    }
-    // mBridge sends mBridge cmd twice per 20 ms cycle, so we have 10 ms time to process
-    // we can't send too fast, in OTX the receive buffer can hold 64 cmds
-    uint8_t mbtask; uint8_t mbcmd;
-    if (mbridge.TelemetryUpdate(&mbtask)) {
-        switch (mbtask) {
-        case TXBRIDGE_SEND_LINK_STATS: mbridge_send_LinkStats(); break;
-        case TXBRIDGE_SEND_CMD:
-            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
-            break;
-        }
-    }
-);
-IF_MBRIDGE_OR_CRSF( // to allow CRSF mBridge emulation
-    // handle an incoming command
-    uint8_t mbcmd;
-    if (mbridge.CommandReceived(&mbcmd)) {
-        switch (mbcmd) {
-        case MBRIDGE_CMD_REQUEST_INFO:
-            setup_reload();
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
-                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
-            } else {
-                mbridge.HandleCmd(MBRIDGE_CMD_REQUEST_INFO);
-            }
-            break;
-        case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleRequestCmd(mbridge.GetPayloadPtr()); break;
-        case MBRIDGE_CMD_PARAM_SET: {
-            bool rx_param_changed;
-            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
-            if (param_changed && rx_param_changed && connected()) {
-                link_task_set(LINK_TASK_TX_SET_RX_PARAMS); // set parameter on Rx side
-                mbridge.Lock(MBRIDGE_CMD_PARAM_SET); // lock mBridge
-            }
-            }break;
-        case MBRIDGE_CMD_PARAM_STORE:
-            if (connected()) {
-                link_task_set(LINK_TASK_TX_STORE_RX_PARAMS);
-                mbridge.Lock(MBRIDGE_CMD_PARAM_STORE); // lock mBridge
-            } else {
-                doParamsStore = true;
-            }
-            break;
-        case MBRIDGE_CMD_BIND_START: tasks.SetMBridgeTask(TASK_BIND_START); break;
-        case MBRIDGE_CMD_BIND_STOP: tasks.SetMBridgeTask(TASK_BIND_STOP); break;
-        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetMBridgeTask(TASK_SYSTEM_BOOT); break;
-        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetMBridgeTask(TASK_ESPBRIDGE_FLASH); break;
-        case MBRIDGE_CMD_MODELID_SET:
-//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
-            config_id.Change(mbridge.GetModelId());
-            break;
-        }
-    }
-);
 IF_CRSF(
+    crsf.Do();
     if (crsf.ChannelsUpdated(&rcData)) {
         rc_data_updated = true;
     }
-    uint8_t crsftask; uint8_t crsfcmd; uint8_t mbcmd;
+    uint8_t crsftask; uint8_t crsfcmd;
     uint8_t* buf; uint8_t len;
     if (crsf.TelemetryUpdate(&crsftask, Config.frame_rate_ms)) {
         switch (crsftask) {
@@ -1172,7 +1144,6 @@ IF_CRSF(
         case TXCRSF_SEND_LINK_STATISTICS_RX: crsf.SendLinkStatisticsRx(); break;
         case TXCRSF_SEND_LINK_STATISTICS_ALL: crsf.SendLinkStatisticsAll(); break;
         case TXCRSF_SEND_TELEMETRY_FRAME:
-            if (mbridge.CommandInFifo(&mbcmd)) { mbridge_send_cmd(mbcmd); }
             if (mbridge.CrsfFrameAvailable(&buf, &len)) {
                 crsf.SendMBridgeFrame(buf, len);
             } else
@@ -1191,10 +1162,35 @@ IF_CRSF(
             config_id.Change(crsf.GetCmdModelId());
             break;
         case TXCRSF_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
-        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_START); break;
-        case TXCRSF_CMD_MBRIDGE_IN:
-//dbg.puts("\ncrsf mbridge ");
-            mbridge.ParseCrsfFrame(crsf.GetPayloadPtr(), crsf.GetPayloadLen());
+        case TXCRSF_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_STOP); break;
+
+        case MBRIDGE_CMD_REQUEST_INFO:
+            setup_reload();
+            if (connected()) {
+                link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
+                mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
+            } else {
+                mbridge.HandleRequestCmd(&crsfcmd);
+            }
+            break;
+        case MBRIDGE_CMD_REQUEST_CMD:
+            mbridge.HandleRequestCmd(mbridge.GetPayloadPtr());
+            break;
+        case MBRIDGE_CMD_PARAM_SET: {
+            bool rx_param_changed;
+            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
+            if (param_changed && rx_param_changed && connected()) {
+                tasks.SetCrsfTask(TASK_RX_PARAM_SET);
+            }
+            }break;
+        case MBRIDGE_CMD_PARAM_STORE: tasks.SetCrsfTask(TASK_PARAM_STORE); break;
+        case MBRIDGE_CMD_BIND_START: tasks.SetCrsfTask(TASK_BIND_START); break;
+        case MBRIDGE_CMD_BIND_STOP: tasks.SetCrsfTask(TASK_BIND_STOP); break;
+        case MBRIDGE_CMD_SYSTEM_BOOTLOADER: tasks.SetCrsfTask(TASK_SYSTEM_BOOT); break;
+        case MBRIDGE_CMD_FLASH_ESPBRIDGE: tasks.SetCrsfTask(TASK_ESPBRIDGE_FLASH); break;
+        case MBRIDGE_CMD_MODELID_SET:
+//dbg.puts("\nmbridge model id "); dbg.puts(u8toBCD_s(mbridge.GetModelId()));
+            config_id.Change(mbridge.GetModelId());
             break;
         }
     }

@@ -40,7 +40,7 @@ const tSxLoraConfiguration Sx127xLoraConfiguration[] = {
       .CrcEnabled = SX1276_LORA_CRC_DISABLE,
       .InvertIQ = SX1276_LORA_IQ_NORMAL,
       .TimeOverAir = 22300,
-      .ReceiverSensitivity = -112,
+      .ReceiveSensitivity = -112,
     }
 };
 
@@ -284,13 +284,13 @@ class Sx127xDriverCommon : public Sx127xDriverBase
         return lora_configuration->TimeOverAir;
     }
 
-    int16_t ReceiverSensitivity_dbm(void)
+    int16_t ReceiveSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
         if (lora_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return lora_configuration->ReceiverSensitivity;
+        return lora_configuration->ReceiveSensitivity;
     }
 
     int8_t RfPower_dbm(void)

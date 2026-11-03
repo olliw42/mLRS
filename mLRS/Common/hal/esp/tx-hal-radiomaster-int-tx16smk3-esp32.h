@@ -104,6 +104,8 @@ IRAM_ATTR void sx_dio_exti_isr_clearflag(void) {}
 #define SX2_DIO                   IO_P34
 #define SX2_BUSY                  IO_P39
 
+#define SX_USE_RFSW_CTRL  {15, 1, 4, 12, 12, 2, 0, 1} // radio_rfsw_ctrl array
+
 #define SX2_USE_REGULATOR_MODE_DCDC
 
 IRQHANDLER(void SX2_DIO_EXTI_IRQHandler(void);)
@@ -189,7 +191,6 @@ IRAM_ATTR void esp_gpio0_low(void) { gpio_high(ESP_GPIO0); }
 
 #include "../../setup_types.h" // needed for frequency band condition in rfpower calc
 #define SX_USE_LP_PA  // GX12 uses the low power amplifier for the 900 side, radio_rfo_hf option
-#define SX_USE_RFSW_CTRL  {15, 1, 4, 12, 12, 2, 0, 1} // radio_rfsw_ctrl array
 #define SX_PA_DAC_IO      IO_P26
 
 void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const uint8_t frequency_band)

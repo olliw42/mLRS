@@ -34,7 +34,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13200,
-      .ReceiverSensitivity = -111,
+      .ReceiveSensitivity = -111,
     },
     { .SpreadingFactor = LR11XX_LORA_SF6, // 900 MHz, 19 Hz
       .Bandwidth = LR11XX_LORA_BW_500,
@@ -45,7 +45,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 22560,
-      .ReceiverSensitivity = -112,
+      .ReceiveSensitivity = -112,
     },
     { .SpreadingFactor = LR11XX_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
@@ -56,7 +56,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
-      .ReceiverSensitivity = -105,
+      .ReceiveSensitivity = -105,
     },
     { .SpreadingFactor = LR11XX_LORA_SF6, // 2.4 GHz, 31 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
@@ -67,7 +67,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13418,
-      .ReceiverSensitivity = -108,
+      .ReceiveSensitivity = -108,
     },
     { .SpreadingFactor = LR11XX_LORA_SF7, // 2.4 GHz, 19 Hz
       .Bandwidth = LR11XX_LORA_BW_800,
@@ -78,7 +78,7 @@ const tSxLoraConfiguration Lr11xxLoraConfiguration[] = {
       .CrcEnabled = LR11XX_LORA_CRC_DISABLE,
       .InvertIQ = LR11XX_LORA_IQ_NORMAL,
       .TimeOverAir = 23527,
-      .ReceiverSensitivity = -112,
+      .ReceiveSensitivity = -112,
     }
 };
 
@@ -96,19 +96,30 @@ const tSxGfskConfiguration Lr11xxGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
       .CRCType = LR11XX_GFSK_CRC_OFF,
       .Whitening = LR11XX_GFSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106, // this is a guess, data sheet is vague here
+      .ReceiveSensitivity = -106, // this is a guess, data sheet is vague here
     }
 };
 
 
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-void lr11xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm, const int8_t sx_power_max)
+void lr11xx_rfpower_calc_default(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm, const int8_t gain_dbm_hf, const int8_t gain_dbm_lf, const uint8_t frequency_band)
 {
+    int8_t gain_dbm = (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) ? gain_dbm_hf : gain_dbm_lf;
+
     int16_t power_sx = (int16_t)power_dbm - gain_dbm;
 
-    if (power_sx < LR11XX_POWER_MIN) power_sx = LR11XX_POWER_MIN;
-    if (power_sx > LR11XX_POWER_MAX) power_sx = LR11XX_POWER_MAX;
-    if (power_sx > sx_power_max) power_sx = sx_power_max;
+    if (frequency_band == SX_FHSS_FREQUENCY_BAND_2P4_GHZ) {
+        if (power_sx < LR11XX_POWER_HF_MIN) power_sx = LR11XX_POWER_HF_MIN;
+        if (power_sx > LR11XX_POWER_HF_MAX) power_sx = LR11XX_POWER_HF_MAX;
+    } else {
+#ifdef SX_USE_LP_PA // TODO: this assumes that SX2 has the same setting!
+        if (power_sx < LR11XX_POWER_LF_LP_MIN) power_sx = LR11XX_POWER_LF_LP_MIN;
+        if (power_sx > LR11XX_POWER_LF_LP_MAX) power_sx = LR11XX_POWER_LF_LP_MAX;
+#else
+        if (power_sx < LR11XX_POWER_LF_HP_MIN) power_sx = LR11XX_POWER_LF_HP_MIN;
+        if (power_sx > LR11XX_POWER_LF_HP_MAX) power_sx = LR11XX_POWER_LF_HP_MAX;
+#endif
+    }
 
     *sx_power = power_sx;
     *actual_power_dbm = power_sx + gain_dbm;
@@ -361,13 +372,13 @@ class Lr11xxDriverCommon : public Lr11xxDriverBase
         return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
-    int16_t ReceiverSensitivity_dbm(void)
+    int16_t ReceiveSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
         if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiveSensitivity : gfsk_configuration->ReceiveSensitivity;
     }
 
     int8_t RfPower_dbm(void)
@@ -453,7 +464,7 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
 #ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX);
+        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM_HF, POWER_GAIN_DBM_LF, gconfig->FrequencyBand);
 #else
         lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif
@@ -592,8 +603,8 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
     {
-#ifdef POWER_USE_DEFAULT_RFPOWER_CALC
-        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM, POWER_LR11XX_MAX);
+#if defined POWER_USE_DEFAULT_RFPOWER_CALC
+        lr11xx_rfpower_calc_default(power_dbm, sx_power, actual_power_dbm, POWER_GAIN_DBM_HF, POWER_GAIN_DBM_LF, gconfig->FrequencyBand);
 #else
         lr11xx_rfpower_calc(power_dbm, sx_power, actual_power_dbm, gconfig->FrequencyBand);
 #endif

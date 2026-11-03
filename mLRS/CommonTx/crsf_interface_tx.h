@@ -16,8 +16,12 @@
 
 #ifdef DEVICE_HAS_JRPIN5
 
+#if defined STM32G4 || defined ESP32
+  // some devices are too slow for high baudrates, or don't support non-inverted pin5 (e.g. R9M)
+  #define CRSF_AUTOBAUD
+#endif
+
 #include "math.h"
-#include "time.h"
 #include "../Common/thirdparty/thirdparty.h"
 #include "../Common/protocols/crsf_protocol.h"
 #include "../Common/protocols/passthrough_protocol.h"
@@ -27,7 +31,11 @@
 
 extern uint16_t micros16(void);
 extern volatile uint32_t millis32(void);
+extern tSetupMetaData SetupMetaData;
+extern tSetup Setup;
+extern tGlobalConfig Config;
 extern tStats stats;
+extern tFhss fhss;
 
 
 //-------------------------------------------------------
@@ -48,23 +56,31 @@ typedef enum {
 
 
 typedef enum {
-    TXCRSF_CMD_MODELID_SET = 0,
+    TXCRSF_CMD_MODELID_SET = 100, // note: this must be larger than the largest MBRIDGE_CMD_xxx to avoid overlap
     TXCRSF_CMD_BIND_START,
     TXCRSF_CMD_BIND_STOP,
-    TXCRSF_CMD_MBRIDGE_IN,
 } TXCRSF_CMD_ENUM;
 
 
-class tTxCrsf : public tPin5BridgeBase
+// NOTE: not all hardware supports more than 400k (e.g. those with diodes may not)
+// TODO: I guess we want a define to enable/disable autobauding
+#define CRSF_AUTOBAUD_CYCLES  40 // 40*3*50ms = 6 sec
+#define CRSF_AUTOBAUD_MS  50
+#define CRSF_AUTOBAUD_PROTOCOLS_LEN  4
+static const uint32_t crsf_baud[CRSF_AUTOBAUD_PROTOCOLS_LEN] = { 400000, 921600, 1870000, 416666};
+static const uint32_t crsf_inverted[CRSF_AUTOBAUD_PROTOCOLS_LEN] = { true, true, true, false};
+
+
+class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 {
   public:
-    void Init(bool enable_flag);
+    using tSerialBase::Init; // tTxCrsf redefines Init(), incompatible with tSerialBase's Init()
+    void Init(bool enable_flag, bool crsfbridge_enable_flag);
+    void Do(void);
     bool ChannelsUpdated(tRcData* const rc);
     bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
 
     bool CommandReceived(uint8_t* const cmd);
-    uint8_t* GetPayloadPtr(void);
-    uint8_t GetPayloadLen(void);
     uint8_t GetCmdModelId(void);
 
     void TelemetryHandleMavlinkMsg(fmav_message_t* const msg);
@@ -76,38 +92,68 @@ class tTxCrsf : public tPin5BridgeBase
     void SendLinkStatisticsRx(void);
     void SendDeviceInfo(void);
     void SendLinkStatisticsAll(void);
+    void SendMbStatistics(void);
 
     void SendMBridgeFrame(void* const payload, uint8_t payload_len);
 
     void PassthroughSetBattery0Capacity(uint32_t capacity); // wrapper since not available to all targets
+
+    // CRSF envelope handling
+    // provides serial interface to the main code
+    void putbuf(uint8_t* const buf, uint16_t len) override { if (crsfbridge_enabled) put_fifo.PutBuf(buf, len); }
+    bool available(void) override { return get_fifo.Available(); }
+    char getc(void) override { return get_fifo.Get(); }
+    void flush(void) override { get_fifo.Flush(); }
 
   private:
     // helper
     void send_frame(const uint8_t frame_id, void* const payload, uint8_t payload_len);
 
     uint8_t crc8(const uint8_t* const buf);
-    void fill_rcdata(tRcData* const rc);
+    bool fill_rcdata(tRcData* const rc);
+    bool fill_rcdata_0x17(tRcData* const rc);
 
     // for in-isr processing, used in half-duplex mode
     void parse_nextchar(uint8_t c) override;
     bool transmit_start(void) override; // returns true if transmission should be started
 
     bool enabled;
+    bool crsfbridge_enabled;
 
-    uint8_t frame[CRSF_BUF_SIZE]; // received frame
-    volatile bool channels_received;
-    volatile bool cmd_received;
-    volatile bool ping_device_received;
-    volatile bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
-    volatile uint8_t cmd_modelid_value;
-    volatile bool cmd_bind_set_received;
-    volatile bool cmd_bind_cancel_received;
+    // parser, state is defined in tPin5BridgeBase
+    // no need for volatile since used only in isr context
+    uint8_t rx_frame[CRSF_BUF_SIZE]; // received frame
+    uint8_t rx_len;
+    uint8_t rx_cnt;
+    uint16_t rx_tlast_us;
+    volatile bool rx_frame_received;
+    tCrsfFrame frame; // double buffered received frame
 
-    volatile bool tx_free; // to signal that the tx buffer can be filled
+    bool channels_received;
+    bool mbridge_cmd_received;
+    bool ping_device_received;
+    bool cmd_modelid_received; // we handle it extra just to really catch it, could do also cmd fifo
+    uint8_t cmd_modelid_value;
+    bool cmd_bind_set_received;
+    bool cmd_bind_cancel_received;
+
     uint8_t tx_frame[CRSF_BUF_SIZE];
+    volatile bool tx_free; // to signal that the tx buffer can be filled
     volatile uint8_t tx_available; // this signals if something needs to be send to radio
 
-    bool startup_passed; // send CRSF frames only after at least a RC channels frame has been received, helps with catching MODEILID
+    // send CRSF frames only after at least a RC channels frame has been received, helps with catching MODEILID
+    // tx modules which do autobauding do this automatically
+    bool startup_passed;
+
+    // autobaud handling
+    struct {
+        bool is_running;
+        uint32_t tlast_ms;
+        uint8_t cycles_cnt;
+        uint8_t protocol_idx;
+        uint8_t channels_received_cnt;
+    } autobaud;
+    void autobaud_do(void);
 
     // CRSF telemetry
 
@@ -200,6 +246,19 @@ class tTxCrsf : public tPin5BridgeBase
     uint16_t msp_inav_status_sensor_status;
     uint32_t msp_inav_status_arming_flags;
 
+    // CRSF envelope
+
+    tFifo<char,TX_CRSFBRIDGE_TXBUFSIZE> put_fifo; // TODO: how large do they really need to be?
+    tFifo<char,TX_CRSFBRIDGE_RXBUFSIZE> get_fifo;
+
+    union {
+        tCrsfMbEnvelope mb;           // 0xEA, len, 0x82, 0x66
+        tCrsfMavlinkEnvelope mavlink; // 0xEA, len, 0xAA
+    } crsf_envelope_out;
+    uint8_t crsf_envelop_out_sequence;
+    bool crsf_envelop_use_mb;
+    uint32_t crsf_envelop_out_tlast_ms;
+
     // momentarily for debug, detect discarded bytes
 #ifdef USE_DEBUG
     uint16_t discarded = 0;
@@ -251,74 +310,43 @@ void tTxCrsf::parse_nextchar(uint8_t c)
     uint16_t tnow_us = micros16();
 
     if (state != STATE_IDLE) {
-        uint16_t dt = tnow_us - tlast_us;
+        uint16_t dt = tnow_us - rx_tlast_us;
         if (dt > CRSF_PARSE_NEXTCHAR_TMO_US) state = STATE_IDLE;
 
-        if (cnt >= sizeof(frame)) state = STATE_IDLE; // prevent buffer overflow
+        if (rx_cnt >= sizeof(rx_frame)) state = STATE_IDLE; // prevent buffer overflow
     }
 
-    tlast_us = tnow_us;
+    rx_tlast_us = tnow_us;
 
     switch (state) {
     case STATE_IDLE:
         if ((c == CRSF_ADDRESS_TRANSMITTER_MODULE) || (c == CRSF_OPENTX_SYNC)) {
-            cnt = 0;
-            frame[cnt++] = c;
+            rx_cnt = 0;
+            rx_frame[rx_cnt++] = c;
             state = STATE_RECEIVE_CRSF_LEN;
 #ifdef USE_DEBUG
-            if (discarded) {
-                if (discarded > 1) {
-                    dbg.puts(u16toBCD_s(discarded));
-                    dbg.puts(" bytes lost!\n");
-                }
-                discarded = 0;
-            }
         } else {
-            discarded++;
+            if (!autobaud.is_running) discarded++;
 #endif
         }
         break;
 
     case STATE_RECEIVE_CRSF_LEN:
-        if (c >= (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
-        frame[cnt++] = c;
-        len = c;
+        if (c > (CRSF_FRAME_LEN_MAX - 2)) { state = STATE_IDLE; break; } // cannot be a valid CRSF frame
+        rx_frame[rx_cnt++] = c;
+        rx_len = c;
         state = STATE_RECEIVE_CRSF_PAYLOAD;
         break;
     case STATE_RECEIVE_CRSF_PAYLOAD:
-        frame[cnt++] = c;
-        if (cnt >= len + 1) {
+        rx_frame[rx_cnt++] = c;
+        if (rx_cnt >= rx_len + 1) {
             state = STATE_RECEIVE_CRSF_CRC;
         }
         break;
     case STATE_RECEIVE_CRSF_CRC:
-        frame[cnt++] = c;
-        // let's ignore the crc here
-        // this is called in isr, so we want to do crc check later, if we want to do it all
-        if (frame[2] == CRSF_FRAME_ID_RC_CHANNELS) { // frame_id
-            channels_received = true;
-        } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
-            // EdgeTx sets frame[3] == CRSF_ADDRESS_BROADCAST, frame[4] == CRSF_ADDRESS_RADIO
-            ping_device_received = true;
-        } else
-        if (frame[0] == CRSF_OPENTX_SYNC && frame[2] == CRSF_FRAME_ID_COMMAND && frame[5] == CRSF_COMMAND_ID) {
-            switch (frame[6]) {
-            case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
-                // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS
-                cmd_modelid_received = true;
-                cmd_modelid_value = frame[7];
-                break;
-            case CRSF_COMMAND_SET_BIND_MODE: // len = 7
-                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
-                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
-            case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
-                // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS
-                if (frame[3] == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
-            }
-        } else {
-            cmd_received = true;
-        }
+        rx_frame[rx_cnt++] = c;
+        memcpy(&frame, rx_frame, rx_cnt);
+        rx_frame_received = true;
         state = STATE_TRANSMIT_START;
         break;
     }
@@ -340,27 +368,90 @@ void tTxCrsf::parse_nextchar(uint8_t c)
 // We assume that's not happening. Note, that len can also be larger, which is in fact
 // done by EdgeTx to provide an additional status byte carrying arming info for ELRS.
 
-void tTxCrsf::fill_rcdata(tRcData* const rc)
+bool tTxCrsf::fill_rcdata(tRcData* const rc)
 {
-tCrsfRcChannelBuffer buf;
+tCrsfRcChannelV2* buf = (tCrsfRcChannelV2*)frame.payload;
+bool is_32channels;
 
-    memcpy(buf.c, &(frame[3]), CRSF_RCCHANNELPACKET_SIZE);
-    rc->ch[0] = rc_from_crsf(buf.ch0);
-    rc->ch[1] = rc_from_crsf(buf.ch1);
-    rc->ch[2] = rc_from_crsf(buf.ch2);
-    rc->ch[3] = rc_from_crsf(buf.ch3);
-    rc->ch[4] = rc_from_crsf(buf.ch4);
-    rc->ch[5] = rc_from_crsf(buf.ch5);
-    rc->ch[6] = rc_from_crsf(buf.ch6);
-    rc->ch[7] = rc_from_crsf(buf.ch7);
-    rc->ch[8] = rc_from_crsf(buf.ch8);
-    rc->ch[9] = rc_from_crsf(buf.ch9);
-    rc->ch[10] = rc_from_crsf(buf.ch10);
-    rc->ch[11] = rc_from_crsf(buf.ch11);
-    rc->ch[12] = rc_from_crsf(buf.ch12);
-    rc->ch[13] = rc_from_crsf(buf.ch13);
-    rc->ch[14] = rc_from_crsf(buf.ch14);
-    rc->ch[15] = rc_from_crsf(buf.ch15);
+    // TODO: variable size frames ??
+
+    if (frame.len >= 1 + 22 + 1 && frame.len <= 1 + 23 + 1) { // V1 frame, we only accept frames with 16 channels
+        is_32channels = false;
+    } else if (frame.len == 1 + 22 + 1 + 22 + 1) { // V2 frame, we only accept frames with 32 channels
+        rc->do_32channels = true;
+        is_32channels = true;
+    } else {
+        return false;
+    }
+
+    rc->ch[0] = rc_from_crsf(buf->ch0);
+    rc->ch[1] = rc_from_crsf(buf->ch1);
+    rc->ch[2] = rc_from_crsf(buf->ch2);
+    rc->ch[3] = rc_from_crsf(buf->ch3);
+    rc->ch[4] = rc_from_crsf(buf->ch4);
+    rc->ch[5] = rc_from_crsf(buf->ch5);
+    rc->ch[6] = rc_from_crsf(buf->ch6);
+    rc->ch[7] = rc_from_crsf(buf->ch7);
+    rc->ch[8] = rc_from_crsf(buf->ch8);
+    rc->ch[9] = rc_from_crsf(buf->ch9);
+    rc->ch[10] = rc_from_crsf(buf->ch10);
+    rc->ch[11] = rc_from_crsf(buf->ch11);
+    rc->ch[12] = rc_from_crsf(buf->ch12);
+    rc->ch[13] = rc_from_crsf(buf->ch13);
+    rc->ch[14] = rc_from_crsf(buf->ch14);
+    rc->ch[15] = rc_from_crsf(buf->ch15);
+
+    if (is_32channels) {
+        rc->ch[16] = rc_from_crsf(buf->ch16);
+        rc->ch[17] = rc_from_crsf(buf->ch17);
+        rc->ch[18] = rc_from_crsf(buf->ch18);
+        rc->ch[19] = rc_from_crsf(buf->ch19);
+        rc->ch[20] = rc_from_crsf(buf->ch20);
+        rc->ch[21] = rc_from_crsf(buf->ch21);
+        rc->ch[22] = rc_from_crsf(buf->ch22);
+        rc->ch[23] = rc_from_crsf(buf->ch23);
+        rc->ch[24] = rc_from_crsf(buf->ch24);
+        rc->ch[25] = rc_from_crsf(buf->ch25);
+        rc->ch[26] = rc_from_crsf(buf->ch26);
+        rc->ch[27] = rc_from_crsf(buf->ch27);
+        rc->ch[28] = rc_from_crsf(buf->ch28);
+        rc->ch[29] = rc_from_crsf(buf->ch29);
+        rc->ch[30] = rc_from_crsf(buf->ch30);
+        rc->ch[31] = rc_from_crsf(buf->ch31);
+    }
+
+    return true;
+}
+
+
+bool tTxCrsf::fill_rcdata_0x17(tRcData* const rc)
+{
+tCrsfSubsetRcChannelsPacked_16x11bit* buf = (tCrsfSubsetRcChannelsPacked_16x11bit*)frame.payload;
+
+    if (frame.len != 25 || frame.payload[0] != 0x30) { // we only accept 0x17 with 11 bit, 16 channels, ch 16 start
+        return false;
+    }
+
+    rc->do_32channels = true;
+
+    rc->ch[16] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch0);
+    rc->ch[17] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch1);
+    rc->ch[18] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch2);
+    rc->ch[19] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch3);
+    rc->ch[20] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch4);
+    rc->ch[21] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch5);
+    rc->ch[22] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch6);
+    rc->ch[23] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch7);
+    rc->ch[24] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch8);
+    rc->ch[25] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch9);
+    rc->ch[26] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch10);
+    rc->ch[27] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch11);
+    rc->ch[28] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch12);
+    rc->ch[29] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch13);
+    rc->ch[30] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch14);
+    rc->ch[31] = rc_from_crsf_0x17_11bit(buf->ch_16x11bit.ch15);
+
+    return true;
 }
 
 
@@ -371,21 +462,66 @@ uint8_t tTxCrsf::crc8(const uint8_t* const buf)
 
 
 //-------------------------------------------------------
+// autobaud handling
+
+void tTxCrsf::autobaud_do(void)
+{
+#ifdef CRSF_AUTOBAUD
+
+    if (!autobaud.is_running) return;
+
+    uint32_t tnow_ms = millis32();
+
+    if (!autobaud.tlast_ms) { // this is the first occurrence, so skip
+        autobaud.tlast_ms = tnow_ms;
+    }
+
+    if ((tnow_ms - autobaud.tlast_ms) > CRSF_AUTOBAUD_MS) {
+        autobaud.tlast_ms = tnow_ms;
+        autobaud.cycles_cnt--;
+
+        for (uint8_t n = 0; n < CRSF_AUTOBAUD_PROTOCOLS_LEN; n++) {
+            INCc(autobaud.protocol_idx, CRSF_AUTOBAUD_PROTOCOLS_LEN); // try next protocol
+            if (pin5_set_protocol(crsf_baud[autobaud.protocol_idx], crsf_inverted[autobaud.protocol_idx])) break;
+        }
+        state = STATE_IDLE;
+        autobaud.channels_received_cnt = 0;
+    }
+
+    if (autobaud.channels_received_cnt > 5) autobaud.is_running = false; // disable, sufficiently many valid frames received
+    if (!autobaud.cycles_cnt) autobaud.is_running = false; // disable, too many tries
+#endif
+}
+
+
+//-------------------------------------------------------
 // CRSF user interface
 
-void tTxCrsf::Init(bool enable_flag)
+void tTxCrsf::Init(bool enable_flag, bool crsfbridge_enable_flag)
 {
     enabled = enable_flag;
+    crsfbridge_enabled = (enabled) ? crsfbridge_enable_flag : false;
 
     if (!enabled) return;
+
+    rx_len = 0;
+    rx_cnt = 0;
+    rx_tlast_us = 0;
+    rx_frame_received = false;
 
     tx_available = 0;
     tx_free = false;
 
     startup_passed = false;
 
+    autobaud.is_running = false;
+    autobaud.tlast_ms = 0;
+    autobaud.cycles_cnt = CRSF_AUTOBAUD_CYCLES;
+    autobaud.protocol_idx = 0;
+    autobaud.channels_received_cnt = 0;
+
     channels_received = false;
-    cmd_received = false;
+    mbridge_cmd_received = false;
     ping_device_received = false;
     cmd_modelid_received = false;
     cmd_bind_set_received = false;
@@ -405,13 +541,101 @@ void tTxCrsf::Init(bool enable_flag)
     msp_inav_status_sensor_status = 0;
     msp_inav_status_arming_flags = 0;
 
+    put_fifo.Init();
+    get_fifo.Init();
+    crsf_envelop_out_sequence = 0;
+    crsf_envelop_use_mb = true;
+    crsf_envelop_out_tlast_ms = 0;
+
     uart_rx_callback_ptr = &crsf_pin5_rx_callback;
     uart_tc_callback_ptr = &crsf_pin5_tc_callback;
 
     tPin5BridgeBase::Init();
+    tSerialBase::Init();
 
     // needs to come after tPin5BridgeBase::Init() since it calls txclock.Init()
-    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
+//    txclock.SetCC1Callback(crsf_pin5_cc1_callback);
+
+#ifdef CRSF_AUTOBAUD
+    autobaud.is_running = true; // start with doing autobaud
+    pin5_set_protocol(crsf_baud[autobaud.protocol_idx], crsf_inverted[autobaud.protocol_idx]);
+#endif
+}
+
+
+// polled in main loop
+void tTxCrsf::Do(void)
+{
+    if (!enabled) return;
+
+    CheckAndRescue();
+
+    // hook into here for autobaud
+    autobaud_do();
+
+#ifdef USE_DEBUG
+    static uint32_t tdiscarded_ms = 0;
+    uint32_t tnow_ms = millis32();
+    if (tnow_ms - tdiscarded_ms >= 1000 && discarded > 0) {
+        tdiscarded_ms = tnow_ms;
+        dbg.puts(u16toBCD_s(discarded));
+        dbg.puts(" bytes lost!\n");
+        discarded = 0;
+    }
+#endif
+
+
+    if (!rx_frame_received) return;
+    rx_frame_received = false;
+
+    if (frame.frame_id == CRSF_FRAME_ID_RC_CHANNELS) { // len = 24 or 25
+        // EdgeTx sets frame[0] = MODULE_ADDRESS
+        channels_received = true;
+    } else
+    if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) { // len = 25
+        channels_received = true;
+    } else
+    if (crsfbridge_enabled &&
+        frame.address == CRSF_ADDRESS_TRANSMITTER_MODULE && frame.frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE &&
+        frame.payload[0] == CRSF_MB_ENVELOPE_CMD) { // 0xEE, len, 0x81, 0x66
+        // since we don't do crc check, let's check consistency of len and data_size
+        if ((frame.len == frame.payload[2] + 5) && (frame.payload[2] <= CRSF_MB_ENVELOPE_DATA_LEN_MAX)) {
+            get_fifo.PutBuf(&frame.payload[3], frame.payload[2]);
+            crsf_envelop_use_mb = true;
+        }
+    } else
+    if (crsfbridge_enabled && frame.frame_id == CRSF_FRAME_ID_MAVLINK_ENVELOPE) {
+        // since we don't do crc check, let's check consistency of len and data_size
+        if ((frame.len == frame.payload[1] + 4) && (frame.payload[1] <= CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX)) {
+            get_fifo.PutBuf(&frame.payload[2], frame.payload[1]);
+            crsf_envelop_use_mb = false;
+        }
+    } else
+    if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_PING_DEVICES) { // len = 4
+        // EdgeTx sets frame[3] = BROADCAST_ADDRESS, frame[4] = RADIO_ADDRESS
+        ping_device_received = true;
+    } else
+    if (frame.address == CRSF_OPENTX_SYNC && frame.frame_id == CRSF_FRAME_ID_COMMAND &&
+        frame.cmd_id == CRSF_COMMAND_ID) {
+        switch (frame.cmd_data[0]) {
+        case CRSF_COMMAND_SET_BIND_MODE: // len = 7
+            // EdgeTx sets frame[3] = MODULE_ADDRESS or RECEIVER_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
+            if (frame.cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_set_received = true;
+            break;
+        case CRSF_COMMAND_CANCEL_BIND_MODE: // len = 7
+            // not used by EdgeTx
+            if (frame.cmd_dest_address == CRSF_ADDRESS_TRANSMITTER_MODULE) cmd_bind_cancel_received = true;
+            break;
+        case CRSF_COMMAND_SET_MODEL_SELECTION: // len = 8
+            // OpenTx/EdgeTx sets frame[3] = MODULE_ADDRESS, frame[4] = RADIO_ADDRESS, frame[5] = SUBCOMMAND_CRSF
+            cmd_modelid_received = true;
+            cmd_modelid_value = frame.cmd_data[1];
+            break;
+        }
+    } else
+    if (frame.address == CRSF_ADDRESS_TRANSMITTER_MODULE && frame.frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
+        mbridge_cmd_received = true;
+    }
 }
 
 
@@ -420,19 +644,21 @@ bool tTxCrsf::ChannelsUpdated(tRcData* const rc)
 {
     if (!enabled) return false;
 
-    CheckAndRescue();
-
     if (!channels_received) return false;
     channels_received = false;
 
     // check crc before we accept it
-    uint8_t crc = crc8(frame);
-    if (crc != frame[frame[1] + 1]) return false;
+    uint8_t crc = crc8(frame.c);
+    if (crc != frame.c[frame.len + 1]) return false;
+
+    if (frame.frame_id == CRSF_FRAME_ID_SUBSET_RC_CHANNELS_PACKED) {
+        return fill_rcdata_0x17(rc);
+    }
 
     startup_passed = true;
+    autobaud.channels_received_cnt++;
 
-    fill_rcdata(rc);
-    return true;
+    return fill_rcdata(rc);
 }
 
 
@@ -446,6 +672,7 @@ bool tTxCrsf::TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms)
     tx_free = false;
 
     if (!startup_passed) return false; // not yet ready to send CRSF frames to the radio
+    if (autobaud.is_running) return false; // don't send any telemetry while in startup sequence
 
     // check if we should restart telemetry sequence
     if (telemetry_start_next_tick) {
@@ -520,33 +747,17 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
         return true;
     }
 
-    if (!cmd_received) return false;
-    cmd_received = false;
-
-    // TODO: we could check crc if we wanted to
-
-    tCrsfFrame* header = (tCrsfFrame*)frame;
-
-    // mBridge emulation
-    if (header->address == CRSF_ADDRESS_TRANSMITTER_MODULE &&
-        header->frame_id == CRSF_FRAME_ID_MBRIDGE_TO_MODULE) {
-        *cmd = TXCRSF_CMD_MBRIDGE_IN;
+    if (mbridge_cmd_received) {
+        mbridge_cmd_received = false;
+        // TODO: we could check crc if we wanted to
+        mbridge.ParseCrsfFrame(frame.payload, frame.len - 2);
+        uint8_t mbcmd;
+        if (!mbridge.CommandReceived(&mbcmd)) return false; // this should not happen, right
+        *cmd = mbcmd;
         return true;
     }
 
     return false;
-}
-
-
-uint8_t* tTxCrsf::GetPayloadPtr(void)
-{
-    return ((tCrsfFrame*)frame)->payload;
-}
-
-
-uint8_t tTxCrsf::GetPayloadLen(void)
-{
-    return ((tCrsfFrame*)frame)->len - 2;
 }
 
 
@@ -602,6 +813,41 @@ uint8_t len;
     for (uint8_t i = 0; i < CRSF_ITEMS_LEN; i++) {
         if (!crsf_status[i].send_tlast_ms) continue;
         if ((tnow_ms - crsf_status[i].send_tlast_ms) > CRSF_REFRESH_TIME_MS) { crsf_status[i].updated = true; }
+    }
+
+    // MAVLink envelope
+    uint16_t available = put_fifo.Available();
+    if (crsfbridge_enabled && available && (available > 20 || (tnow_ms - crsf_envelop_out_tlast_ms) > 9)) {
+        if (crsf_envelop_use_mb) {
+            crsf_envelope_out.mb.cmd = CRSF_MB_ENVELOPE_CMD;
+            crsf_envelope_out.mb.seq = crsf_envelop_out_sequence;
+            crsf_envelope_out.mb.data_size = 0;
+            for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) { // 57
+                if (!put_fifo.Available()) break;
+                crsf_envelope_out.mb.data[i] = put_fifo.Get();
+                crsf_envelope_out.mb.data_size++;
+            }
+            send_frame(
+                CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
+                &(crsf_envelope_out),
+                crsf_envelope_out.mb.data_size + 3);
+        } else {
+            crsf_envelope_out.mavlink.total_chunks = 0;
+            crsf_envelope_out.mavlink.current_chunk = crsf_envelop_out_sequence;
+            crsf_envelope_out.mavlink.data_size = 0;
+            for (uint8_t i = 0; i < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX; i++) { // 58
+                if (!put_fifo.Available()) break;
+                crsf_envelope_out.mavlink.data[i] = put_fifo.Get();
+                crsf_envelope_out.mavlink.data_size++;
+            }
+            send_frame(
+                CRSF_FRAME_ID_MAVLINK_ENVELOPE, // 0xEA, len, 0xAA
+                &(crsf_envelope_out),
+                crsf_envelope_out.mavlink.data_size + 2);
+        }
+        crsf_envelop_out_sequence++;
+        crsf_envelop_out_tlast_ms = tnow_ms;
+        return; // send only one per slot
     }
 
     // one by one, order by desired priority
@@ -681,15 +927,15 @@ void tTxCrsf::handle_mavlink_msg_system_time(fmav_system_time_t* const payload)
     // SYSTEM_TIME.time_unix_usec is != 0 if AP::rtc() gives a value, so not GPS time strictly
     if (payload->time_unix_usec == 0) return; // not available
 
-    time_t time_unix = payload->time_unix_usec / 1000000; // standard unix time is in seconds since 1970
-    struct tm* time_info = gmtime(&time_unix); // UTC
+    tDateTime dt;
+    datetime_from_unix_time(&dt, payload->time_unix_usec / 1000000); // standard unix time is in seconds since 1970, UTC
 
-    gps_time.year = CRSF_REV_U16(time_info->tm_year + 1900); // EdgeTx since v2.12.?=? -> Date
-    gps_time.month = time_info->tm_mon + 1;
-    gps_time.day = time_info->tm_mday;
-    gps_time.hour = time_info->tm_hour;
-    gps_time.minute = time_info->tm_min;
-    gps_time.second = time_info->tm_sec;
+    gps_time.year = CRSF_REV_U16(dt.year); // EdgeTx since v2.12.?=? -> Date
+    gps_time.month = dt.month;
+    gps_time.day = dt.day;
+    gps_time.hour = dt.hour;
+    gps_time.minute = dt.minute;
+    gps_time.second = dt.second;
     gps_time.millisecond = CRSF_REV_U16((payload->time_unix_usec % 1000000) / 1000);
 
     crsf_status[CRSF_ITEM_GPS_TIME].updated = true;
@@ -761,7 +1007,7 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
     gps.gps_heading = CRSF_REV_U16(payload->hdg);
 
     // take the ground speed from VFR_HUD
-    if (vfr_hud_groundspd_mps != NAN) {
+    if (!isnan(vfr_hud_groundspd_mps)) {
         gps.groundspeed = CRSF_REV_U16(10.0f * vfr_hud_groundspd_mps * 3.6f); // TBS docs say 'km/h / 100' but seems to be 'km/h / 10'
     } else {
         gps.groundspeed = 0;
@@ -1093,23 +1339,24 @@ void tTxCrsf::TelemetryHandleMspMsg(msp_message_t* const msg)
 // somehow the OpenTx naming/usage doesn't make fully sense
 // so we "correct" things here such that the names make sense, irrespective of uplink/downlink notation
 
+// 26.Sep.2026: all stats reworked according to EdgeTx v2.12.4
+
 void tTxCrsf::SendLinkStatistics(void)
 {
 tCrsfLinkStatistics clstats;
 
-    clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);           // OpenTX -> "1RSS"
-    clstats.uplink_rssi2 = 0; // we don't know it                           // OpenTX -> "2RSS"
-    clstats.uplink_LQ = stats.GetReceivedLQ_rc(); // this sets main rssi in OpenTx, 0 = resets main rssi   // OpenTx -> "RQly"
-    clstats.uplink_snr = 0; // we don't know it                             // OpenTx -> "RSNR"
-    clstats.active_antenna = stats.received_antenna;                        // OpenTx -> "ANT"
-    clstats.mode = crsf_cvt_mode(Config.Mode);                              // OpenTx -> "RFMD"
-    clstats.uplink_transmit_power = crsf_cvt_power(                         // OpenTx -> "TPw2"
+    clstats.uplink_rssi1 = crsf_cvt_rssi_tx(stats.received_rssi);     // EdgeTX -> "1RSS"   dBm
+    clstats.uplink_rssi2 = UINT8_MAX;                                 // EdgeTX -> "2RSS"   dBm,  we don't know it
+    clstats.uplink_LQ = stats.GetReceivedLQ_rc();                     // EdgeTx -> "RQly"   %     this sets main rssi, 0 = resets main rssi
+    clstats.uplink_snr = UINT8_MAX;                                   // EdgeTx -> "RSNR"   dB,   we don't know it
+    clstats.active_antenna = stats.received_antenna;                  // EdgeTx -> "ANT"
+    clstats.mode = crsf_cvt_mode(Config.Mode);                        // EdgeTx -> "RFMD"
+    clstats.uplink_transmit_power = crsf_cvt_power(                   // EdgeTx -> "TPWR"   mW    ?OpenTx -> "TPw2"
         SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm())
         );
-
-    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());          // OpenTx -> "TRSS"
-    clstats.downlink_LQ = stats.GetLQ_serial();                             // OpenTx -> "TQly"
-    clstats.downlink_snr = stats.GetLastSnr();                              // OpenTx -> "TSNR"
+    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());    // EdgeTx -> "TRSS"   dBm
+    clstats.downlink_LQ = stats.GetLQ_serial();                       // EdgeTx -> "TQly"   %
+    clstats.downlink_snr = stats.GetLastSnr();                        // EdgeTx -> "TSNR"   dB
 
     // misuse 2RSS for reporting the MAVLink packet link quality
     clstats.uplink_rssi2 = stats.GetMavlinkLQ();
@@ -1118,38 +1365,39 @@ tCrsfLinkStatistics clstats;
 }
 
 
-void tTxCrsf::SendLinkStatisticsTx(void)
-{
-tCrsfLinkStatisticsTx clstats;
-
-    clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());                  // ignored by OpenTx
-    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(                          // OpenTx -> "TRSP" // ??? uplink but "T" ??
-        stats.GetLastRssi(),
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
-        );
-    clstats.uplink_LQ = stats.GetLQ_serial();                                     // ignored by OpenTx
-    clstats.uplink_snr = stats.GetLastSnr();                                      // ignored by OpenTx
-    clstats.downlink_transmit_power = UINT8_MAX; // we don't know it              // OpenTx -> "RPWR"
-    clstats.uplink_fps = crsf_cvt_fps(Config.Mode); // *10 in OpenTx              // OpenTx -> "TFPS"
-
-    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);
-}
-
-
 void tTxCrsf::SendLinkStatisticsRx(void)
 {
 tCrsfLinkStatisticsRx clstats;
 
-    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);                // ignored by OpenTx
-    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(                        // OpenTx -> "RRSP" // ??? downlink but "R" ??
+    clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);    // ignored by EdgeTx
+    clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(            // EdgeTx -> "RRSP"   %     ?downlink but "R"?
         stats.received_rssi,
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
+        SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm())
         );
-    clstats.downlink_LQ = stats.GetReceivedLQ_rc();                               // ignored by OpenTx
-    clstats.downlink_snr = 0; // we don't know it                                 // ignored by OpenTx
-    clstats.uplink_transmit_power = SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());// OpenTx -> "TPWR"
+    clstats.downlink_LQ = stats.GetReceivedLQ_rc();                   // ignored by EdgeTx
+    clstats.downlink_snr = UINT8_MAX;                                 // ignored by EdgeTx,       we don't know it
+    clstats.uplink_transmit_power =                                   // EdgeTx -> "TPWR"   dBm
+        SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());
 
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS_RX, &clstats, CRSF_LINK_STATISTICS_RX_LEN);
+}
+
+
+void tTxCrsf::SendLinkStatisticsTx(void)
+{
+tCrsfLinkStatisticsTx clstats;
+
+    clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());      // ignored by EdgeTx
+    clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(              // EdgeTx -> "TRSP"   %     ?uplink but "T"?
+        stats.GetLastRssi(),
+        SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm())
+        );
+    clstats.uplink_LQ = stats.GetLQ_serial();                         // ignored by EdgeTx
+    clstats.uplink_snr = stats.GetLastSnr();                          // ignored by EdgeTx
+    clstats.downlink_transmit_power = UINT8_MAX;                      // EdgeTx -> "RPWR"   dBm,  we don't know it
+    clstats.uplink_fps = crsf_cvt_fps(Config.Mode);                   // EdgeTx -> "TFPS"   Hz,   *10
+
+    send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);
 }
 
 
@@ -1192,33 +1440,126 @@ void tTxCrsf::SendLinkStatisticsAll(void)
 uint8_t data[CRSF_BUF_SIZE];
 uint8_t len;
 
-    SendLinkStatistics();
+    SendLinkStatistics(); // 3 + 10 + 1 = 14
     memcpy(data, tx_frame, tx_available);
     len = tx_available;
 
-    SendLinkStatisticsTx();
+    SendLinkStatisticsTx(); // 3 + 6 + 1 = 10
     memcpy(data + len, tx_frame, tx_available);
     len += tx_available;
 
-    SendLinkStatisticsRx();
+    SendLinkStatisticsRx(); // 3 + 5 + 1 = 9
     memcpy(data + len, tx_frame, tx_available);
     len += tx_available;
 
-    memcpy(tx_frame, data, len);
+    SendMbStatistics(); // 3 + 18 + 1 = 22
+    memcpy(data + len, tx_frame, tx_available);
+    len += tx_available;
+
+    memcpy(tx_frame, data, len); // 14 + 10 + 9 + 22 = 55
     tx_available = len;
 }
 
 
+//-------------------------------------------------------
+// CRSF Mb Statistics
+
+CRSF_PACKED(
+typedef struct
+{
+    uint8_t cmd; // always 0x65
+
+    uint8_t connected : 1;
+    uint8_t binding : 1;
+    uint8_t dualband : 1;
+    uint8_t rx_available : 1;
+    uint8_t privacy : 2;
+    uint8_t spare : 2;
+
+    uint8_t rx_actual_diversity : 4;
+    uint8_t tx_actual_diversity : 4;
+
+    uint8_t receive_antenna : 1;
+    uint8_t transmit_antenna : 1;
+    uint8_t receiver_receive_antenna : 1;
+    uint8_t receiver_transmit_antenna : 1;
+    uint8_t spare2 : 4;
+
+    int8_t rssi1_instantaneous;
+    int8_t rssi2_instantaneous;
+    int8_t receiver_rssi_instantaneous;
+
+    uint8_t LQ_serial;
+    uint8_t receiver_LQ_rc;
+    uint8_t receiver_LQ_serial;
+
+    uint32_t bytes_transmitted : 14;
+    uint32_t bytes_received : 14;
+    uint32_t spare3 : 4;
+
+    uint32_t fhss1_curr_i : 5;
+    uint32_t fhss1_cnt : 5;
+    uint32_t fhss2_curr_i : 5;
+    uint32_t fhss2_cnt : 5;
+    uint32_t spare4 : 12;
+}) tCrsfMbStatistics; // 18 bytes
+
+
+void tTxCrsf::SendMbStatistics(void)
+{
+tCrsfMbStatistics lstats = {};
+
+    lstats.cmd = 0x65;
+
+    lstats.connected = connected();
+    lstats.binding = bind.IsInBind();
+    lstats.dualband = Config.IsDualBand;
+    lstats.rx_available = SetupMetaData.rx_available;
+    lstats.privacy = Setup.Common[Config.ConfigId].Privacy;
+
+    lstats.rx_actual_diversity = SetupMetaData.rx_actual_diversity;
+    lstats.tx_actual_diversity = Config.Diversity;
+
+    lstats.receive_antenna = stats.last_antenna;
+    lstats.transmit_antenna = stats.last_transmit_antenna;
+    lstats.receiver_receive_antenna = stats.received_antenna;
+    lstats.receiver_transmit_antenna = stats.received_transmit_antenna;
+
+    lstats.rssi1_instantaneous = stats.last_rssi1;
+    lstats.rssi2_instantaneous = stats.last_rssi2;
+    lstats.receiver_rssi_instantaneous = stats.received_rssi;
+
+    lstats.LQ_serial = stats.GetLQ_serial();
+    lstats.receiver_LQ_rc = stats.GetReceivedLQ_rc();
+    lstats.receiver_LQ_serial = stats.received_LQ_serial;
+
+    lstats.bytes_transmitted = stats.bytes_transmitted.GetBytesPerSec();
+    lstats.bytes_received = stats.bytes_received.GetBytesPerSec();
+
+    lstats.fhss1_curr_i = fhss.GetCurrI();
+    lstats.fhss1_cnt = fhss.Cnt();
+    lstats.fhss2_curr_i = fhss.GetCurrI2();
+    lstats.fhss2_cnt = fhss.Cnt2();
+
+    send_frame(CRSF_FRAME_ID_MBRIDGE_TO_RADIO, &lstats, sizeof(tCrsfMbStatistics));
+}
+
+
+//-- check some sizes
+
+STATIC_ASSERT((int)TXCRSF_CMD_MODELID_SET > (int)MBRIDGE_CMD_MAX, "TXCRSF_CMD_xxx and MBRIDGE_CMD_xxx overlapp")
+
+
 #else
 
-class tTxCrsf
+class tTxCrsf : public tSerialBase
 {
   public:
-    void Init(bool enable_flag) {}
-    bool Update(tRcData* const rc) { return false;}
+    void Init(bool enable_flag, bool crsfbridge_enable_flag) {}
+    void Do(void) {}
+    bool Update(tRcData* const rc) { return false; }
     void TelemetryStart(void) {}
-    void TelemetryTick_ms(void) {}
-    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms);
+    bool TelemetryUpdate(uint8_t* const task, uint16_t frame_rate_ms) { return false; }
     void TelemetryHandleMavlinkMsg(fmav_message_t* const msg) {}
     void TelemetryHandleMspMsg(msp_message_t* const msg) {}
 

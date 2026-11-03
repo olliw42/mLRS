@@ -26,7 +26,8 @@
 typedef enum {
     FRAME_TYPE_TX = 0x00,
     FRAME_TYPE_RX = 0x01,
-    FRAME_TYPE_TX_RX_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
+    FRAME_TYPE_CMD = 0x02, // these commands use the normal Tx/Rx frames, with repurposed payload however
+    FRAME_TYPE_CMD_ENCRYPTED = 0x03,
 } FRAME_TYPE_ENUM;
 
 
@@ -50,8 +51,10 @@ typedef struct
 
 
 #define FRAME_TX_RX_HEADER_LEN  7
-#define FRAME_TX_RCDATA1_LEN    6
-#define FRAME_TX_RCDATA2_LEN    10
+#define FRAME_TX_RC1_V1_LEN     6
+// not used #define FRAME_TX_RC2_V1_LEN   10
+#define FRAME_TX_RC1_V2_LEN     11
+// not used #define FRAME_TX_RC2_V2_LEN   5
 #define FRAME_TX_PAYLOAD_LEN    64 // 82 - 10-6(rcdata) - 2(crc) = 64
 #define FRAME_RX_PAYLOAD_LEN    82
 
@@ -61,7 +64,8 @@ typedef struct
 {
     uint32_t seq_no : 3;
     uint32_t ack : 1;
-    uint32_t frame_type : 4;
+    uint32_t frame_type : 3;
+    uint32_t is_32channels : 1;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
     uint32_t fhss_index_band : 1; // fhss index is for band 0 or 1
@@ -78,7 +82,8 @@ typedef struct
 {
     uint32_t seq_no : 3;
     uint32_t ack : 1;
-    uint32_t frame_type : 4;
+    uint32_t frame_type : 3;
+    uint32_t spare1 : 1;
     uint32_t antenna : 1;
     uint32_t rssi_u7 : 7;
     uint32_t LQ_rc : 7; // available only for Rx->Tx frame, not for Tx->Rx
@@ -91,6 +96,19 @@ typedef struct
 
 //-- Tx Frame ----------
 
+// for reminder:
+// 11 bit: 1 .. 172 .. 1024 .. 1876 .. 2047
+//         pwm = ((int32_t)x - 1024) * 500 / 852 + 1500 (ca= x * 500 / 852 + 900, is slightly different)
+//             = 899us .. 1000us .. 1500us .. 2000us .. 2100us
+//             = -120% .. -100% .. 0% .. 100% .. 120%
+// 9-pos:  0 .. 4 .. 8
+//         see theory of operation
+//         rc  =   1,  359,  581,  802, 1024, 1245, 1467, 1688, 2047
+//         pwm = 900, 1109, 1240, 1369, 1500, 1629, 1759, 1889, 2100
+// 3-pos:  0 .. 1 .. 2
+//         rc  = 0, 1024, 2047
+//         pwm = 899us .. 1500us .. 2100us
+
 PACKED(
 typedef struct
 {
@@ -100,12 +118,7 @@ typedef struct
     uint16_t ch3  : 11;
     uint16_t ch12 :  2; // 0 .. 1 .. 2, 2 bits, 3-way
     uint16_t ch13 :  2;
-}) tFrameRcData1; // 6 bytes
-
-
-PACKED(
-typedef struct
-{
+    uint16_t crc1;
     uint16_t ch4  : 11; // 0 .. 1024 .. 2047, 11 bits
     uint16_t ch5  : 11;
     uint16_t ch6  : 11;
@@ -116,7 +129,27 @@ typedef struct
     uint8_t ch9;        // 0 .. 128 .. 255, 8 bits
     uint8_t ch10;       // 0 .. 128 .. 255, 8 bits
     uint8_t ch11;       // 0 .. 128 .. 255, 8 bits
-}) tFrameRcData2; // 10 bytes
+}) tFrameRcDataV1; // 6 bytes rc1 + 2 bytes crc1 + 10 bytes rc2 = 18 bytes
+
+
+PACKED(
+typedef struct
+{
+    uint16_t ch0  : 11; // 0 .. 1024 .. 2047, 11 bits
+    uint16_t ch1  : 11;
+    uint16_t ch2  : 11;
+    uint16_t ch3  : 11;
+    uint16_t ch4  : 11;
+    uint16_t ch5  : 11;
+    uint16_t ch6  : 11;
+    uint16_t ch7  : 11;
+    uint16_t crc1;
+    uint8_t ch8_12;     // 0 .. 128 .. 255, 8 bits.  interlaced with 1:2
+    uint8_t ch9_13;     // 0 .. 128 .. 255, 8 bits
+    uint8_t ch10_14;    // 0 .. 128 .. 255, 8 bits
+    uint8_t ch11_15;    // 0 .. 128 .. 255, 8 bits
+    uint8_t ch16x_20x_24x_28x; // 1x 9-pos and 3x 3-pos, interlaced with 1:4, = ch16 * 1 + ch20 * 9 + ch24 * 9*3 + ch28 * 9*3*3
+}) tFrameRcDataV2; // 11 bytes rc1 + 2 bytes crc1 + 5 bytes rc2 interlaced = 18 bytes
 
 
 PACKED(
@@ -124,9 +157,10 @@ typedef struct
 {
     uint16_t sync_word; // 2 bytes
     tTxFrameStatus status; // 5 bytes
-    tFrameRcData1 rc1; // 6 bytes
-    uint16_t crc1;
-    tFrameRcData2 rc2; // 10 bytes
+    PACKED(union{
+        tFrameRcDataV1 rcV1; // 6 bytes + 2 bytes + 10 bytes
+        tFrameRcDataV2 rcV2; // 11 bytes + 2 bytes + 5 bytes
+    });
     uint8_t payload[64]; // = FRAME_TX_PAYLOAD_LEN
     uint16_t crc;
 }) tTxFrame; // 91 bytes
@@ -153,20 +187,24 @@ PACKED(
 typedef struct
 {
     uint64_t bind_signature; // 8 bytes // different for Tx and Rx
-    uint8_t seq_no : 3;
+    uint8_t seq_no : 3; // 1 byte
     uint8_t ack : 1;
-    uint8_t frame_type : 4; // 1 byte // not used currently
+    uint8_t frame_type : 3;
+    uint8_t spare : 1;
 
     uint8_t connected : 1;
-    uint8_t spare : 7;
+    uint8_t spare2 : 7;
 
     char BindPhrase_6[6];
     uint8_t FrequencyBand: 4; // required for bind to know
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare1 : 4;
-    uint8_t spare2[71];
+    uint8_t spare3[51];
+
+    uint8_t tx_uid[12]; // 12 bytes = 96 bits
+    uint64_t tx_random; //  8 bytes = 64 bits
 
     uint16_t crc; // 2 bytes
 }) tTxBindFrame; // 91 bytes
@@ -176,17 +214,20 @@ PACKED(
 typedef struct
 {
     uint64_t bind_signature; // 8 bytes // different for Tx and Rx
-    uint8_t seq_no : 3;
+    uint8_t seq_no : 3; // 1 byte
     uint8_t ack : 1;
-    uint8_t frame_type : 4; // 1 byte // not used currently
+    uint8_t frame_type : 3;
+    uint8_t spare : 1;
 
     uint8_t connected : 1;
-    uint8_t spare : 7;
+    uint8_t spare2 : 7;
 
     uint32_t firmware_version;
     char device_name_20[20];
 
-    uint8_t spare2[55];
+    uint8_t spare3[43];
+
+    uint8_t rx_uid[12]; // 12 bytes = 96 bits
 
     uint16_t crc; // 2 bytes
 }) tRxBindFrame; // 91 bytes
@@ -196,18 +237,26 @@ typedef struct
 // Cmd & SetupData frames
 // these are just normal Tx and Rx frames, with special payloads though
 //-------------------------------------------------------
+// Tx -> Rx
+// CMD_GET_RX_SETUPDATA           only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
+// CMD_GET_RX_SETUPDATA_WRELOAD   only 1 cmd byte                   -> response from Rx with RX_SETUPDATA
+// CMD_GET_RX_SETUPDATA_STARTUP   1 cmd byte + 18 bytes nonce&MAC   -> response from Rx with RX_SETUPDATA
+// CMD_SET_RX_PARAMS              tTxCmdFrameRxParams = 64-12 bytes -> response from Rx with RX_SETUPDATA
+// CMD_STORE_RX_PARAMS            only 1 cmd byte                   -> no response, rx reboots
+// Rx -> Tx
+// CMD_RX_SETUPDATA               tRxCmdFrameRxSetupData = 82 bytes
 
 typedef enum {
     FRAME_CMD_NONE = 0,
-    FRAME_CMD_RX_REBOOT,
-    FRAME_CMD_RX_BIND,
-
-    // these commands use the normal Tx/Rx frames, with re-purposed payload however
-    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata -> response with RX_SETUPDATA
+//not used    FRAME_CMD_RX_REBOOT,  // tx -> rx, rx reboots
+//not used    FRAME_CMD_RX_BIND,    // tx -> rx, rx goes into bind mode
+    // some of these commands have additional data
+    FRAME_CMD_GET_RX_SETUPDATA = 32,    // tx -> rx, ask for parameters & metadata
     FRAME_CMD_RX_SETUPDATA,             // rx -> tx, return parameters & metadata
-    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters -> response with RX_SETUPDATA
-    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots
-    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters -> response with RX_SETUPDATA
+    FRAME_CMD_SET_RX_PARAMS,            // tx -> rx, set parameters
+    FRAME_CMD_STORE_RX_PARAMS,          // tx -> rx, store parameters, reboots (no extra data)
+    FRAME_CMD_GET_RX_SETUPDATA_WRELOAD, // tx -> rx, reload parameters
+    FRAME_CMD_GET_RX_SETUPDATA_STARTUP, // tx -> rx, ask for param & metadata, send session random
 } FRAME_CMD_ENUM;
 
 
@@ -225,7 +274,7 @@ typedef struct
     uint8_t SerialBaudrate : 4;
     uint8_t SerialLinkMode : 4;
     uint8_t SendRadioStatus : 4;
-    uint8_t spare1 : 4;
+    uint8_t spare : 4;
     uint8_t SendRcChannels : 4;
     uint8_t spare2 : 4;
     uint8_t OutLqChannelMode : 4;
@@ -243,7 +292,8 @@ typedef struct
 }) tCmdFrameRxParameters; // 24 bytes
 
 
-// send from Rx as response to GET_RX_SETUPDATA
+// send from Rx as response to commands GET_RX_SETUPDATA, SET_RX_PARAMS, GET_RX_SETUPDATA_WRELOAD, GET_RX_SETUPDATA_STARTUP
+// Note: This structure CANNOT be shortened by 12 bytes for nonce and MAC, and is thus not encryptable.
 PACKED(
 typedef struct
 {
@@ -265,8 +315,9 @@ typedef struct
     uint16_t FrequencyBand_allowed_mask_XXX; // TODO
     uint8_t Mode_allowed_mask_XXX; // TODO
     uint8_t Ortho_allowed_mask_XXX; // TODO
+    uint8_t Privacy_allowed_mask_XXX; // TODO
 
-    uint8_t spare2[2];
+    uint8_t spare2;
 
     int16_t Power_list[8];
     uint8_t Diversity_allowed_mask;
@@ -278,6 +329,11 @@ typedef struct
 
 
 // send from Tx to do SET_RX_PARAMS
+// Note: The strange arrangement is to allow for encryption.
+// Unfortunately, the version and layout fields were placed at the end of the structure.
+// This prevents reserving the up to 12 bytes required for nonce and MAC.
+// Hence, on the Tx side these data are copied into the copy fields, and on the Rx side
+// are moved for privacy > 0 back to the end. This maintains backwards compatibility.
 PACKED(
 typedef struct
 {
@@ -289,16 +345,21 @@ typedef struct
     uint8_t FrequencyBand : 4;
     uint8_t Mode : 4;
     uint8_t Ortho : 4;
+    uint8_t Privacy : 4;
 
-    uint8_t spare1 : 4;
     uint8_t spare2[2];
 
     tCmdFrameRxParameters RxParams; // 24 bytes
 
-    uint8_t spare3[24];
+    uint8_t spare3[12];
 
-    uint16_t tx_firmware_version_u16; // 16.64.64
-    uint16_t tx_setup_layout_u16; // 16.64.64
+    uint16_t tx_firmware_version_u16_new; // 16.64.64
+    uint16_t tx_setup_layout_u16_new; // 16.64.64
+
+    //--
+    uint8_t reserved_for_crypto[8]; // do not use
+    uint16_t tx_firmware_version_u16_old; // 16.64.64
+    uint16_t tx_setup_layout_u16_old; // 16.64.64
 }) tTxCmdFrameRxParams; // 64 bytes
 
 

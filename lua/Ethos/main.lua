@@ -1,7 +1,7 @@
 --[[
   Copyright (C) 2025 Rob Thomson
   GPLv3 — https://www.gnu.org/licenses/gpl-3.0.en.html
-  version 7. Apr. 2026
+  version 10. Oct. 2027
 ]]--
 
 local SYSTEM_TOOL = false  -- set to true to force system tool registration
@@ -453,6 +453,7 @@ local function paramGroupByPrefix(name)
   if name:match("^[Tt][Xx]%f[%A]") then return "tx" end
   if name:match("^[Mm]ode%f[%A]") then return "tx" end
   if name:match("^[Rr][Ff]%f[%A]") then return "tx" end
+  if name:match("^[Pp]rivacy%f[%A]") then return "tx" end
 
   -- Bind related prefixes
   if name:match("^[Bb]ind%f[%A]") then return "bind" end
