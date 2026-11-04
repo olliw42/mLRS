@@ -197,6 +197,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
+        _spi_enable_isr(false); // needs isr protection for single spi devices
+
 /*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
@@ -205,6 +207,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         // it seems that rxStartBufferPointer is always 0, so we assume that
         ReadBuffer(0, data, len);
+
+        _spi_enable_isr(true);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
@@ -237,8 +241,12 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
+        _spi_enable_isr(false); // needs isr protection for single spi devices
+
         int16_t rssi;
         Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
+
+        _spi_enable_isr(true);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
@@ -253,8 +261,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void HandleAFC(void)
     {
+        _spi_enable_isr(false); // needs isr protection for single spi devices
         AfcDo();
+        _spi_enable_isr(true);
     }
+
+    //-- SPI interface
+
+    virtual void _spi_enable_isr(bool enable) {};
 
     //-- RF power interface
 
@@ -387,6 +401,13 @@ class Sx127xDriver : public Sx127xDriverCommon
     {
         spi_write(dataout, len);
     }
+
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    void _spi_enable_isr(bool enable) override
+    {
+        sx_enable_isr(enable);
+    }
+#endif
 
     //-- RF power interface
 
@@ -536,6 +557,11 @@ class Sx127xDriver2 : public Sx127xDriverCommon
     void SpiWrite(uint8_t* dataout, uint8_t len) override
     {
         spi_write(dataout, len);
+    }
+
+    void _spi_enable_isr(bool enable) override
+    {
+        sx2_enable_isr(enable);
     }
 #endif
 

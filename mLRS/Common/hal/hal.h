@@ -39,6 +39,7 @@ following for the tx-hal and rx-hal files.
 In tx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
+#define DEVICE_HAS_DIVERSITY_SINGLE_SPI   // board supports diversity on a single SPI bus
 #define DEVICE_HAS_JRPIN5           // board has a pin for JR bay Pin5/SPort
 #define DEVICE_HAS_IN               // board has an IN port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_IN_NORMAL        // board has an IN port, which supports only normal UART signals
@@ -75,7 +76,7 @@ In tx-hal files:
 In rx-hal files:
 
 #define DEVICE_HAS_DIVERSITY        // board supports diversity
-#define DEVICE_HAS_DIVERSITY_SINGLE_SPI // board supports diversity on a single SPI bus
+#define DEVICE_HAS_DIVERSITY_SINGLE_SPI   // board supports diversity on a single SPI bus
 #define DEVICE_HAS_OUT              // board has an OUT port, which supports both normal and inverted UART signals
 #define DEVICE_HAS_OUT_NORMAL       // board has an OUT port, which supports only normal UART signals
 #define DEVICE_HAS_OUT_INVERTED     // board has an OUT port, which supports only inverted UART signals
@@ -523,6 +524,17 @@ extern "C" { void delay_ms(uint16_t ms); }
 
 #if !defined DEVICE_HAS_FIVEWAY && !defined USE_DISPLAY
   void fiveway_init(void) {}
+#endif
+
+// should be elsewhere, do it here for the moment
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+    static portMUX_TYPE spi_mux = portMUX_INITIALIZER_UNLOCKED;
+    void sx_enable_isr(bool enable) {
+        if (enable) portEXIT_CRITICAL_SAFE(&spi_mux); else portENTER_CRITICAL_SAFE(&spi_mux);
+    }
+    void sx2_enable_isr(bool enable) {
+        if (enable) portEXIT_CRITICAL_SAFE(&spi_mux); else portENTER_CRITICAL_SAFE(&spi_mux);
+    }
 #endif
 
 
