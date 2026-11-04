@@ -532,9 +532,6 @@ extern "C" { void delay_ms(uint16_t ms); }
     void sx_enable_isr(bool enable) {
         if (enable) portEXIT_CRITICAL_SAFE(&spi_mux); else portENTER_CRITICAL_SAFE(&spi_mux);
     }
-    void sx2_enable_isr(bool enable) {
-        if (enable) portEXIT_CRITICAL_SAFE(&spi_mux); else portENTER_CRITICAL_SAFE(&spi_mux);
-    }
 #endif
 
 

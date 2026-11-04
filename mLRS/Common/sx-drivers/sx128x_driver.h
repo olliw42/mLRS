@@ -557,7 +557,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
 
     void _spi_enable_isr(bool enable) override
     {
-        sx2_enable_isr(enable);
+        sx_enable_isr(enable);
     }
 #endif
 

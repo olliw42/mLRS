@@ -619,7 +619,7 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
 
     void _spi_enable_isr(bool enable) override
     {
-        sx2_enable_isr(enable);
+        sx_enable_isr(enable);
     }
 #endif
 
