@@ -400,12 +400,12 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         memcpy(data, rx_buf, rx_buf_pos);
         len -= rx_buf_pos;
 
-        _spi_enable_isr(false); // needs isr protection for single spi devices
+        EnableIsr(false); // needs isr protection for single spi devices
 
         ReadRadioRxFifo(data + rx_buf_pos, len);
         ClearRxFifo();
 
-        _spi_enable_isr(true);
+        EnableIsr(true);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -435,7 +435,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     {
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
-        _spi_enable_isr(false); // needs isr protection for single spi devices
+        EnableIsr(false); // needs isr protection for single spi devices
 
         int16_t rssi, rssi_s;
         switch (mode()) {
@@ -451,7 +451,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
             GetPacketStatusFSK(&rssi, &rssi_s, Snr);
         }
 
-        _spi_enable_isr(true);
+        EnableIsr(true);
 
         rssi = -(rssi / 2);
 
@@ -463,9 +463,9 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     void HandleAFC(void) {} // would need isr protection for single spi devices
 
-    //-- SPI interface
+    //-- ISR interface
 
-    virtual void _spi_enable_isr(bool enable) {};
+    virtual void EnableIsr(bool enable) {};
 
     //-- RF power interface
 
@@ -636,12 +636,10 @@ class Lr20xxDriver : public Lr20xxDriverCommon
         spi_write(dataout, len);
     }
 
-#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
-    void _spi_enable_isr(bool enable) override
+    void EnableIsr(bool enable) override
     {
         sx_enable_isr(enable);
     }
-#endif
 
     //-- RF power interface
 
@@ -786,12 +784,12 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
     {
         spi_write(dataout, len);
     }
-
-    void _spi_enable_isr(bool enable) override
-    {
-        sx_enable_isr(enable);
-    }
 #endif
+
+    void EnableIsr(bool enable) override
+    {
+        sx2_enable_isr(enable);
+    }
 
     //-- RF power interface
 
