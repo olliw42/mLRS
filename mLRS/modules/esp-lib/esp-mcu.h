@@ -47,4 +47,37 @@ void BootLoaderInit(void)
 };
 
 
+//-------------------------------------------------------
+// Flash QIO
+//-------------------------------------------------------
+
+#if defined CONFIG_IDF_TARGET_ESP32 && defined CONFIG_ESPTOOLPY_FLASHMODE_QIO
+#include "bootloader_flash_config.h"
+#include "esp32/rom/efuse.h"
+#include "esp32/rom/spi_flash.h"
+#include "esp_spi_flash.h"
+#include "soc/spi_reg.h"
+
+// a dio bootloader (e.g. kept when flashing via ELRS wifi) never sets up qio, which breaks nvs in our qio build
+// so do what the qio bootloader does, except the quad enable bit, which the idf flash driver init already sets
+
+// no caller in our code, constructor makes idf startup run it from do_global_ctors()
+// that is after the flash driver init and before initArduino(), which does the first nvs_flash_init()
+IRAM_ATTR __attribute__((constructor)) void esp_flash_qio_init(void)
+{
+    if (REG_READ(SPI_CTRL_REG(0)) & SPI_FREAD_QIO) return; // qio bootloader did it all, spi0 is what the cache reads through
+
+    // rom: set the wp/hd pin functions for quad io, needed for nvs since the flash driver reads in qio
+    // pins from the efuse spi config (0 = default), wp pin from bootloader_support for custom pin maps
+    esp_rom_spiflash_select_qio_pins(bootloader_flash_get_wp_pin(), ets_efuse_get_spiconfig());
+
+    // switch code execution from flash to qio, for performance, the guard turns the flash cache off and back on
+    // scheduler not yet started and the app cpu spins in iram, so only iram and rom code until the cache is back on
+    g_flash_guard_default_ops.start();
+    esp_rom_spiflash_config_readmode(ESP_ROM_SPIFLASH_QIO_MODE); // idf iram patch, sets spi0 and spi1 and the cache read command and dummy
+    g_flash_guard_default_ops.end();
+}
+#endif
+
+
 #endif // ESPLIB_MCU_H
