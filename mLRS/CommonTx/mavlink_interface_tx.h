@@ -304,8 +304,7 @@ void tTxMavlink::Do(void)
 
 void tTxMavlink::parse_serial_in_link_out(void)
 {
-    // parse ser in -> link out
-    fmav_result_t result;
+fmav_result_t result;
 
 if (!do_router()) {
     // without router, parse ser in -> link out

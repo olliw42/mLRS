@@ -100,7 +100,7 @@
 #define SX_DIO_EXTI               EXTI_IO_PA1
 #define SX_DIO_EXTI_IRQn          EXTI1_IRQn
 #define SX_DIO_EXTI_IRQHandler    EXTI1_IRQHandler
-//#define SX_DIO_EXTI_IRQ_PRIORITY  11
+//#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 void sx_init_gpio(void)
 {
@@ -163,7 +163,7 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_DIO_EXTI              EXTI_IO_PB0
 #define SX2_DIO_EXTI_IRQn         EXTI0_IRQn
 #define SX2_DIO_EXTI_IRQHandler   EXTI0_IRQHandler
-//#define SX2_DIO_EXTI_IRQ_PRIORITY 11
+//#define SX2_DIO_EXTI_IRQ_PRIORITY   11
 
 void sx2_init_gpio(void)
 {

@@ -12,6 +12,7 @@
 #include <string.h>
 #include "crypto.h"
 #include "thirdparty/monocypher/src/monocypher.h"
+#include "../modules/stm32ll-lib/src/stdstm32.h"
 
 
 #define NONCE_LEN       3
@@ -42,6 +43,29 @@ const crypto_level_t crypto_list[] = {
 #define PRIVACY_LEVEL_NUM  (sizeof(crypto_list)/sizeof(crypto_level_t))
 
 
+// this is to reduce stack usage, the crypto functions are pretty stack hungry
+crypto_blake2b_ctx blake2b_ctx ALIGNED8_ATTR; // 216 bytes
+crypto_poly1305_ctx poly1305_ctx; // 72 bytes
+uint8_t key_source[64]; // 46 + 8 = 54
+uint8_t nonce[12];
+uint8_t poly1305_key[32];
+uint8_t mac[16];
+
+static void mlrs_crypto_blake2b(uint8_t* hash, size_t hash_size, const uint8_t* msg, size_t msg_size)
+{
+    crypto_blake2b_keyed_init(&blake2b_ctx, hash_size, 0, 0);
+    crypto_blake2b_update    (&blake2b_ctx, msg, msg_size);
+    crypto_blake2b_final     (&blake2b_ctx, hash);
+}
+
+static void mlrs_crypto_poly1305(uint8_t mac[16], const uint8_t* msg, size_t msg_size, const uint8_t key[32])
+{
+    crypto_poly1305_init  (&poly1305_ctx, key);
+    crypto_poly1305_update(&poly1305_ctx, msg, msg_size);
+    crypto_poly1305_final (&poly1305_ctx, mac);
+}
+
+
 //-------------------------------------------------------
 // Crypto API
 //-------------------------------------------------------
@@ -70,7 +94,8 @@ void tCrypto::Init(
     memcpy(_static_source + 8 + 6 + 12,      rx_uid,       12); // 12 bytes
     memcpy(_static_source + 8 + 6 + 12 +12,  &tx_random,    8); //  8 bytes // sum 46 bytes
 
-    crypto_blake2b(_static_key, 32, _static_source, 46); // construct static key
+    //crypto_blake2b(_static_key, 32, _static_source, 46); // construct static key
+    mlrs_crypto_blake2b(_static_key, 32, _static_source, 46);
 
     _startup_nonce_u32 = 0;
 
@@ -95,7 +120,6 @@ void tCrypto::Init(
 
 bool tCrypto::ValidKeys(void) // to tell Tx or Rx if they can connect
 {
-//    return (_privacy_level == 0 ||(_static_random != UINT64_MAX && _session_random != UINT64_MAX));
     return !(_privacy_level > 0 && (_static_random == UINT64_MAX || _session_random == UINT64_MAX));
 }
 
@@ -106,14 +130,15 @@ bool tCrypto::ValidKeys(void) // to tell Tx or Rx if they can connect
 // Rx: called by SetSessionKeyFromEncryptedRandom() when a FRAME_CMD_GET_RX_SETUPDATA_STARTUP frame is received
 void tCrypto::SetSessionKey(uint64_t session_random)
 {
-uint8_t key_source[64]; // 46 + 8 = 54
+//uint8_t key_source[64]; // 46 + 8 = 54
 
     _session_random = session_random;
 
     memcpy(key_source,      _static_source,   46); // 46 bytes
     memcpy(key_source + 46, &_session_random,  8); //  8 bytes // sum = 54 bytes
 
-    crypto_blake2b(_session_key, 32, key_source, 54);
+    //crypto_blake2b(_session_key, 32, key_source, 54);
+    mlrs_crypto_blake2b(_session_key, 32, key_source, 54);
 
     _session_key_has_been_set = true;
 }
@@ -126,9 +151,9 @@ uint8_t key_source[64]; // 46 + 8 = 54
 // only Tx: send along with a FRAME_CMD_GET_RX_SETUPDATA_STARTUP frame
 void tCrypto::EncryptSessionRandom(uint8_t* const buf28, uint64_t startup_random, uint64_t bind_random)
 {
-uint8_t nonce[12];
-uint8_t poly1305_key[32];
-uint8_t mac[16];
+//uint8_t nonce[12];
+//uint8_t poly1305_key[32];
+//uint8_t mac[16];
 
     if (!_session_key_has_been_set) while(1){} // must not happen, SetSessionKey() must be called before
 
@@ -144,7 +169,8 @@ uint8_t mac[16];
     memcpy(buf28 + 8, nonce, 12); // random[8] ... random[20 - 1]
 
     crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce, 0);
-    crypto_poly1305(mac, buf28, 20, poly1305_key); // mac over session random & nonce
+    //crypto_poly1305(mac, buf28, 20, poly1305_key); // mac over session random & nonce
+    mlrs_crypto_poly1305(mac, buf28, 20, poly1305_key);
 
     memcpy(buf28 + 20, mac, 8); // random[20] ... random[28 - 1]
 }
@@ -153,9 +179,9 @@ uint8_t mac[16];
 // only Rx: called upon receive of a FRAME_CMD_GET_RX_SETUPDATA frame
 void tCrypto::SetSessionKeyFromEncryptedRandomBuf(uint8_t* const buf28)
 {
-uint8_t nonce[12];
-uint8_t poly1305_key[32];
-uint8_t mac[16];
+//uint8_t nonce[12];
+//uint8_t poly1305_key[32];
+//uint8_t mac[16];
 uint64_t session_random;
 
     if (_session_key_has_been_set) return; // has already been set
@@ -164,7 +190,8 @@ uint64_t session_random;
     memcpy(nonce, buf28 + 8, 12); // random[8] ... random[20 -1]
 
     crypto_chacha20_ietf(poly1305_key, NULL, 32, _static_key, nonce, 0);
-    crypto_poly1305(mac, buf28, 20, poly1305_key); // mac over session random & nonce
+    //crypto_poly1305(mac, buf28, 20, poly1305_key); // mac over session random & nonce
+    mlrs_crypto_poly1305(mac, buf28, 20, poly1305_key);
     for (uint8_t i = 0; i < 8; i++) { if (buf28[20 + i] != mac[i]) return; } // authentication failed
 
     crypto_chacha20_ietf((uint8_t*)&session_random, buf28, 8, _static_key, nonce, 1);
@@ -229,8 +256,8 @@ bool tCrypto::Decrypt(void* const header, uint8_t header_len, void* const data, 
 // so that payload_len + nonce_len + mac_len never exceeds the size of the payload buffer.
 void tCrypto::_encrypt_it(uint8_t* const header, uint8_t header_len, uint8_t* const data, uint8_t len)
 {
-uint8_t nonce[12];
-uint8_t mac[16];
+//uint8_t nonce[12];
+//uint8_t mac[16];
 
     // update nonce
     _nonce_u32++;
@@ -263,8 +290,8 @@ uint8_t mac[16];
 
 void tCrypto::_remac_it(uint8_t* const header, uint8_t header_len, uint8_t* const data, uint8_t len)
 {
-uint8_t nonce[12];
-uint8_t mac[16];
+//uint8_t nonce[12];
+//uint8_t mac[16];
 
     if (!_mac_len) return; // nothing to do
 
@@ -288,9 +315,9 @@ uint8_t mac[16];
 bool tCrypto::_decrypt_it(uint8_t* const header, uint8_t header_len, uint8_t* const data, uint8_t len)
 {
 uint8_t received_mac[LVL3_MAC_LEN];
-uint8_t nonce[12];
+//uint8_t nonce[12];
 uint32_t nonce_u32;
-uint8_t mac[16];
+//uint8_t mac[16];
 
     if (len < _mac_len + _nonce_len) { // higher level code should prevent this, play it safe
         return false;
@@ -365,8 +392,8 @@ void tCrypto::_crypt_it(uint8_t* data, uint16_t len, uint8_t nonce[12])
 
 void tCrypto::_mac_it(uint8_t mac[16], uint8_t* const header, uint8_t header_len, uint8_t* const data, uint16_t len, uint8_t nonce[12], uint8_t nonce_len)
 {
-uint8_t poly1305_key[32];
-crypto_poly1305_ctx ctx;
+//uint8_t poly1305_key[32];
+//crypto_poly1305_ctx poly1305_ctx; // 72 bytes
 
 // Note: the ChaCha20 keystream of the first block is used as key for poly1305 (which wants 32 bytes key)
 // so, we use counter = 0
@@ -380,10 +407,10 @@ crypto_poly1305_ctx ctx;
         nonce,        // nonce[12],
         0);           // ctr
 
-    crypto_poly1305_init(&ctx, poly1305_key);
-    crypto_poly1305_update(&ctx, header, header_len);
-    crypto_poly1305_update(&ctx, nonce, nonce_len);
-    crypto_poly1305_update(&ctx, data, len);
-    crypto_poly1305_final(&ctx, mac);
+    crypto_poly1305_init(&poly1305_ctx, poly1305_key);
+    crypto_poly1305_update(&poly1305_ctx, header, header_len);
+    crypto_poly1305_update(&poly1305_ctx, nonce, nonce_len);
+    crypto_poly1305_update(&poly1305_ctx, data, len);
+    crypto_poly1305_final(&poly1305_ctx, mac);
 }
 

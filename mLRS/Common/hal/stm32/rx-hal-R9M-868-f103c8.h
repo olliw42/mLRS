@@ -72,11 +72,11 @@
 #define SX_SWITCH_RX_EN           IO_PB3
 #define SX_PA_EN                  IO_PA6
 
-#define SX_DIO_GPIO_AF_EXTI_PORTx     LL_GPIO_AF_EXTI_PORTA
-#define SX_DIO_GPIO_AF_EXTI_LINEx     LL_GPIO_AF_EXTI_LINE15
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
+#define SX_DIO_GPIO_AF_EXTI_PORTx LL_GPIO_AF_EXTI_PORTA
+#define SX_DIO_GPIO_AF_EXTI_LINEx LL_GPIO_AF_EXTI_LINE15
+#define SX_DIO_EXTI_LINE_x        LL_EXTI_LINE_15
+#define SX_DIO_EXTI_IRQn          EXTI15_10_IRQn
+#define SX_DIO_EXTI_IRQHandler    EXTI15_10_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 // R9M power management:

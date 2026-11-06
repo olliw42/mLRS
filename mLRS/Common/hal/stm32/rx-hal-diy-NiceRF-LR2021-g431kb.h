@@ -74,11 +74,11 @@
 #define SX_DIO8                   IO_PB9
 #define SX_DIO9                   IO_PB7
 
-#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTB
-#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE4
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_4
-#define SX_DIO_EXTI_IRQn              EXTI4_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI4_IRQHandler
+#define SX_DIO_SYSCFG_EXTI_PORTx  LL_SYSCFG_EXTI_PORTB
+#define SX_DIO_SYSCFG_EXTI_LINEx  LL_SYSCFG_EXTI_LINE4
+#define SX_DIO_EXTI_LINE_x        LL_EXTI_LINE_4
+#define SX_DIO_EXTI_IRQn          EXTI4_IRQn
+#define SX_DIO_EXTI_IRQHandler    EXTI4_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 #define SX_USE_IRQ_DIO_NO             LR20XX_DIO_7
