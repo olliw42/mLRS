@@ -36,6 +36,7 @@ extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tStats stats;
 extern tFhss fhss;
+extern tMBridge mbridge;
 
 
 //-------------------------------------------------------
@@ -265,13 +266,12 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 #endif
 };
 
-tTxCrsf crsf;
-
 
 //-------------------------------------------------------
 // CRSF half-duplex interface, used for radio <-> mLRS tx module
 
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
+extern tTxCrsf crsf;
 void crsf_pin5_rx_callback(uint8_t c) { crsf.pin5_rx_callback(c); }
 void crsf_pin5_tc_callback(void) { crsf.pin5_tc_callback(); }
 void crsf_pin5_cc1_callback(void) { crsf.pin5_cc1_callback(); }
@@ -1566,9 +1566,8 @@ class tTxCrsf : public tSerialBase
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
 
-tTxCrsf crsf;
-
 #endif // ifdef DEVICE_HAS_JRPIN5
+
 
 #endif // CRSF_INTERFACE_TX_H
 

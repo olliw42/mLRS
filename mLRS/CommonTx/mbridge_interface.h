@@ -82,8 +82,6 @@ class tMBridge
     uint32_t cmd_processed_tlast_ms;
 };
 
-tMBridge mbridge;
-
 
 //-------------------------------------------------------
 // MBridge parser
@@ -582,8 +580,7 @@ class tMBridge
     void Unlock(void) {}
 };
 
-tMBridge mbridge;
-
 #endif // ifdef DEVICE_HAS_JRPIN5
+
 
 #endif // MBRIDGE_INTERFACE_H

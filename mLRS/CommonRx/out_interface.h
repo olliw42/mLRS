@@ -103,9 +103,6 @@ class tOut : public tOutBase
     }
 };
 
-tOut out;
-
-
 #else
 
 class tOut : public tOutBase
@@ -119,8 +116,6 @@ class tOut : public tOutBase
     void SendLinkStatistics(void) {}
     void SendLinkStatisticsDisconnected(void) {}
 };
-
-tOut out;
 
 #endif // #ifdef USE_OUT
 

@@ -13,19 +13,21 @@
 
 #include "common_conf.h"
 #include "sx-drivers/sx12xx_driver.h"
-#include "lq_counter.h"
-#include "fhss.h"
-#include "frames.h"
-#include "frame_types.h"
-#include "link_types.h"
 #include "common_stats.h"
+#include "crypto.h"
+#include "diversity.h"
+#include "fhss.h"
+#include "link_types.h"
+#include "lq_counter.h"
+#include "setup_types.h"
+#include "frame_types.h"
+#include "frames.h"
 #include "bind.h"
 #include "fail.h"
 #include "buzzer.h"
 #include "fan.h"
 #include "leds.h"
 #include "rf_power.h"
-#include "setup_types.h"
 
 
 //-------------------------------------------------------
@@ -316,6 +318,10 @@ tRxFrame rxFrame, rxFrame2;
 
 SX_DRIVER sx;
 SX2_DRIVER sx2;
+
+tRDiversity rdiversity;
+tTDiversity tdiversity;
+tCrypto crypto;
 
 tStats stats;
 tFhss fhss;

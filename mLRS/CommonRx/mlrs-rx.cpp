@@ -86,17 +86,15 @@
 #include "../modules/stm32ll-lib/src/stdstm32-i2c.h"
 #endif
 #include "../Common/hal/timer.h"
-#include "powerup.h"
 #include "rxclock.h"
+#include "powerup.h"
 
 #endif //#if defined ESP8266 || defined ESP32
 
 #include "../Common/mavlink/fmav.h"
 #include "../Common/setup.h"
 #include "../Common/common.h"
-#include "../Common/diversity.h"
 #include "../Common/arq.h"
-#include "../Common/crypto.h"
 //#include "../Common/time_stats.h" // un-comment if you want to use
 //#include "../Common/test.h" // un-comment if you want to compile for board test
 
@@ -105,10 +103,8 @@
 
 tRxClock rxclock;
 tPowerupCounter powerup;
-tRDiversity rdiversity;
-tTDiversity tdiversity;
 tTransmitArq tarq;
-tCrypto crypto;
+tOut out;
 
 
 // is required in bind.h

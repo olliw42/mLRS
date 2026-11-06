@@ -165,17 +165,14 @@ class tIn : public tInBase
 
 #endif
 
+
 #else
-// !defined USE_IN
 
 class tIn : public tInBase
 {
 };
 
-#endif // if (defined USE_IN)
-
-
-tIn in;
+#endif // ifdef USE_IN
 
 
 #endif // IN_INTERFACE_H
