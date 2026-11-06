@@ -92,8 +92,6 @@ void sx2_init_gpio(void)
     gpio_init(SX2_RX_EN, IO_MODE_OUTPUT_PP_LOW);
 }
 
-IRAM_ATTR void spib_select(void) { gpio_low(SX2_CS_IO); }
-IRAM_ATTR void spib_deselect(void) { gpio_high(SX2_CS_IO); }
 
 IRAM_ATTR void sx2_amp_transmit(void)
 {
