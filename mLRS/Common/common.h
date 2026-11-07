@@ -339,6 +339,8 @@ tRfPower rfpower;
 // Sx/Sx2 convenience wrapper
 //-------------------------------------------------------
 
+// called in do_receive(), which is called in isr loop in main
+// needs isr protection for single spi devices
 void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t len)
 {
     if (antenna == ANTENNA_1) {
@@ -349,6 +351,19 @@ void sxReadFrame(uint8_t antenna, void* const data, void* const data2, uint8_t l
 }
 
 
+// called in do_receive(), which is called in isr loop in main
+// needs isr protection for single spi devices
+void sxGetPacketStatus(uint8_t antenna, tStats* const stats)
+{
+    if (antenna == ANTENNA_1) {
+        sx.GetPacketStatus(&(stats->last_rssi1), &(stats->last_snr1));
+    } else {
+        sx2.GetPacketStatus(&(stats->last_rssi2), &(stats->last_snr2));
+    }
+}
+
+
+// called in do_transmit(), which is called in main when switching to transmit
 void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms)
 {
 #if defined DEVICE_HAS_DUAL_SX126x_SX128x || defined DEVICE_HAS_DUAL_SX126x_SX126x // DUAL BAND
@@ -363,16 +378,6 @@ void sxSendFrame(uint8_t antenna, void* const data, uint8_t len, uint16_t tmo_ms
     } else {
         sx2.SendFrame((uint8_t*)data, len, tmo_ms); // should never happen that SX2 is not set up when antenna2
         IF_SX(sx.SetToIdle();)
-    }
-}
-
-
-void sxGetPacketStatus(uint8_t antenna, tStats* const stats)
-{
-    if (antenna == ANTENNA_1) {
-        sx.GetPacketStatus(&(stats->last_rssi1), &(stats->last_snr1));
-    } else {
-        sx2.GetPacketStatus(&(stats->last_rssi2), &(stats->last_snr2));
     }
 }
 

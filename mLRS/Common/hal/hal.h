@@ -526,5 +526,19 @@ extern "C" { void delay_ms(uint16_t ms); }
   void fiveway_init(void) {}
 #endif
 
+// should be elsewhere, do it here for the moment; only for single spi & esp for the moment
+#ifdef DEVICE_HAS_DIVERSITY_SINGLE_SPI
+  static portMUX_TYPE sx_mux = portMUX_INITIALIZER_UNLOCKED;
+  void sx_enable_isr(bool enable) {
+    if (enable) portEXIT_CRITICAL_SAFE(&sx_mux); else portENTER_CRITICAL_SAFE(&sx_mux);
+  }
+  void sx2_enable_isr(bool enable) {
+    if (enable) portEXIT_CRITICAL_SAFE(&sx_mux); else portENTER_CRITICAL_SAFE(&sx_mux);
+  }
+#else
+  void sx_enable_isr(bool enable) {}
+  void sx2_enable_isr(bool enable) {}
+#endif
+
 
 #endif // HAL_H

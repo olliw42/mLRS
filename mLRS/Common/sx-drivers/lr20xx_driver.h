@@ -400,8 +400,12 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         memcpy(data, rx_buf, rx_buf_pos);
         len -= rx_buf_pos;
 
+        EnableIsr(false); // needs isr protection for single spi devices
+
         ReadRadioRxFifo(data + rx_buf_pos, len);
         ClearRxFifo();
+
+        EnableIsr(true);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -431,6 +435,8 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
     {
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
+        EnableIsr(false); // needs isr protection for single spi devices
+
         int16_t rssi, rssi_s;
         switch (mode()) {
         case IS_LORA:
@@ -444,6 +450,9 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         default: // IS_FSK
             GetPacketStatusFSK(&rssi, &rssi_s, Snr);
         }
+
+        EnableIsr(true);
+
         rssi = -(rssi / 2);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
@@ -452,7 +461,11 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         *RssiSync = rssi;
     }
 
-    void HandleAFC(void) {}
+    void HandleAFC(void) {} // would need isr protection for single spi devices
+
+    //-- ISR interface
+
+    virtual void EnableIsr(bool enable) {};
 
     //-- RF power interface
 
@@ -623,6 +636,11 @@ class Lr20xxDriver : public Lr20xxDriverCommon
         spi_write(dataout, len);
     }
 
+    void EnableIsr(bool enable) override
+    {
+        sx_enable_isr(enable);
+    }
+
     //-- RF power interface
 
     void _rfpower_calc(int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm) override
@@ -767,6 +785,11 @@ class Lr20xxDriver2 : public Lr20xxDriverCommon
         spi_write(dataout, len);
     }
 #endif
+
+    void EnableIsr(bool enable) override
+    {
+        sx2_enable_isr(enable);
+    }
 
     //-- RF power interface
 

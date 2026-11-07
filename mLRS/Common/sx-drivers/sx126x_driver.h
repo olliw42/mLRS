@@ -269,6 +269,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
+        EnableIsr(false); // needs isr protection for single spi devices
+
 /*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
@@ -277,6 +279,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
         // it seems that rxStartBufferPointer is always 0, so we assume that
         ReadBuffer(0, data, len);
+
+        EnableIsr(true);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms)
@@ -303,6 +307,8 @@ class Sx126xDriverCommon : public Sx126xDriverBase
     {
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
+        EnableIsr(false); // needs isr protection for single spi devices
+
         int16_t rssi;
         if (gconfig->modeIsLora()) {
             Sx126xDriverBase::GetPacketStatus(&rssi, Snr);
@@ -314,13 +320,19 @@ class Sx126xDriverCommon : public Sx126xDriverBase
             *Snr = 0;
         }
 
+        EnableIsr(true);
+
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
 
         *RssiSync = rssi;
     }
 
-    void HandleAFC(void) {}
+    void HandleAFC(void) {} // would need isr protection for single spi devices
+
+    //-- ISR interface
+
+    virtual void EnableIsr(bool enable) {};
 
     //-- RF power interface
 
@@ -438,6 +450,11 @@ class Sx126xDriver : public Sx126xDriverCommon
     void SpiWrite(uint8_t* dataout, uint8_t len) override
     {
         spi_write(dataout, len);
+    }
+
+    void EnableIsr(bool enable) override
+    {
+        sx_enable_isr(enable);
     }
 
     //-- RF power interface
@@ -574,6 +591,11 @@ class Sx126xDriver2 : public Sx126xDriverCommon
     void SpiWrite(uint8_t* dataout, uint8_t len) override
     {
         spib_write(dataout, len);
+    }
+
+    void EnableIsr(bool enable) override
+    {
+        sx2_enable_isr(enable);
     }
 
     //-- RF power interface

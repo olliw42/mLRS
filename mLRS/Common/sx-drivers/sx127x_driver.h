@@ -197,6 +197,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void ReadFrame(uint8_t* const data, uint8_t len)
     {
+        EnableIsr(false); // needs isr protection for single spi devices
+
 /*        uint8_t rxStartBufferPointer;
         uint8_t rxPayloadLength;
 
@@ -205,6 +207,8 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
         // it seems that rxStartBufferPointer is always 0, so we assume that
         ReadBuffer(0, data, len);
+
+        EnableIsr(true);
     }
 
     void SendFrame(uint8_t* const data, uint8_t len, uint16_t tmo_ms) // SX1276 doesn't have a Tx timeout
@@ -237,8 +241,12 @@ class Sx127xDriverCommon : public Sx127xDriverBase
     {
         if (!gconfig) { *RssiSync = -127; *Snr = 0; return; } // should not happen in practice
 
+        EnableIsr(false); // needs isr protection for single spi devices
+
         int16_t rssi;
         Sx127xDriverBase::GetPacketStatus(&rssi, Snr, low_frequency_mode);
+
+        EnableIsr(true);
 
         if (rssi > -1) rssi = -1; // we do not support values larger than this
         if (rssi < -127) rssi = -127; // we do not support values lower than this
@@ -253,8 +261,14 @@ class Sx127xDriverCommon : public Sx127xDriverBase
 
     void HandleAFC(void)
     {
+        EnableIsr(false); // needs isr protection for single spi devices
         AfcDo();
+        EnableIsr(true);
     }
+
+    //-- ISR interface
+
+    virtual void EnableIsr(bool enable) {};
 
     //-- RF power interface
 
@@ -386,6 +400,11 @@ class Sx127xDriver : public Sx127xDriverCommon
     void SpiWrite(uint8_t* dataout, uint8_t len) override
     {
         spi_write(dataout, len);
+    }
+
+    void EnableIsr(bool enable) override
+    {
+        sx_enable_isr(enable);
     }
 
     //-- RF power interface
@@ -538,6 +557,11 @@ class Sx127xDriver2 : public Sx127xDriverCommon
         spi_write(dataout, len);
     }
 #endif
+
+    void EnableIsr(bool enable) override
+    {
+        sx2_enable_isr(enable);
+    }
 
     //-- RF power interface
 
