@@ -1,0 +1,6 @@
+# CubeIDE includes this into its makefile, it builds the OTA loader, see CommonRx/ota_loader.mk
+TARGET_D = RX_MATEK_MR900_22_WLE5CC
+MCU_D = STM32WLE5xx
+OTA_LOADER_HAL = STM32WLxx
+OTA_LOADER_MCU_FLAGS = -mcpu=cortex-m4 -mfloat-abi=soft
+include ../../CommonRx/ota_loader.mk
