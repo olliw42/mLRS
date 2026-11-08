@@ -30,6 +30,17 @@ void __disable_irq(void) {}
 void __enable_irq(void) {}
 
 
+// they must be used as matched pairs, must not be nested
+#ifdef ESP8266
+void _atomic_enter(void) { noInterrupts(); }
+void _atomic_exit(void) { interrupts(); }
+#else
+static portMUX_TYPE _atomic_mux = portMUX_INITIALIZER_UNLOCKED;
+void _atomic_enter(void) { portENTER_CRITICAL_SAFE(&_atomic_mux); }
+void _atomic_exit(void) { portEXIT_CRITICAL_SAFE(&_atomic_mux); }
+#endif
+
+
 typedef enum {
     DISABLE = 0,
     ENABLE = !DISABLE
