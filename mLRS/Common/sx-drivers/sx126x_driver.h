@@ -299,8 +299,12 @@ class Sx126xDriverCommon : public Sx126xDriverBase
 
     void SetToIdle(void)
     {
+        EnableIsr(false); // needs isr protection for single spi devices
+
         SetFs();
         ClearIrqStatus(SX126X_IRQ_ALL);
+
+        EnableIsr(true);
     }
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)

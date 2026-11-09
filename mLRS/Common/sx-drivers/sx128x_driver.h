@@ -247,8 +247,12 @@ class Sx128xDriverCommon : public Sx128xDriverBase
 
     void SetToIdle(void)
     {
+        EnableIsr(false); // needs isr protection for single spi devices
+
         SetFs();
         ClearIrqStatus(SX1280_IRQ_ALL);
+
+        EnableIsr(true);
     }
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)

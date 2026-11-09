@@ -427,8 +427,12 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
 
     void SetToIdle(void)
     {
+        EnableIsr(false); // needs isr protection for single spi devices
+
         SetFs();
         ClearIrq(LR20XX_IRQ_ALL);
+
+        EnableIsr(true);
     }
 
     void GetPacketStatus(int8_t* const RssiSync, int8_t* const Snr)
