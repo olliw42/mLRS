@@ -86,11 +86,11 @@
 #define SX_RX_EN                  //
 #define SX_TX_EN                  //
 
-#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTA
-#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE15
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
+#define SX_DIO_SYSCFG_EXTI_PORTx  LL_SYSCFG_EXTI_PORTA
+#define SX_DIO_SYSCFG_EXTI_LINEx  LL_SYSCFG_EXTI_LINE15
+#define SX_DIO_EXTI_LINE_x        LL_EXTI_LINE_15
+#define SX_DIO_EXTI_IRQn          EXTI15_10_IRQn
+#define SX_DIO_EXTI_IRQHandler    EXTI15_10_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 void sx_init_gpio(void)

@@ -31,7 +31,7 @@ const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
       .CrcEnabled = SX1280_LORA_CRC_DISABLE,
       .InvertIQ = SX1280_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
-      .ReceiverSensitivity = -105,
+      .ReceiveSensitivity = -105,
     },
     { .SpreadingFactor = SX1280_LORA_SF6, // 2.4 GHz, 50 Hz
       .Bandwidth = SX1280_LORA_BW_800,
@@ -42,7 +42,7 @@ const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
       .CrcEnabled = SX1280_LORA_CRC_DISABLE,
       .InvertIQ = SX1280_LORA_IQ_NORMAL,
       .TimeOverAir = 13418,
-      .ReceiverSensitivity = -108,
+      .ReceiveSensitivity = -108,
     },
     { .SpreadingFactor = SX1280_LORA_SF7, // 2.4 GHz, 50 Hz
       .Bandwidth = SX1280_LORA_BW_800,
@@ -53,7 +53,7 @@ const tSxLoraConfiguration Sx128xLoraConfiguration[] = {
       .CrcEnabled = SX1280_LORA_CRC_DISABLE,
       .InvertIQ = SX1280_LORA_IQ_NORMAL,
       .TimeOverAir = 23527,
-      .ReceiverSensitivity = -112,
+      .ReceiveSensitivity = -112,
     }
 };
 
@@ -68,7 +68,7 @@ const tSxFlrcConfiguration Sx128xFlrcConfiguration[] = { // 2.4 GHz, 111 Hz FLRC
       .PayloadLength = FRAME_TX_RX_LEN,
       .CrcLength = SX1280_FLRC_CRC_DISABLE,
       .TimeOverAir = 2383,
-      .ReceiverSensitivity = -104,
+      .ReceiveSensitivity = -104,
     }
 };
 
@@ -298,13 +298,13 @@ class Sx128xDriverCommon : public Sx128xDriverBase
         return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : flrc_configuration->TimeOverAir;
     }
 
-    int16_t ReceiverSensitivity_dbm(void)
+    int16_t ReceiveSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
         if (lora_configuration == nullptr && flrc_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : flrc_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiveSensitivity : flrc_configuration->ReceiveSensitivity;
     }
 
     int8_t RfPower_dbm(void)

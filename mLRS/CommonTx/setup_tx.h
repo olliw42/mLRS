@@ -129,11 +129,12 @@ typedef union
 {
     uint8_t u8;
     int8_t i8;
-    uint16_t u16;
-    int16_t i16;
+//    uint16_t u16; // not used
+//    int16_t i16; // not used
 } tParamValue;
 
 
+// returns true if a rx param is changed
 bool setup_set_param(uint8_t param_idx, tParamValue value)
 {
     if (param_idx >= SETUP_PARAMETER_NUM) return false;

@@ -26,7 +26,7 @@
 #define DEVICE_HAS_IN
 #define DEVICE_HAS_FAN_ONOFF
 
-#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
+#ifdef TX_RADIOMASTER_BANDIT_900_ESP32 // Bandit, "big" Bandit
 #define DEVICE_HAS_SINGLE_LED_RGB
 #define DEVICE_HAS_I2C_DISPLAY
 #else // Bandit Micro
@@ -141,7 +141,7 @@ IRAM_ATTR bool button_pressed(void) { return false; }
 //-- LEDs
 
 // Big Bandit has RGB LEDs, Bandit Micro has a single LED
-#ifdef TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#ifdef TX_RADIOMASTER_BANDIT_900_ESP32
     #define LED_RGB                   IO_P15
     #define LED_RGB_PIXEL_NUM         6
     #include "esp-hal-led-rgb.h"
@@ -158,7 +158,7 @@ IRAM_ATTR void led_red_off(void) { gpio_low(LED_RED); }
 IRAM_ATTR void led_red_on(void) { gpio_high(LED_RED); }
 IRAM_ATTR void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
-#endif // TX_ELRS_RADIOMASTER_BANDIT_900_ESP32
+#endif // TX_RADIOMASTER_BANDIT_900_ESP32
 
 
 //-- Display I2C

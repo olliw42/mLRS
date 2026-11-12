@@ -781,7 +781,7 @@ char s[32];
     param_get_val_formattedstr(s, PARAM_INDEX_MODE); // 1 = index of Mode
     gdisp_puts(s);
     gdisp_setcurX(80 + 5);
-    stoBCDstr(SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm()), s);
+    stoBCDstr(SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm()), s);
     gdisp_puts(s);
     gdisp_puts(" dB");
 

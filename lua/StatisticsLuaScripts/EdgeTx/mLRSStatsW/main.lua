@@ -5,7 +5,7 @@ local widgetName = "mLRS Statistics Widget"
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
 -- copy script to the WIDGETS\mLRSStatsW folder on the EdgeTx SD card
--- version 2026-10-10.00
+-- version 2026-10-17.00
 
 
 local options = {
@@ -28,6 +28,7 @@ ui.COLOR_EARTH = lcd.RGB(107, 142, 35)
 ----------------------------------------------------------------------
 -- CRSF Mb statistics decoder
 ----------------------------------------------------------------------
+-- frame: 0xEA, len, 0x82, 0x65, 17 bytes, crc
 
 local mbStats = nil
 local mbRssiList = nil
@@ -93,39 +94,71 @@ end
 ----------------------------------------------------------------------
 -- Drawing
 ----------------------------------------------------------------------
+-- view is laid out for 480x272 screen and scaled to the widget
 
-local function drawIt(widget, event)
-    local zone = widget.zone
-    if zone.w ~= LCD_W or zone.h ~= LCD_H then -- is not full size widget
-        if mbStats == nil then
-            lcd.drawText(0, 0, "waits...", widget.options.Color)
-            return
-        end
-        lcd.drawText(zone.w-2, 0, CHAR_TELEMETRY..mbStats.privacy, widget.options.Color + RIGHT + SMLSIZE)
-        if mbStats.connected < 1 then
-            lcd.drawText(0, 0, "!", widget.options.Color)
-        else
-            --lcd.drawText(zone.w-5, 0, CHAR_TELEMETRY, widget.options.Color + RIGHT)
-            --lcd.drawText(zone.w-5, 2, "*", widget.options.Color + RIGHT)
-            --lcd.drawText(zone.w-2, 0, "*"..mbStats.privacy, widget.options.Color + RIGHT)
-            --if mbStats.privacy > 0 then
-            --    lcd.drawText(zone.w-4, 0, "p"..mbStats.privacy, widget.options.Color + RIGHT)
-            --end
-            lcd.drawText(0, 0, ">", widget.options.Color)
-            lcd.drawNumber(10, 0, mbStats.bytes_transmitted, widget.options.Color)
-            lcd.drawText(0, 20, "<", widget.options.Color)
-            lcd.drawNumber(10, 20, mbStats.bytes_received, widget.options.Color)
-        end
+local sx, sy = 1, 1
+local function X(x) return math.floor(x * sx + 0.5) end
+local function Y(y) return math.floor(y * sy + 0.5) end
+
+local function drawText(x, y, txt, color)
+    lcd.drawText(X(x), Y(y), txt, color)
+end
+
+local function drawNumber(x, y, val, color)
+    lcd.drawNumber(X(x), Y(y), val, color)
+end
+
+local function drawRectangle(x, y, w, h, flag)
+    lcd.drawRectangle(X(x), Y(y), X(w), Y(h), flag)
+end
+
+local function drawLine(x1, y1, x2, y2, flag, color)
+    lcd.drawLine(X(x1), Y(y1), X(x2), Y(y2), flag, color)
+end
+
+local function drawFilledTriangle(x1, y1, x2, y2, x3, y3, flag)
+    lcd.drawFilledTriangle(X(x1), Y(y1), X(x2), Y(y2), X(x3), Y(y3), flag)
+end
+
+local function drawFilledRectangle(x, y, w, h, flag)
+    lcd.drawFilledRectangle(X(x), Y(y), X(w), Y(h), flag)
+end
+
+local function drawCircle(x, y, r, color)
+    lcd.drawCircle(X(x), Y(y), X(r), color) -- TODO: better r
+end
+
+
+local function drawCompact(widget, w, h)
+    local color = widget.options.Color
+    if mbStats == nil then
+        lcd.drawText(0, 0, "waits...", color)
         return
+    end
+    lcd.drawText(w - 2, 0, CHAR_TELEMETRY..mbStats.privacy, color + RIGHT + SMLSIZE)
+    if mbStats.connected < 1 then
+        lcd.drawText(0, 0, "!", color)
+    else
+        lcd.drawText(0, 0, ">", color)
+        lcd.drawNumber(10, 0, mbStats.bytes_transmitted, color)
+        lcd.drawText(0, 20, "<", color)
+        lcd.drawNumber(10, 20, mbStats.bytes_received, color)
+    end
+end
+
+
+local function drawFull(widget, w, h)
+    if w == 800 and h == 480 then
+        sx, sy = 1.6, 1.6
     end
 
     lcd.resetBacklightTimeout()
     lcd.clear(ui.COLOR_BACKGROUND)
 
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_WHITE)
-    lcd.drawText(50, 1, "mLRS Statistics", CUSTOM_COLOR)
+    drawText(50, 1, "mLRS Statistics", CUSTOM_COLOR)
     if mbStats == nil then
-        lcd.drawText(100, 20, "Waiting for packet...", CUSTOM_COLOR)
+        drawText(100, 20, "Waiting for packet...", CUSTOM_COLOR)
         return
     end
 
@@ -134,107 +167,106 @@ local function drawIt(widget, event)
     x = 255
     y = 25
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_WHITE)
-    lcd.drawText(x-72, y, "rx LQ", CUSTOM_COLOR)
-    lcd.drawNumber(x, y-6, mbStats.receiver_LQ_rc, CUSTOM_COLOR+MIDSIZE+CENTER)
+    drawText(x-72, y, "rx LQ", CUSTOM_COLOR)
+    drawNumber(x, y-6, mbStats.receiver_LQ_rc, CUSTOM_COLOR+MIDSIZE+CENTER)
 
     y = 90
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_RED)
-    lcd.drawRectangle(60, y, 100, 50, CUSTOM_COLOR+SOLID)
-    lcd.drawRectangle(61, y+1, 98, 48, CUSTOM_COLOR+SOLID)
-    lcd.drawRectangle(300, y, 100, 50, CUSTOM_COLOR+SOLID)
-    lcd.drawRectangle(301, y+1, 98, 48, CUSTOM_COLOR+SOLID)
-    lcd.drawLine(177, y+25-10, 280, y+25-10, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(177, y+25-9, 280, y+25-9, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(177, y+25-11, 280, y+25-11, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(180, y+25+10, 283, y+25+10, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(180, y+25+11, 283, y+25+11, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(180, y+25+9, 283, y+25+9, SOLID, CUSTOM_COLOR)
-    lcd.drawFilledTriangle(280+5, y+25-10, 280,y+25-10-5, 280,y+25-10+5, CUSTOM_COLOR+SOLID)
-    lcd.drawFilledTriangle(180-5, y+25+10, 180,y+25+10-5, 180,y+25+10+5, CUSTOM_COLOR+SOLID)
+    drawRectangle(60, y, 100, 50, CUSTOM_COLOR+SOLID)
+    drawRectangle(61, y+1, 98, 48, CUSTOM_COLOR+SOLID)
+    drawRectangle(300, y, 100, 50, CUSTOM_COLOR+SOLID)
+    drawRectangle(301, y+1, 98, 48, CUSTOM_COLOR+SOLID)
+    drawLine(177, y+25-10, 280, y+25-10, SOLID, CUSTOM_COLOR)
+    drawLine(177, y+25-9, 280, y+25-9, SOLID, CUSTOM_COLOR)
+    drawLine(177, y+25-11, 280, y+25-11, SOLID, CUSTOM_COLOR)
+    drawLine(180, y+25+10, 283, y+25+10, SOLID, CUSTOM_COLOR)
+    drawLine(180, y+25+11, 283, y+25+11, SOLID, CUSTOM_COLOR)
+    drawLine(180, y+25+9, 283, y+25+9, SOLID, CUSTOM_COLOR)
+    drawFilledTriangle(280+5, y+25-10, 280, y+25-10-5, 280, y+25-10+5, CUSTOM_COLOR+SOLID)
+    drawFilledTriangle(180-5, y+25+10, 180, y+25+10-5, 180, y+25+10+5, CUSTOM_COLOR+SOLID)
 
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_WHITE)
 
     x = 60
     y = y - 45
-    lcd.drawText(x-10, y, "tx rssi", CUSTOM_COLOR)
+    drawText(x-10, y, "tx rssi", CUSTOM_COLOR)
     local rssi = (mbStats.receive_antenna == 0) and mbStats.rssi1 or mbStats.rssi2 -- that's Lua for (cond) ? a1 : a2
-    lcd.drawNumber(x+70, y, rssi, CUSTOM_COLOR)
-    lcd.drawText(x-10, y+20, "tx LQ ser", CUSTOM_COLOR)
-    lcd.drawNumber(x+70, y+20, mbStats.LQ_serial, CUSTOM_COLOR)
+    drawNumber(x+70, y, rssi, CUSTOM_COLOR)
+    drawText(x-10, y+20, "tx LQ ser", CUSTOM_COLOR)
+    drawNumber(x+70, y+20, mbStats.LQ_serial, CUSTOM_COLOR)
 
     local s = (mbStats.transmit_antenna == 0) and "a1" or "a2"
-    lcd.drawText(x+75, y+50, s, CUSTOM_COLOR)
+    drawText(x+75, y+50, s, CUSTOM_COLOR)
     s = (mbStats.receive_antenna == 0) and "a1" or "a2"
-    lcd.drawText(x+75, y+70, s, CUSTOM_COLOR)
+    drawText(x+75, y+70, s, CUSTOM_COLOR)
 
-    x = 300;
-    lcd.drawText(x, y, "rx rssi", CUSTOM_COLOR)
-    lcd.drawNumber(x+80, y, mbStats.receiver_rssi, CUSTOM_COLOR)
-    lcd.drawText(x, y+20, "rx LQ ser", CUSTOM_COLOR)
-    lcd.drawNumber(x+80, y+20, mbStats.receiver_LQ_serial, CUSTOM_COLOR)
+    x = 300
+    drawText(x, y, "rx rssi", CUSTOM_COLOR)
+    drawNumber(x+80, y, mbStats.receiver_rssi, CUSTOM_COLOR)
+    drawText(x, y+20, "rx LQ ser", CUSTOM_COLOR)
+    drawNumber(x+80, y+20, mbStats.receiver_LQ_serial, CUSTOM_COLOR)
 
     s = (mbStats.receiver_receive_antenna == 0) and "a1" or "a2"
-    lcd.drawText(x+5, y+50, s, CUSTOM_COLOR)
+    drawText(x+5, y+50, s, CUSTOM_COLOR)
     s = (mbStats.receiver_transmit_antenna == 0) and "a1" or "a2"
-    lcd.drawText(x+5, y+70, s, CUSTOM_COLOR)
+    drawText(x+5, y+70, s, CUSTOM_COLOR)
 
-    x = 190;
-    y = y + 35;
-    lcd.drawText(x, y, "Bps", CUSTOM_COLOR)
-    lcd.drawNumber(x+46, y, mbStats.bytes_transmitted, CUSTOM_COLOR)
-    y = y + 50;
-    lcd.drawText(x, y, "Bps", CUSTOM_COLOR)
-    lcd.drawNumber(x+46, y, mbStats.bytes_received, CUSTOM_COLOR)
+    x = 190
+    y = y + 35
+    drawText(x, y, "Bps", CUSTOM_COLOR)
+    drawNumber(x+46, y, mbStats.bytes_transmitted, CUSTOM_COLOR)
+    y = y + 50
+    drawText(x, y, "Bps", CUSTOM_COLOR)
+    drawNumber(x+46, y, mbStats.bytes_received, CUSTOM_COLOR)
 
-    x = 225;
-    y = 114;
+    -- privacy key symbol
+    x = 225
+    y = 114
     if mbStats.privacy > 0 then
-        lcd.drawCircle(x, y, 5, CUSTOM_COLOR)
+        drawCircle(x, y, 5, CUSTOM_COLOR)
         local xend = x + 15 + mbStats.privacy * 3 -- 1: 17, 2: 20, 3: 23
-        lcd.drawLine(x+4, y, xend, y, SOLID, CUSTOM_COLOR)
-        lcd.drawLine(xend, y, xend, y-5, SOLID, CUSTOM_COLOR)
+        drawLine(x+4, y, xend, y, SOLID, CUSTOM_COLOR)
         for i = 1, mbStats.privacy do
-            lcd.drawLine(xend, y, xend, y-5, SOLID, CUSTOM_COLOR)
+            drawLine(xend, y, xend, y-5, SOLID, CUSTOM_COLOR)
             xend = xend - 5
         end
     end
 
     -- RSSI spectrum graph
-
     x = 70
     y = 260
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_LIGHTGREY)
-    lcd.drawLine(x - 10, y, x + 24*15 + 10, y, SOLID, CUSTOM_COLOR)
-    lcd.drawLine(x - 10, y - (110 - 90), x + 24*15 + 10, y - (110 - 90), SOLID, CUSTOM_COLOR)
-    lcd.drawLine(x - 10, y - (110 - 50), x + 24*15 + 10, y - (110 - 50), SOLID, CUSTOM_COLOR)
-    lcd.drawText(x-15, y-9, "-110", CUSTOM_COLOR+RIGHT+SMLSIZE)
-    lcd.drawText(x-15, y-9-20, "-90", CUSTOM_COLOR+RIGHT+SMLSIZE)
-    lcd.drawText(x-15, y-9-60, "-50", CUSTOM_COLOR+RIGHT+SMLSIZE)
+    drawLine(x - 10, y, x + 24*15 + 10, y, SOLID, CUSTOM_COLOR)
+    drawLine(x - 10, y - (110 - 90), x + 24*15 + 10, y - (110 - 90), SOLID, CUSTOM_COLOR)
+    drawLine(x - 10, y - (110 - 50), x + 24*15 + 10, y - (110 - 50), SOLID, CUSTOM_COLOR)
+    drawText(x-15, y-9, "-110", CUSTOM_COLOR+RIGHT+SMLSIZE)
+    drawText(x-15, y-9-20, "-90", CUSTOM_COLOR+RIGHT+SMLSIZE)
+    drawText(x-15, y-9-60, "-50", CUSTOM_COLOR+RIGHT+SMLSIZE)
 
     if mbRssiList == nil then return end
 
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_YELLOW)
     for i = 0, mbStats.fhss1_cnt - 1 do
-      local r = mbRssiList[i].rssi1
-      if r > 120 then
-        lcd.drawFilledRectangle(x + i*15 - 1, y - 1, 3, 5, CUSTOM_COLOR+SOLID)
-      else
-        if r > -40 then r = -40 end
-        r = 110 + r
-        lcd.drawLine(x + i*15, y, x + i*15, y - r, SOLID, CUSTOM_COLOR)
-      end
+        local r = mbRssiList[i].rssi1
+        if r > 120 then
+            drawFilledRectangle(x + i*15 - 1, y - 1, 3, 5, CUSTOM_COLOR+SOLID)
+        else
+            if r > -40 then r = -40 end
+            r = 110 + r
+            drawLine(x + i*15, y, x + i*15, y - r, SOLID, CUSTOM_COLOR)
+        end
     end
 
     lcd.setColor(CUSTOM_COLOR, ui.COLOR_RED)
     for i = 0, mbStats.fhss1_cnt - 1 do
-      local r = mbRssiList[i].rssi2
-      if r > 120 then
-        lcd.drawFilledRectangle(x+3 + i*15 - 1, y - 1, 3, 5, CUSTOM_COLOR+SOLID)
-      else
-        if r > -40 then r = -40 end
-        r = 110 + r
-        lcd.drawLine(x+3 + i*15, y, x+3 + i*15, y - r, SOLID, CUSTOM_COLOR)
-      end
+        local r = mbRssiList[i].rssi2
+        if r > 120 then
+            drawFilledRectangle(x+3 + i*15 - 1, y - 1, 3, 5, CUSTOM_COLOR+SOLID)
+        else
+            if r > -40 then r = -40 end
+            r = 110 + r
+            drawLine(x+3 + i*15, y, x+3 + i*15, y - r, SOLID, CUSTOM_COLOR)
+        end
     end
 end
 
@@ -263,12 +295,17 @@ end
 
 local function refresh(widget, event, touchState)
     while true do
-         local command, packet = crossfireTelemetryPop()
+        local command, packet = crossfireTelemetryPop()
         if command == nil or packet == nil then break end
         decodeCrsfMbStatistics(command, packet)
     end
 
-    drawIt(widget, event)
+    local zone = widget.zone
+    if zone.w ~= LCD_W or zone.h ~= LCD_H then -- is not full size widget
+        drawCompact(widget, zone.w, zone.h)
+    else
+        drawFull(widget, zone.w, zone.h)
+    end
 end
 
 

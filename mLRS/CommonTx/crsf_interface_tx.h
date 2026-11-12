@@ -36,6 +36,7 @@ extern tSetup Setup;
 extern tGlobalConfig Config;
 extern tStats stats;
 extern tFhss fhss;
+extern tMBridge mbridge;
 
 
 //-------------------------------------------------------
@@ -265,13 +266,12 @@ class tTxCrsf : public tPin5BridgeBase, public tSerialBase
 #endif
 };
 
-tTxCrsf crsf;
-
 
 //-------------------------------------------------------
 // CRSF half-duplex interface, used for radio <-> mLRS tx module
 
 // to avoid error: ISO C++ forbids taking the address of a bound member function to form a pointer to member function
+extern tTxCrsf crsf;
 void crsf_pin5_rx_callback(uint8_t c) { crsf.pin5_rx_callback(c); }
 void crsf_pin5_tc_callback(void) { crsf.pin5_tc_callback(); }
 void crsf_pin5_cc1_callback(void) { crsf.pin5_cc1_callback(); }
@@ -1007,7 +1007,7 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
     gps.gps_heading = CRSF_REV_U16(payload->hdg);
 
     // take the ground speed from VFR_HUD
-    if (vfr_hud_groundspd_mps != NAN) {
+    if (!isnan(vfr_hud_groundspd_mps)) {
         gps.groundspeed = CRSF_REV_U16(10.0f * vfr_hud_groundspd_mps * 3.6f); // TBS docs say 'km/h / 100' but seems to be 'km/h / 10'
     } else {
         gps.groundspeed = 0;
@@ -1372,7 +1372,7 @@ tCrsfLinkStatisticsRx clstats;
     clstats.downlink_rssi = crsf_cvt_rssi_tx(stats.received_rssi);    // ignored by EdgeTx
     clstats.downlink_rssi_percent = crsf_cvt_rssi_percent(            // EdgeTx -> "RRSP"   %     ?downlink but "R"?
         stats.received_rssi,
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
+        SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm())
         );
     clstats.downlink_LQ = stats.GetReceivedLQ_rc();                   // ignored by EdgeTx
     clstats.downlink_snr = UINT8_MAX;                                 // ignored by EdgeTx,       we don't know it
@@ -1390,7 +1390,7 @@ tCrsfLinkStatisticsTx clstats;
     clstats.uplink_rssi = crsf_cvt_rssi_tx(stats.GetLastRssi());      // ignored by EdgeTx
     clstats.uplink_rssi_percent = crsf_cvt_rssi_percent(              // EdgeTx -> "TRSP"   %     ?uplink but "T"?
         stats.GetLastRssi(),
-        SX_OR_SX2(sx.ReceiverSensitivity_dbm(),sx2.ReceiverSensitivity_dbm())
+        SX_OR_SX2(sx.ReceiveSensitivity_dbm(),sx2.ReceiveSensitivity_dbm())
         );
     clstats.uplink_LQ = stats.GetLQ_serial();                         // ignored by EdgeTx
     clstats.uplink_snr = stats.GetLastSnr();                          // ignored by EdgeTx
@@ -1566,9 +1566,8 @@ class tTxCrsf : public tSerialBase
     void PassthroughSetBattery0Capacity(uint32_t capacity) {}
 };
 
-tTxCrsf crsf;
-
 #endif // ifdef DEVICE_HAS_JRPIN5
+
 
 #endif // CRSF_INTERFACE_TX_H
 

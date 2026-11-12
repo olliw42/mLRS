@@ -36,7 +36,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
       .CrcEnabled = SX126X_LORA_CRC_DISABLE,
       .InvertIQ = SX126X_LORA_IQ_NORMAL,
       .TimeOverAir = 13200,
-      .ReceiverSensitivity = -111,
+      .ReceiveSensitivity = -111,
     },
     { .SpreadingFactor = SX126X_LORA_SF6, // 900 MHz, 19 Hz
       .Bandwidth = SX126X_LORA_BW_500,
@@ -47,7 +47,7 @@ const tSxLoraConfiguration Sx126xLoraConfiguration[] = {
       .CrcEnabled = SX126X_LORA_CRC_DISABLE,
       .InvertIQ = SX126X_LORA_IQ_NORMAL,
       .TimeOverAir = 22560,
-      .ReceiverSensitivity = -112, // Q: SF5 with CR4/8 would be -111 dBm, 20.1 ms, better option??
+      .ReceiveSensitivity = -112, // Q: SF5 with CR4/8 would be -111 dBm, 20.1 ms, better option??
     }
 };
 
@@ -65,7 +65,7 @@ const tSxGfskConfiguration Sx126xGfskConfiguration[] = { // 900 MHz, 50 Hz FSK
       .CRCType = SX126X_GFSK_CRC_OFF,
       .Whitening = SX126X_GFSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106, // this is a guess, data sheet is vague here
+      .ReceiveSensitivity = -106, // this is a guess, data sheet is vague here
     }
 };
 
@@ -352,13 +352,13 @@ class Sx126xDriverCommon : public Sx126xDriverBase
         return (gconfig->modeIsLora()) ? lora_configuration->TimeOverAir : gfsk_configuration->TimeOverAir;
     }
 
-    int16_t ReceiverSensitivity_dbm(void)
+    int16_t ReceiveSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
         if (lora_configuration == nullptr && gfsk_configuration == nullptr) _config_calc(); // ensure it is set
 
-        return (gconfig->modeIsLora()) ? lora_configuration->ReceiverSensitivity : gfsk_configuration->ReceiverSensitivity;
+        return (gconfig->modeIsLora()) ? lora_configuration->ReceiveSensitivity : gfsk_configuration->ReceiveSensitivity;
     }
 
     int8_t RfPower_dbm(void)

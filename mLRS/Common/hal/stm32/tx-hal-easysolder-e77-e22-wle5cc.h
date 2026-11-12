@@ -109,8 +109,8 @@
 #define SX_RX_EN                  IO_PA7
 #define SX_TX_EN                  IO_PA6
 
-#define SX_DIO_EXTI_IRQn              SUBGHZ_Radio_IRQn
-#define SX_DIO_EXTI_IRQHandler        SUBGHZ_Radio_IRQHandler
+#define SX_DIO_EXTI_IRQn          SUBGHZ_Radio_IRQn
+#define SX_DIO_EXTI_IRQHandler    SUBGHZ_Radio_IRQHandler
 //#define SX_DIO_EXTI_IRQ_PRIORITY    11
 
 #ifdef MLRS_FEATURE_E77_XTAL
@@ -143,8 +143,6 @@ void sx_amp_receive(void)
 void sx_dio_init_exti_isroff(void)
 {
     // there is no EXTI_LINE_44 interrupt flag
-    //LL_EXTI_DisableEvent_32_63(SX_DIO_EXTI_LINE_x);
-    //LL_EXTI_DisableIT_32_63(SX_DIO_EXTI_LINE_x);
 
     NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
     //NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
@@ -153,8 +151,6 @@ void sx_dio_init_exti_isroff(void)
 void sx_dio_enable_exti_isr(void)
 {
     // there is no EXTI_LINE_44 interrupt flag
-    //LL_EXTI_ClearFlag_32_63(SX_DIO_EXTI_LINE_x);
-    //LL_EXTI_EnableIT_32_63(SX_DIO_EXTI_LINE_x);
 
     NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
 }
@@ -181,11 +177,11 @@ void sx_dio_exti_isr_clearflag(void)
 #define SX2_RX_EN                 IO_PA0
 #define SX2_TX_EN                 IO_PB8
 
-#define SX2_DIO_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTC
-#define SX2_DIO_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE13
-#define SX2_DIO_EXTI_LINE_x           LL_EXTI_LINE_13
-#define SX2_DIO_EXTI_IRQn             EXTI15_10_IRQn
-#define SX2_DIO_EXTI_IRQHandler       EXTI15_10_IRQHandler
+#define SX2_DIO_SYSCFG_EXTI_PORTx LL_SYSCFG_EXTI_PORTC
+#define SX2_DIO_SYSCFG_EXTI_LINEx LL_SYSCFG_EXTI_LINE13
+#define SX2_DIO_EXTI_LINE_x       LL_EXTI_LINE_13
+#define SX2_DIO_EXTI_IRQn         EXTI15_10_IRQn
+#define SX2_DIO_EXTI_IRQHandler   EXTI15_10_IRQHandler
 //#define SX2_DIO_EXTI_IRQ_PRIORITY   11
 
 void sx2_init_gpio(void)

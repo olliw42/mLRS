@@ -33,7 +33,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13200,
-      .ReceiverSensitivity = -111, // ??
+      .ReceiveSensitivity = -111, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF6,// 900 MHz, 19 Hz
       .Bandwidth = LR20XX_LORA_BW_500,
@@ -44,7 +44,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 22560,
-      .ReceiverSensitivity = -112, // ??
+      .ReceiveSensitivity = -112, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF5, // 2.4 GHz, 50 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
@@ -55,7 +55,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 7892,
-      .ReceiverSensitivity = -105, // ??
+      .ReceiveSensitivity = -105, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF6, // 2.4 GHz, 31 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
@@ -66,7 +66,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 13418,
-      .ReceiverSensitivity = -108, // ??
+      .ReceiveSensitivity = -108, // ??
     },
     { .SpreadingFactor = LR20XX_LORA_SF7, // 2.4 GHz, 19 Hz
       .Bandwidth = LR20XX_LORA_BW_812,
@@ -77,7 +77,7 @@ const tSxLoraConfiguration Lr20xxLoraConfiguration[] = {
       .CrcEnabled = LR20XX_LORA_CRC_DISABLE,
       .InvertIQ = LR20XX_LORA_IQ_NORMAL,
       .TimeOverAir = 23527,
-      .ReceiverSensitivity = -112, // ??
+      .ReceiveSensitivity = -112, // ??
     }
 };
 
@@ -95,7 +95,7 @@ const tSxGfskConfiguration Lr20xxGfskConfiguration[] = { // 900 MHz, FSK 50 Hz
       .CRCType = LR20XX_FSK_CRC_OFF,
       .Whitening = LR20XX_FSK_WHITENING_ENABLE,
       .TimeOverAir = 7600,
-      .ReceiverSensitivity = -106, // ??
+      .ReceiveSensitivity = -106, // ??
     }
 };
 
@@ -110,7 +110,7 @@ const tSxFlrcConfiguration Lr20xxFlrcConfiguration[] = { // 2.4 GHz, FLRC 111 Hz
       .PayloadLength = FRAME_TX_RX_LEN,
       .CrcLength = LR20XX_FLRC_CRC_OFF,
       .TimeOverAir = 2383,
-      .ReceiverSensitivity = -104, // ??
+      .ReceiveSensitivity = -104, // ??
     }
 };
 
@@ -498,7 +498,7 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         }
     }
 
-    int16_t ReceiverSensitivity_dbm(void)
+    int16_t ReceiveSensitivity_dbm(void)
     {
         if (!gconfig) return 0; // should not happen in practice
 
@@ -507,9 +507,9 @@ class Lr20xxDriverCommon : public Lr20xxDriverBase
         }
 
         switch (mode()) {
-        case IS_LORA: return lora_configuration->ReceiverSensitivity;
-        case IS_GFSK: return gfsk_configuration->ReceiverSensitivity;
-        default: return flrc_configuration->ReceiverSensitivity;
+        case IS_LORA: return lora_configuration->ReceiveSensitivity;
+        case IS_GFSK: return gfsk_configuration->ReceiveSensitivity;
+        default: return flrc_configuration->ReceiveSensitivity;
         }
     }
 

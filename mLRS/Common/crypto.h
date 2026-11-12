@@ -56,11 +56,12 @@ class tCrypto
     void SetSessionKey(uint64_t session_random); // Tx only
     void EncryptSessionRandom(uint8_t* const buf28, uint64_t startup_random, uint64_t bind_random); // Tx only
     void SetSessionKeyFromEncryptedRandomBuf(uint8_t* const buf28); // Rx only
+    void Disconnected(void); // Rx only
 
     bool ValidKeys(void);
 
     uint8_t PrivacyLevel(void) { return _privacy_level; }
-    bool IsAuthenticated(void) { return (_privacy_level >= 2); }
+    bool IsAuthenticated(void) { return (_privacy_level >= 2); } // should be the same as (_mac_len > 0)
     uint16_t NonceLen(void);
     void Encrypt(void* const header, uint8_t header_len, void* const data, uint8_t len);
     void RecalculateMac(void* const header, uint8_t header_len, void* const data, uint8_t len);

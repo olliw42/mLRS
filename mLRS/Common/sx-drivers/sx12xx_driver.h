@@ -76,7 +76,7 @@ typedef struct
     uint8_t CrcEnabled;
     uint8_t InvertIQ;
     uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
+    int16_t ReceiveSensitivity;
 } tSxLoraConfiguration;
 
 
@@ -92,7 +92,7 @@ typedef struct
     uint8_t PayloadLength;
     uint8_t CrcLength;
     uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
+    int16_t ReceiveSensitivity;
 } tSxFlrcConfiguration;
 
 
@@ -111,7 +111,7 @@ typedef struct
     uint8_t CRCType;
     uint8_t Whitening;
     uint32_t TimeOverAir; // in us
-    int16_t ReceiverSensitivity;
+    int16_t ReceiveSensitivity;
 } tSxGfskConfiguration;
 
 
@@ -134,7 +134,7 @@ class SxDriverDummy
     void UpdateRfPower(tSxGlobalConfig* const global_config) {}
     void ClearIrqStatus(uint32_t IrqMask) {}
 
-    int16_t ReceiverSensitivity_dbm(void) { return 0; }
+    int16_t ReceiveSensitivity_dbm(void) { return 0; }
     int8_t RfPower_dbm(void) { return INT8_MIN; }
 
     void HandleAFC(void) {}
