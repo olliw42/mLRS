@@ -426,7 +426,7 @@ tCmdFrameHeader* head = (tCmdFrameHeader*)(frame->payload);
         link_task_reset();
 #ifdef DEVICE_HAS_JRPIN5
         switch (mbridge.cmd_in_process) {
-        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleRequestCmd(MBRIDGE_CMD_REQUEST_INFO); break;
+        case MBRIDGE_CMD_REQUEST_INFO: mbridge.HandleCmdRequest(MBRIDGE_CMD_REQUEST_INFO); break;
         }
         mbridge.Unlock();
 #endif
@@ -1166,16 +1166,13 @@ IF_CRSF(
                 link_task_set(LINK_TASK_TX_GET_RX_SETUPDATA_WRELOAD);
                 mbridge.Lock(MBRIDGE_CMD_REQUEST_INFO); // lock mBridge
             } else {
-                mbridge.HandleRequestCmd(&crsfcmd);
+                mbridge.HandleCmdRequest(&crsfcmd);
             }
             break;
-        case MBRIDGE_CMD_REQUEST_CMD:
-            mbridge.HandleRequestCmd(mbridge.GetPayloadPtr());
-            break;
+        case MBRIDGE_CMD_REQUEST_CMD: mbridge.HandleCmdRequest(); break;
         case MBRIDGE_CMD_PARAM_SET: {
-            bool rx_param_changed;
-            bool param_changed = mbridge_do_ParamSet(mbridge.GetPayloadPtr(), &rx_param_changed);
-            if (param_changed && rx_param_changed && connected()) {
+            bool rx_param_changed = mbridge.HandleCmdParamSet();
+            if (rx_param_changed && connected()) {
                 tasks.SetCrsfTask(TASK_RX_PARAM_SET);
             }
             }break;
