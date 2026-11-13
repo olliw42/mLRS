@@ -107,6 +107,10 @@
 #endif
 
 
+void _atomic_enter(void) { __disable_irq(); }
+void _atomic_exit(void) { __enable_irq(); }
+#define ATOMIC(x) _atomic_enter(); x; _atomic_exit();
+
 
 // setup(), loop() streamlining between Arduino/STM code
 uint8_t restart_controller = 0;
