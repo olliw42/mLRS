@@ -1026,6 +1026,23 @@ void tTxCrsf::handle_mavlink_msg_global_position_int(fmav_global_position_int_t*
 
     // mark as updated
     crsf_status[CRSF_ITEM_GPS].updated = true;
+
+    // there is no MAVLink message providing barometer altitude
+    // so use this one
+    // relative_alt is in mm, convert to dm + 1000m or m, with rounding
+    uint16_t altitude;
+    if (payload->relative_alt <= -1000000) { // minimum: -1000 m
+        altitude = 0;
+    } else if (payload->relative_alt >= 32766000) { // maximum: 32766 m
+        altitude = 0xFFFE;
+    } else if (payload->relative_alt < 22768000) { // convert to dm + 1000 m offset (32768 - 1000 = 22768)
+        altitude = 10000 + payload->relative_alt / 100;
+    } else { // convert to m
+        altitude = (payload->relative_alt / 1000) | 0x8000;
+    }
+    baro_altitude.altitude_packed = CRSF_REV_U16(altitude);
+    baro_altitude.vertical_speed_packed = 0; // unknown
+    crsf_status[CRSF_ITEM_BARO_ALTITUDE].updated = true;
 }
 
 
@@ -1056,7 +1073,6 @@ void tTxCrsf::handle_mavlink_msg_scaled_pressure(fmav_scaled_pressure_t* const p
     temp_ambient.temp_source_id = 1;
     temp_ambient.temperature = CRSF_REV_I16(0.1f * payload->temperature);
     crsf_status[CRSF_ITEM_TEMP].updated = true;
-
 }
 
 
