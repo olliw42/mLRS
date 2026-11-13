@@ -35,10 +35,10 @@ void __enable_irq(void) {}
 void _atomic_enter(void) { noInterrupts(); }
 void _atomic_exit(void) { interrupts(); }
 #else
-static portMUX_TYPE _atomic_mux = portMUX_INITIALIZER_UNLOCKED;
-void _atomic_enter(void) { portENTER_CRITICAL_SAFE(&_atomic_mux); }
-void _atomic_exit(void) { portEXIT_CRITICAL_SAFE(&_atomic_mux); }
+void _atomic_enter(void) { portDISABLE_INTERRUPTS(); }
+void _atomic_exit(void) { portENABLE_INTERRUPTS(); }
 #endif
+#define ATOMIC(x) _atomic_enter(); x; _atomic_exit();
 
 
 typedef enum {
