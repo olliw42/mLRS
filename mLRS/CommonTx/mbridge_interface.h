@@ -34,9 +34,10 @@ class tMBridge
     void Init(bool enable_flag);
 
     bool CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len);
-    void HandleRequestCmd(uint8_t* const payload);
-    void HandleRequestCmd(uint8_t cmd) { HandleRequestCmd(&cmd); } // when only the cmd byte is needed
-    uint8_t* GetPayloadPtr(void);
+    void HandleCmdRequest(uint8_t* const payload);
+    void HandleCmdRequest(uint8_t cmd) { HandleCmdRequest(&cmd); } // when only the cmd byte is needed
+    void HandleCmdRequest(void) { HandleCmdRequest(payload_ptr()); } // when the internal payload is needed
+    bool HandleCmdParamSet(void);
     uint8_t GetModelId(void);
     void Lock(uint8_t cmd);
     void Unlock(void);
@@ -52,6 +53,7 @@ class tMBridge
     void ParseCrsfFrame(uint8_t* const crsf, uint8_t len);
     bool CommandReceived(uint8_t* const cmd);
     void parse_nextchar(uint8_t c);
+    uint8_t* payload_ptr(void) { return &(cmd_r2m_frame[1]); }
 
     bool enabled;
 
@@ -192,12 +194,6 @@ bool tMBridge::CommandReceived(uint8_t* const cmd)
 }
 
 
-uint8_t* tMBridge::GetPayloadPtr(void)
-{
-    return &(cmd_r2m_frame[1]);
-}
-
-
 uint8_t tMBridge::GetModelId(void)
 {
     return cmd_r2m_frame[1];
@@ -267,7 +263,7 @@ bool tMBridge::CrsfFrameAvailable(uint8_t** const buf, uint8_t* const len)
 //-------------------------------------------------------
 // handler
 
-void tMBridge::HandleRequestCmd(uint8_t* const payload)
+void tMBridge::HandleCmdRequest(uint8_t* const payload)
 {
 tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
 
@@ -293,6 +289,25 @@ tMBridgeRequestCmd* request = (tMBridgeRequestCmd*)payload;
         start_ParamRequestByIndex(idx);
         break; }
     }
+}
+
+
+// returns true if a rx param is changed
+bool tMBridge::HandleCmdParamSet(void)
+{
+tMBridgeParamSet* param = (tMBridgeParamSet*)payload_ptr(); //payload;
+
+    if (param->index >= SETUP_PARAMETER_NUM) return false;
+
+    if (SetupParameter[param->index].type <= SETUP_PARAM_TYPE_LIST) {
+        return setup_set_param(param->index, param->value);
+    }
+
+    if (SetupParameter[param->index].type == SETUP_PARAM_TYPE_STR6) {
+        return setup_set_param_str6(param->index, param->str6_6);
+    }
+
+    return false;
 }
 
 
@@ -369,7 +384,6 @@ char param_optstr[96]; // is currently limited to 67 max
 
 typedef enum {
     MB_PARAM_ITEM = 0,
-    MB_PARAM_ITEM1,
     MB_PARAM_ITEM2,
     MB_PARAM_ITEM3,
     MB_PARAM_ITEM4,
@@ -544,28 +558,6 @@ void tMBridge::send_ParamItem(void)
     }
 
     cmd_fifo.Put(MBRIDGE_CMD_PARAM_ITEM); // trigger sending out next
-}
-
-
-bool mbridge_do_ParamSet(uint8_t* payload, bool* rx_param_changed)
-{
-tMBridgeParamSet* param = (tMBridgeParamSet*)payload;
-
-    *rx_param_changed = false;
-
-    if (param->index >= SETUP_PARAMETER_NUM) return false;
-
-    if (SetupParameter[param->index].type <= SETUP_PARAM_TYPE_LIST) {
-        *rx_param_changed = setup_set_param(param->index, param->value);
-        return true;
-    }
-
-    if (SetupParameter[param->index].type == SETUP_PARAM_TYPE_STR6) {
-        *rx_param_changed = setup_set_param_str6(param->index, param->str6_6);
-        return true;
-    }
-
-    return false;
 }
 
 
