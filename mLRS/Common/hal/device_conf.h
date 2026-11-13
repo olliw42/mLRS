@@ -93,10 +93,10 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR20xx
   #define FREQUENCY_BAND_2P4_GHZ
- #define FREQUENCY_BAND_433_MHZ
- #define FREQUENCY_BAND_70_CM_HAM
-  // #define FREQUENCY_BAND_868_MHZ
-  // #define FREQUENCY_BAND_915_MHZ_FCC
+// #define FREQUENCY_BAND_433_MHZ
+// #define FREQUENCY_BAND_70_CM_HAM
+   #define FREQUENCY_BAND_868_MHZ
+   #define FREQUENCY_BAND_915_MHZ_FCC
 
 #endif
 
@@ -105,10 +105,10 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_LR20xx
   #define FREQUENCY_BAND_2P4_GHZ
- #define FREQUENCY_BAND_433_MHZ
- #define FREQUENCY_BAND_70_CM_HAM
-  // #define FREQUENCY_BAND_868_MHZ
-  // #define FREQUENCY_BAND_915_MHZ_FCC
+// #define FREQUENCY_BAND_433_MHZ
+// #define FREQUENCY_BAND_70_CM_HAM
+   #define FREQUENCY_BAND_868_MHZ
+   #define FREQUENCY_BAND_915_MHZ_FCC
 
 #endif
 
