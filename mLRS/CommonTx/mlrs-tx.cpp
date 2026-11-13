@@ -330,12 +330,10 @@ void SX2_DIO_EXTI_IRQHandler(void)
 
 void sx_isr_handler(void)
 {
-    //_atomic_enter();
     ATOMIC(
         uint32_t pending = irq_pending;
         irq_pending = 0;
     )
-    //_atomic_exit();
 
     if (pending & 0x01) {
         irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
