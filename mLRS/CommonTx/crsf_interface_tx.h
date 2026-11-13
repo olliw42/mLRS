@@ -37,6 +37,7 @@ extern tGlobalConfig Config;
 extern tStats stats;
 extern tFhss fhss;
 extern tMBridge mbridge;
+extern int8_t rx_power_dBm(void);
 
 
 //-------------------------------------------------------
@@ -1376,7 +1377,7 @@ tCrsfLinkStatisticsRx clstats;
         );
     clstats.downlink_LQ = stats.GetReceivedLQ_rc();                   // ignored by EdgeTx
     clstats.downlink_snr = UINT8_MAX;                                 // ignored by EdgeTx,       we don't know it
-    clstats.uplink_transmit_power =                                   // EdgeTx -> "TPWR"   dBm
+    clstats.uplink_transmit_power =                                   // EdgeTx -> "TPWR"   dBm   note: EdgeTx shows it as unsigned!
         SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm());
 
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS_RX, &clstats, CRSF_LINK_STATISTICS_RX_LEN);
@@ -1394,7 +1395,7 @@ tCrsfLinkStatisticsTx clstats;
         );
     clstats.uplink_LQ = stats.GetLQ_serial();                         // ignored by EdgeTx
     clstats.uplink_snr = stats.GetLastSnr();                          // ignored by EdgeTx
-    clstats.downlink_transmit_power = UINT8_MAX;                      // EdgeTx -> "RPWR"   dBm,  we don't know it
+    clstats.downlink_transmit_power = rx_power_dBm(); //UINT8_MAX;    // EdgeTx -> "RPWR"   dBm,  we don't know it, note: EdgeTx shows it as unsigned!
     clstats.uplink_fps = crsf_cvt_fps(Config.Mode);                   // EdgeTx -> "TFPS"   Hz,   *10
 
     send_frame(CRSF_FRAME_ID_LINK_STATISTICS_TX, &clstats, CRSF_LINK_STATISTICS_TX_LEN);

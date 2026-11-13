@@ -508,6 +508,7 @@ typedef struct
     char rx_device_name[20+1];
     int8_t rx_actual_power_dbm;
     uint8_t rx_actual_diversity;
+    int16_t rx_power_list[8];
 } tSetupMetaData;
 
 
