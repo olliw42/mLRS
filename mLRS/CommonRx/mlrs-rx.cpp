@@ -972,6 +972,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
         return; // link state may have changed, process immediately
     }//end of if(doPostReceive)
 
+    if (irq_pending) return; // dio isr pending, so process immediately
+
     //-- Update channels, Out handling, etc
 
     if (doPostReceive2_cnt) {

@@ -1235,6 +1235,7 @@ IF_IN(
         }
     }
 
+    if (irq_pending) return; // dio isr pending, so process immediately
     if (isInTimeGuard || link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!
 
     //-- Do MAVLink & MSP
