@@ -222,4 +222,9 @@ typedef enum {
 } KEY_ENUM;
 
 
+//-- power conversion
+
+int8_t cvt_power_mW_to_dBm(int16_t power_mW);
+
+
 #endif // COMMON_TYPES_H

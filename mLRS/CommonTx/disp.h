@@ -46,6 +46,7 @@ extern tStats stats;
 extern tGDisplay gdisp;
 extern tTxInfo info;
 extern tTxTasks tasks;
+extern int8_t rx_power_dBm(void);
 
 
 #define DISP_START_PAGE_TMO_MS  SYSTICK_DELAY_MS(1500)
@@ -728,7 +729,7 @@ int8_t power;
     if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-\x7F"); }
     gdisp_setcurX(100);
     if (connected_and_rx_setup_available()) {
-        power = SetupMetaData.rx_actual_power_dbm;
+        power = rx_power_dBm();
         if (power >= -9) { stoBCDstr(power, s); gdisp_puts(s); } else { gdisp_puts("-\x7F"); }
     }
     gdisp_setcurX(115);
@@ -773,6 +774,8 @@ void tTxDisp::draw_page_main_sub1(void)
 {
 char s[32];
 
+if (page_modified) {
+    // the part which is static
     draw_header("Main/2");
 
     gdisp_setcurXY(0, 0 * 10 + DISP_CONTENT_Y_BASE);
@@ -787,12 +790,6 @@ char s[32];
 
     gdisp_setcurXY(0, 1 * 10 + DISP_CONTENT_Y_BASE);
     gdisp_puts("Power");
-    gdisp_setcurX(40);
-    stoBCDstr(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()), s);
-    gdisp_puts(s);
-    gdisp_setcurX(80);
-    stoBCDstr(SetupMetaData.rx_actual_power_dbm, s);
-    if (connected_and_rx_setup_available()) gdisp_puts(s);
 
     gdisp_setcurX(115);
     gdisp_puts("dB");
@@ -808,13 +805,28 @@ char s[32];
     if (connected_and_rx_setup_available()) gdisp_puts(s);
 }
 
+    // now the part which is frequently updated
+    gdisp_setfontbackground();
+
+    gdisp_setcurX(40);
+    stoBCDstr(SX_OR_SX2(sx.RfPower_dbm(),sx2.RfPower_dbm()), s);
+    gdisp_puts(s);
+    if (connected_and_rx_setup_available()) {
+        gdisp_setcurX(80);
+        stoBCDstr(rx_power_dBm(), s);
+        gdisp_puts(s);
+    }
+
+    gdisp_unsetfontbackground();
+}
+
 
 void tTxDisp::draw_page_main_sub2(void)
 {
 char s[32];
 
 if (page_modified) {
-
+    // the part which is static
     draw_header("Main/3");
 
     gdisp_setcurXY(5, 0 * 10 + DISP_CONTENT_Y_BASE);
@@ -866,6 +878,7 @@ if (page_modified) {
         case 3: gdisp_drawbitmap(55, 40, key3, 17, 5, 1); break;
     }
 }
+
     // now the part which is frequently updated
     gdisp_setfontbackground();
 
@@ -956,8 +969,10 @@ uint8_t yofs = 0;
 void tTxDisp::draw_page_main(void)
 {
     switch (subpage) {
+    default:
+        draw_page_main_sub0();
+        return;
     case SUBPAGE_MAIN_SUB1:
-        if (!page_modified) return; // has no update elements
         draw_page_main_sub1();
         return;
     case SUBPAGE_MAIN_SUB2:
@@ -973,8 +988,6 @@ void tTxDisp::draw_page_main(void)
         draw_page_main_sub4();
         return;
 #endif
-    default:
-        draw_page_main_sub0();
     }
 }
 
