@@ -136,6 +136,7 @@ tTxCli cli;
 tMBridge mbridge;
 tTxCrsf crsf;
 tIn in;
+tRfPower rfpower_rx;
 
 
 //-------------------------------------------------------
@@ -232,6 +233,18 @@ void tWhileTransmit::handle_once(void)
 //-------------------------------------------------------
 // Some helper
 //-------------------------------------------------------
+
+// simulates the Rx's power setting
+int8_t rx_power_dBm(void)
+{
+    int8_t power = SetupMetaData.rx_actual_power_dbm;
+    if (Setup.Rx.PowerSwitchChannel != POWER_SWITCH_CHANNEL_OFF && rfpower_rx.Get() < 8) {
+        int16_t rx_power_mW = SetupMetaData.rx_power_list[rfpower_rx.Get()];
+        if (rx_power_mW < INT16_MAX) power = cvt_power_mW_to_dBm(rx_power_mW);
+    }
+    return power;
+}
+
 
 void enter_system_bootloader(void)
 {
@@ -750,6 +763,7 @@ RESTARTCONTROLLER
     fhss.Init(&Config.Fhss, &Config.Fhss2);
     fhss.Start();
     rfpower.Init();
+    rfpower_rx.Init();
 
     sx.SetRfFrequency(fhss.GetCurrFreq());
     sx2.SetRfFrequency(fhss.GetCurrFreq2());
@@ -1197,6 +1211,9 @@ IF_IN(
         rc_data_updated = false;
         channelOrder.SetAndApply(&rcData, Setup.Tx[Config.ConfigId].ChannelOrder);
         rfpower.Set(&rcData, Setup.Tx[Config.ConfigId].PowerSwitchChannel, Setup.Tx[Config.ConfigId].Power);
+        if (connected_and_rx_setup_available()) {
+            rfpower_rx.Set(&rcData, Setup.Rx.PowerSwitchChannel, Setup.Rx.Power);
+        }
     }
 
     if (isInTimeGuard || link_state == LINK_STATE_TRANSMIT_SEND) return; // don't do anything else in this time slot, is important!

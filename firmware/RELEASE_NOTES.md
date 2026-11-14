@@ -1,5 +1,44 @@
 # mLRS - Release Notes #
 
+## v1.4.04 (pre-release) (11.10.2026) ##
+
+This version brings (as compared to v1.4.02):
+
+- 32 channels support, with Lua scripts for EdgeTx radios, Frsky/ETHOS radios supports it natively
+- CRSF Tx side autobauding, supports 400k, 921k, 1.87M and 416666 non-inverted
+- CRSF RPM and WIND sensors added
+- CRSF link statistics reworked to match EdgeTX 2.12.4 behavior
+- new devices: Bayck UR1000, RadioMaster GX15, Jumper T15 Pro Duo, Jumper T22 Duo
+- mlrs_mavlink_link_stats.lua Lua script for ArduPilot updated and aligned with AP 4.7, with RSSI in dBm for AP ≥ 4.7.2
+- new Lua widget for EdgeTx showing detailed mLRS statistics (mLRSStatsW)(see attached picture below)
+- Lua configuration script: several improvements (nice now on 800x480 screens aka RM TX16S Mk3, displays right away on start, faster parameter load when receiver not connected, parameter download retry)
+- crsfbridge introduced, works with the mTXe project (MAVLink for EdgeTx)
+- a few bugs (all non-critical) corrected
+
+The one, big addition in this version is support of 32 RC channels. For FrSky/ETHOS radios, this even works natively with ETHOS 26.1.3 and later. For EdgeTx radios, we provide two Lua scripts that can be installed on the radio to enable 32-channel operation. For details, see [32 RC Channels](https://github.com/olliw42/mLRS-docu/blob/main/docs/32CHANNELS.md). INAV already supports 32 channels. For ArduPilot, a PR is pending ([#34615](https://github.com/ArduPilot/ardupilot/pull/34615)), so support of 32 channels may arrive there soon as well. In other words, 32 RC channels is a reality now 🙂
+
+Note to users of EdgeTx radios with an H7 processor: Please upgrade your radio to EdgeTx firmware v2.12.4 or later. Earlier versions had a CRSF-related issue that prevented some mLRS Tx modules from working correctly. To address this, mLRS introduced a workaround, which has now been removed because the issue is fixed in the latest EdgeTx version.
+
+## v1.4.02 (pre-release) (2.8.2026) ##
+
+This version brings (as compared to v1.4.00):
+
+- DroneCAN: CANFD support (4 Mbps)
+- entirely new serial handling, Serial_Dest renamed to Ser_Port, Ser_Port2 added
+- USB port usable through setting for serial data
+- MAVLink: routing capability when two serials are used
+- MSP: BOXID instead of BOXNAMES, avoids longstanding INAV bug, is better in any way (thx to <@375368952941117440> and <@265918883838296065>)
+- MSP: update to latest and greatest, new modes added
+- wireless bridge: ESPNOW multipeer option
+- Radiomaster TX16S MK3, Radiomaster AX12, Jumper T15 Pro
+- Lua: ETHOS Lua script
+- LR2021 support
+- CSRF: telemetry speed improvement
+- CRSF: Distance sensor support added
+- CLI: no minimum length limit for netssid
+
+This version brings some quite substantial additions and improvements. Most of the bullets speak for themselves, maybe few comments on the serial rewrite, as this is probably the part which you may notice first. It shows up as renamed parameters, i.e., TX_Ser_Dest and Rx_Ser_Dest are now Tx_Ser_Port and Rx_Ser_Port. You now however also can select "com" as option which makes the USB port easily available for serial (MAVLink/MSP) data, and a BT or ESP32 module is selected as "wbridge" (for wireless bridge). Furthermore, also a Tx_Ser_Port2 exists, which with MAVLink allows to use two serials on the Tx module, then including full MAVLink routing capabilities. This should allow a range of new applications. INAV/MSP users may also want to upgrade.
+
 ## v1.4.00 (official release) (20.3.2026) ##
 
 This version brings (as compared to v1.3.08):

@@ -14,6 +14,10 @@
 #include "hal/hal.h"
 
 
+extern tGlobalConfig Config;
+// also references rfpower_list[], RFPOWER_LIST_NUM
+
+
 class tRfPower
 {
   public:
@@ -21,6 +25,8 @@ class tRfPower
     void Update(void);
     void Set(tRcData* const rc, uint8_t power_switch_channel, uint8_t power);
     void Set(uint8_t power);
+
+    uint8_t Get(void) { return rfpower_new_idx; }
 
   private:
     uint8_t rfpower_current_idx;

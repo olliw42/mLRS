@@ -9,6 +9,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include "common_types.h"
 #include "../modules/stm32ll-lib/src/stdstm32.h"
 #include "protocols/crsf_protocol.h"
@@ -628,4 +629,14 @@ char ss[32];
         }
     }
     return major * 10000 + minor * 100 + patch;
+}
+
+
+//-- power conversion
+
+int8_t cvt_power_mW_to_dBm(int16_t power_mW)
+{
+    if (power_mW <= 0) return INT8_MIN;
+    float dbm = 10.0f * log10f((float)power_mW);
+    return (int8_t)(dbm + 0.5f);
 }

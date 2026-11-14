@@ -5,7 +5,7 @@ local widgetName = "mLRS Statistics Widget"
 -- https://www.gnu.org/licenses/gpl-3.0.de.html
 ----------------------------------------------------------------------
 -- copy script to the WIDGETS\mLRSStatsW folder on the EdgeTx SD card
--- version 2026-10-17.00
+-- version 2026-11-13.00
 
 
 local options = {
@@ -147,6 +147,21 @@ local function drawCompact(widget, w, h)
 end
 
 
+-- grrr, EgdeTx has two TPWR sensors :(
+local TPWR_ID = nil
+local function findTPWR()
+    local info = getFieldInfo("TPWR")
+    if not info then return end
+    for sourceId = info.id, 600 do
+        local info = getFieldInfo(sourceId)
+        if info and info.name == "TPWR" and info.unit == 29 then -- 29 = dBm, 16 = mW
+            TPWR_ID = sourceId
+            return
+        end
+    end
+end
+
+
 local function drawFull(widget, w, h)
     if w == 800 and h == 480 then
         sx, sy = 1.6, 1.6
@@ -196,9 +211,18 @@ local function drawFull(widget, w, h)
     drawNumber(x+70, y+20, mbStats.LQ_serial, CUSTOM_COLOR)
 
     local s = (mbStats.transmit_antenna == 0) and "a1" or "a2"
-    drawText(x+75, y+50, s, CUSTOM_COLOR)
+    drawText(x+76, y+50, s, CUSTOM_COLOR)
     s = (mbStats.receive_antenna == 0) and "a1" or "a2"
-    drawText(x+75, y+70, s, CUSTOM_COLOR)
+    drawText(x+76, y+70, s, CUSTOM_COLOR)
+
+    if TPWR_ID then
+        local tpwr = getValue(TPWR_ID) -- getValue("TPWR")
+        if tpwr > 127 then tpwr = tpwr - 256 end
+        if tpwr then
+            drawNumber(x+23, y+60, tpwr, CUSTOM_COLOR + RIGHT)
+            drawText(x+26, y+60, "dBm", CUSTOM_COLOR)
+        end
+    end
 
     x = 300
     drawText(x, y, "rx rssi", CUSTOM_COLOR)
@@ -210,6 +234,13 @@ local function drawFull(widget, w, h)
     drawText(x+5, y+50, s, CUSTOM_COLOR)
     s = (mbStats.receiver_transmit_antenna == 0) and "a1" or "a2"
     drawText(x+5, y+70, s, CUSTOM_COLOR)
+
+    local rpwr = getValue("RPWR")
+    if rpwr then
+        if rpwr > 127 then rpwr = rpwr - 256 end
+        drawNumber(x+58, y+60, rpwr, CUSTOM_COLOR + RIGHT)
+        drawText(x+61, y+60, "dBm", CUSTOM_COLOR)
+    end
 
     x = 190
     y = y + 35
@@ -280,6 +311,7 @@ local function create(zone, options)
         error("CRSF not enabled!")
     end
     local widget = { zone = zone, options = options }
+    findTPWR()
     return widget
 end
 
