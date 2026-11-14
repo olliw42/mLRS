@@ -169,45 +169,63 @@ void init_hw(void)
 // SX12xx
 //-------------------------------------------------------
 
-volatile uint32_t irq_status;
-volatile uint32_t irq2_status;
+volatile uint32_t irq_pending; // 0, 0x01, 0x02
+uint32_t irq_status;
+uint32_t irq2_status;
 
 IRQHANDLER(
 void SX_DIO_EXTI_IRQHandler(void)
 {
     sx_dio_exti_isr_clearflag();
-    irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
-    if (irq_status & SX_IRQ_RX_DONE) {
-        if (bind.IsInBind()) {
-            uint64_t bind_signature;
-            sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-            if (bind_signature != bind.TxSignature) irq_status = 0; // not binding frame, so ignore it
-        } else {
-            uint16_t sync_word;
-            sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
-            if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
-        }
-    }
+    irq_pending |= 0x01;
 })
 #ifdef USE_SX2
 IRQHANDLER(
 void SX2_DIO_EXTI_IRQHandler(void)
 {
     sx2_dio_exti_isr_clearflag();
-    irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
-    if (irq2_status & SX2_IRQ_RX_DONE) {
-        if (bind.IsInBind()) {
-            uint64_t bind_signature;
-            sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
-            if (bind_signature != bind.TxSignature) irq2_status = 0;
-        } else {
-            uint16_t sync_word;
-            sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
-            if (sync_word != Config.FrameSyncWord) irq2_status = 0;
-        }
-    }
+    irq_pending |= 0x02;
 })
 #endif
+
+void sx_isr_handler(void)
+{
+    ATOMIC(
+        uint32_t pending = irq_pending;
+        irq_pending = 0;
+    )
+
+    if (pending & 0x01) {
+      irq_status = sx.GetAndClearIrqStatus(SX_IRQ_ALL);
+        if (irq_status & SX_IRQ_RX_DONE) {
+            if (bind.IsInBind()) {
+                uint64_t bind_signature;
+                sx.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+                if (bind_signature != bind.TxSignature) irq_status = 0; // not binding frame, so ignore it
+            } else {
+                uint16_t sync_word;
+                sx.ReadBuffer(0, (uint8_t*)&sync_word, 2); // rxStartBufferPointer is always 0, so no need for sx.GetRxBufferStatus()
+                if (sync_word != Config.FrameSyncWord) irq_status = 0; // not for us, so ignore it
+            }
+        }
+    }
+#ifdef USE_SX2
+    if (pending & 0x02) {
+        irq2_status = sx2.GetAndClearIrqStatus(SX2_IRQ_ALL);
+        if (irq2_status & SX2_IRQ_RX_DONE) {
+            if (bind.IsInBind()) {
+                uint64_t bind_signature;
+                sx2.ReadBuffer(0, (uint8_t*)&bind_signature, 8);
+                if (bind_signature != bind.TxSignature) irq2_status = 0;
+            } else {
+                uint16_t sync_word;
+                sx2.ReadBuffer(0, (uint8_t*)&sync_word, 2);
+                if (sync_word != Config.FrameSyncWord) irq2_status = 0;
+            }
+        }
+    }
+#endif
+}
 
 
 uint8_t link_rx1_status;
@@ -573,7 +591,7 @@ RESTARTCONTROLLER
     // start up sx
     if (!sx.isOk()) { FAILALWAYS(BLINK_RD_GR_OFF, "Sx not ok"); } // fail!
     if (!sx2.isOk()) { FAILALWAYS(BLINK_GR_RD_OFF, "Sx2 not ok"); } // fail!
-    irq_status = irq2_status = 0;
+    irq_pending = irq_status = irq2_status = 0;
     IF_SX(sx.StartUp(&Config.Sx));
     IF_SX2(sx2.StartUp(&Config.Sx2));
     bind.Init();
@@ -671,7 +689,7 @@ INITCONTROLLER_END
         IF_ANTENNA2(sx2.SetToRx());
         link_state = LINK_STATE_RECEIVE_WAIT;
         link_rx1_status = link_rx2_status = RX_STATUS_NONE;
-        irq_status = irq2_status = 0;
+        irq_pending = irq_status = irq2_status = 0;
         DBG_MAIN_SLIM(dbg.puts("\n>");)
         break;
 
@@ -680,11 +698,12 @@ INITCONTROLLER_END
         do_transmit(tdiversity.Antenna());
         link_state = LINK_STATE_TRANSMIT_WAIT;
         link_tx_status = TX_STATUS_NONE;
-        irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
+        irq_pending = irq_status = irq2_status = 0; // important, in low connection condition, RxDone isr could trigger
         DBG_MAIN_SLIM(dbg.puts("t");)
         break;
     }//end of switch(link_state)
 
+    sx_isr_handler();
 IF_SX(
     if (irq_status) {
         if (link_state == LINK_STATE_TRANSMIT_WAIT) {
@@ -952,6 +971,8 @@ dbg.puts(s8toBCD_s(stats.last_rssi2));*/
 
         return; // link state may have changed, process immediately
     }//end of if(doPostReceive)
+
+    if (irq_pending) return; // dio isr pending, so process immediately
 
     //-- Update channels, Out handling, etc
 
