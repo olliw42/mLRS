@@ -2,9 +2,9 @@
 
 # mLRS #
 
-The mLRS project offers an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides bidirectional serial connection combined with full remote control. The 'm' in the project name alludes to 'MAVLink', as the project includes features that optimize performance for MAVLink systems. It may also allude to 'MSP' for the same reason. However, mLRS also provides a transparent serial link, making it broadly useful and not limited to MAVLink or MSP systems alone. The 'LR' in the project name alludes to 'long range', which should not be understood in terms of an absolute range, such as 100 km, but - of course - as achieving the best possible range under given conditions. Physical laws dictate that higher data rates result in shorter range. So, mLRS cannot compete purely on range with systems that achieve the range by reducing data rates to a minimum, at the cost of the associated compromises. The goal of mLRS is to achieve a high range while maintaining a relatively high data rate. 
+The mLRS project offers an open source 2.4 GHz & 915/868 MHz & 433 MHz/70 cm LoRa-based high-performance long-range radio link, which provides bidirectional serial connection combined with full remote control. The 'm' in the project name alludes to 'MAVLink', as the project includes features that optimize performance for MAVLink systems. It may also allude to 'MSP' for the same reason. However, mLRS also provides a transparent serial link, making it broadly useful and not limited to MAVLink or MSP systems alone. The 'LR' in the project name alludes to 'long range', which should not be understood in terms of an absolute range, such as 100 km, but - of course - as achieving the best possible range under given conditions. Physical laws dictate that higher data rates result in shorter range. So, mLRS cannot compete purely on range with systems that achieve large range by reducing data rates to a minimum, at the cost of the associated compromises. The goal of mLRS is to achieve a high range while maintaining a relatively high data rate. 
 
-Typical specs could be 'plenty' of full-resolution RC channels, with 50 Hz update rate and serial data rates of about 3-5 kBytes/s at 2.4 GHz.
+Typical specs could be 'plenty' of full-resolution RC channels with 50 Hz update rate and serial data rates of about 3-5 kBytes/s at 2.4 GHz.
 
 Many LRS or radio links with telemetry exist, among them open source projects such as SiK radios, OpenLRS, ExpressLRS, but also befinitiv wifibroadcast based projects like OpenHD or Ruby, closed source hobbyist projects such as UltimateLRS, QczekLRS, as well as commercial systems such as DragonLink, RFD900, Dronee Zoon, Siyi, and also TBS Crossfire and alike.
 
@@ -46,6 +46,8 @@ The 32-channel configuration provides the following channel layout:
 - CH17 - CH20: 4 channels with 9-position values (interlaced 1:4)
 - CH21 - CH32: 13 channels with three-position values (interlaced 1:4)
 
+For details see [here](https://github.com/olliw42/mLRS-docu/blob/main/docs/32CHANNELS.md).
+
 ### Operation Modes
 
 mLRS provides these operation modes:
@@ -58,6 +60,8 @@ mLRS provides these operation modes:
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver<br>sensitivity | -105 dBm | -108 dBm | -112 dBm | -112 dBm | not for LR | not for LR |
 
+For a compatibility chart see [here](https://github.com/olliw42/mLRS-docu/blob/main/docs/SX126x_SX127x_INCOMPATIBILITY.md).
+
 ### Further Features
 
 - full diversity: mLRS transmitters and receivers which feature two Semtech Lora chips provide full diversity, for both receiving and transmitting. This really improves link quality in the far range, and allows advanced dual-antenna setups on the transmitter side.
@@ -66,7 +70,7 @@ mLRS provides these operation modes:
 - the receiver parameters can be set from the mLRS transmitter or radio; no need to mess with the receiver for configuration in any way.
 - the transmitter and receiver parameters can be set via a Lua script, CLI, or an OLED display. There is no need to recompile or reflash the firmware in order to change an option or parameter setting. 
 - bind mode for binding "unknown" receivers to a transmitter.
-- the mLRS system can be configured through the parameters for a wide range of applications and use cases, for details see [Documentation](https://github.com/olliw42/mLRS-docu).
+- the mLRS system can be configured through the parameters for a wide range of applications and use cases.
 - 10 model configurations stored in the mLRS transmitter, selected by "Receiver" number in OpenTx/EdgeTx radios.  
 - support of CRSF and ArduPilot passthrough protocol; enables using the Yaapu Telemetry app on standard radios (out of the box, no need for extra dongles!).
 - optimizations for ArduPilot and PX4 autopilot systems.
@@ -78,6 +82,8 @@ mLRS provides these operation modes:
 - support for OLED display & five-way button, serial2. 
 - support of ESP32 and ESP8266 modules for wireless connection to a ground control station (aka wireless bridge).
 - support of plenty platforms: STM32F103, STM32G4, STM32L4, STM32F3, STM32WLE5, Wio-E5, ESP8285, ESP32, ESP32-C3, ESP32-S3, E28, E22, E77, SX1280, SX1262, SX1276, LLCC68, LR1121, LR2021.
+
+For more details see [Documentation](https://github.com/olliw42/mLRS-docu).
 
 ## Community ##
 
