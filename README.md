@@ -46,7 +46,7 @@ The 32-channel configuration provides the following channel layout:
 - CH17 - CH20: 4 channels with 9-position values (interlaced 1:4)
 - CH21 - CH32: 13 channels with three-position values (interlaced 1:4)
 
-For details see [here](https://github.com/olliw42/mLRS-docu/blob/main/docs/32CHANNELS.md).
+For details see [Documentation: 32 Channels Support](https://github.com/olliw42/mLRS-docu/blob/main/docs/32CHANNELS.md).
 
 ### Operation Modes
 
@@ -60,7 +60,7 @@ mLRS provides these operation modes:
 | uplink<br>serial rate | 3200 Bytes/sec | 2000 Bytes/sec | 1207 Bytes/sec | 1207 Bytes/sec | 7111 Bytes/sec | 3200 Bytes/sec |  
 | receiver<br>sensitivity | -105 dBm | -108 dBm | -112 dBm | -112 dBm | not for LR | not for LR |
 
-For a compatibility chart see [here](https://github.com/olliw42/mLRS-docu/blob/main/docs/SX126x_SX127x_INCOMPATIBILITY.md).
+For a compatibility chart see [Documentation: Compatibility Chart](https://github.com/olliw42/mLRS-docu/blob/main/docs/SX126x_SX127x_INCOMPATIBILITY.md).
 
 ### Further Features
 
