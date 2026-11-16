@@ -369,6 +369,7 @@ class Sx128xDriver : public Sx128xDriverCommon
     {
         delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
         spi_deselect();
+        delay_ns(100); // datasheet says t9 = 100 ns, NSS high time, BUSY can be low right after a read
     }
 
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
@@ -503,6 +504,7 @@ class Sx128xDriver2 : public Sx128xDriverCommon
     {
         delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
         spib_deselect();
+        delay_ns(100); // datasheet says t9 = 100 ns, NSS high time, BUSY can be low right after a read
     }
 
 #ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI

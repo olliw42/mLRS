@@ -435,13 +435,14 @@ class Lr11xxDriver : public Lr11xxDriverCommon
     void SpiSelect(void) override
     {
         spi_select();
-        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+        delay_ns(50); // datasheet says t1 = 31.25 ns, NSS falling edge to SCK setup time
     }
 
     void SpiDeselect(void) override
     {
-        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        delay_ns(50); // datasheet gives no SCK to NSS rising edge hold time, helps so do it
         spi_deselect();
+        delay_ns(125); // datasheet gives no NSS high time, use LR20xx tSH = 125 ns, BUSY can be low right after a read
     }
 
     void SpiTransfer(uint8_t* dataout, uint8_t* datain, uint8_t len) override
@@ -558,13 +559,14 @@ class Lr11xxDriver2 : public Lr11xxDriverCommon
     void SpiSelect(void) override
     {
         spib_select();
-        delay_ns(50); // datasheet says t1 = 25 ns, semtech driver doesn't do it, helps so do it
+        delay_ns(50); // datasheet says t1 = 31.25 ns, NSS falling edge to SCK setup time
     }
 
     void SpiDeselect(void) override
     {
-        delay_ns(50); // datasheet says t8 = 25 ns, semtech driver doesn't do it, helps so do it
+        delay_ns(50); // datasheet gives no SCK to NSS rising edge hold time, helps so do it
         spib_deselect();
+        delay_ns(125); // datasheet gives no NSS high time, use LR20xx tSH = 125 ns, BUSY can be low right after a read
     }
 
 #ifndef DEVICE_HAS_DIVERSITY_SINGLE_SPI
