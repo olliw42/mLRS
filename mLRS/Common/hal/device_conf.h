@@ -88,7 +88,7 @@ The default selection of frequency bands can be overruled by feature defines.
 
 //-- XRC Technologies NOVALINK mLRS devices
 
-#ifdef TX_XRC_NOVALINK433_G473CE
+#ifdef TX_XRC_NOVALINK924_G473CE
   #define DEVICE_NAME "XRC LR2021 TX"
   #define DEVICE_IS_TRANSMITTER
   #define DEVICE_HAS_LR20xx
@@ -100,7 +100,7 @@ The default selection of frequency bands can be overruled by feature defines.
 
 #endif
 
-#ifdef RX_XRC_NOVALINK433_G473CE
+#ifdef RX_XRC_NOVALINK924_G473CE
   #define DEVICE_NAME "XRC LR2021 RX"
   #define DEVICE_IS_RECEIVER
   #define DEVICE_HAS_LR20xx

@@ -7,7 +7,7 @@
 //*******************************************************
 
 //-------------------------------------------------------
-// XRC Technologies NOVALINK 433MHz Receiver, STM32G473CE
+// XRC Technologies NOVALINK 915MHz/2.4GHz Receiver, STM32G473CE
 //-------------------------------------------------------
 
 /*
@@ -228,9 +228,6 @@ void out_set_inverted(void)
 
 //-- POWER
 
-//#define POWER_PA_NONE_LR20XX
-//#include "../hal-power-pa.h"
-
 #define POWER_GAIN_DBM_HF         0 // gain of a PA stage if present
 #define POWER_GAIN_DBM_LF         0
 #define POWER_USE_DEFAULT_RFPOWER_CALC
@@ -239,11 +236,11 @@ void out_set_inverted(void)
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_MIN, .mW = INT8_MIN },
-    { .dbm = POWER_0_DBM, .mW = 1 },
-    { .dbm = POWER_10_DBM, .mW = 10 },
-    { .dbm = POWER_14_DBM, .mW = 25 },
-    { .dbm = POWER_20_DBM, .mW = 100 },
-    { .dbm = POWER_22_DBM, .mW = 158 },
+    { .dbm = POWER_0_DBM, .mW = 50 },
+    { .dbm = POWER_10_DBM, .mW = 100 },
+    { .dbm = POWER_14_DBM, .mW = 250 },
+    { .dbm = POWER_20_DBM, .mW = 500 },
+    { .dbm = POWER_22_DBM, .mW = 1000 },
 };
 
 //-- TEST
