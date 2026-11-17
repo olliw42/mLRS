@@ -1,0 +1,28 @@
+10/23/26
+
+NiceRF Lora2021 915/868 version is the highest performance mLRS module out of all setups
+
+Specifically 915 MHz with custom tuned antenna SWR ~1.2
+
+Beats 433Mhz 3.5W + SAW filter
+
+Beats 2.4GHz Lora2021
+
+Beats 433Mhz Lora2021
+
+Beats NiceRF SX1278 1W module 433MHz
+
+Properly goes down to rated RSSI level
+
+Need to est against sx1276 but am hopeful that sx1276 will not have to be used anymore or any sx127x line.
+
+SX1278 still giving best performance at 433MHz. Best performance is 3W + SAW filter problem is that it's not manufacturable.
+
+TODO:
+
+Test all 2.4GHz sx 1280/sx1281 modules
+
+Test 1276 868 and 915MHz ones to deterine if they are OK.
+
+This significantly changes the requirement to use the nicerf modules. Perhaps the old sx127x footprint can be retired and XRC can release a version that uses a custom 433Mhz implementation and then use the nicerf module for the modern lora2021 footprint which also happens to be lr1121 compatible too.
+
