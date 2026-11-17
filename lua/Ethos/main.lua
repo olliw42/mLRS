@@ -1,7 +1,7 @@
 --[[
   Copyright (C) 2025 Rob Thomson
   GPLv3 — https://www.gnu.org/licenses/gpl-3.0.en.html
-  version 10. Oct. 2027
+  version 28. Oct. 2026
 ]]--
 
 local SYSTEM_TOOL = false  -- set to true to force system tool registration
@@ -18,7 +18,6 @@ local icon = lcd and lcd.loadMask and lcd.loadMask(BASE .. "/icon.png") or nil
 local api
 local requested = false
 local loadedParams = false
-local paramsRequested = false
 
 local statusMsg = "Starting…"
 local errMsg
@@ -32,12 +31,15 @@ local bindEndAt = 0
 
 local hasUnsavedChanges = false
 
--- RX presence tracking (latched)
-local rxPresent = nil
-local lastRxProbeAt = 0
+-- Receiver panel is built only while mLRS reports a receiver (see isRxPresent)
+local rxPanelShown = false
+-- Edge detector for the Ethos telemetry-active source
+local lastTlmActive = nil
 
-local linkActive = false
-local lastLinkActive = nil
+-- Oldest firmware this script talks to (same as the EdgeTX script)
+local REQUIRED_TX_VERSION_INT = 10303 -- v1.3.03
+local REQUIRED_RX_VERSION_INT = 10303
+local layoutWarn = nil -- Tx/Rx parameter layout mismatch, shown next to the status
 
 local function now() return os.clock() end
 local function fmt(x) return (x == nil) and "---" or tostring(x) end
@@ -82,7 +84,18 @@ local function statusText()
   if errMsg and errMsg ~= "" then
     return "ERR: " .. errMsg
   end
-  return statusMsg or ""
+  local s = statusMsg or ""
+  if layoutWarn then s = s .. " | " .. layoutWarn end
+  -- while params load, append progress "(done/total)" like the EdgeTX script
+  if api then
+    local done, total = api:loadProgress()
+    if done then
+      s = s .. " (" .. tostring(done)
+      if total and total > 0 then s = s .. "/" .. tostring(total) end
+      s = s .. ")"
+    end
+  end
+  return s
 end
 
 local function updateStatusWidgets()
@@ -170,7 +183,7 @@ end
 -- Bind helpers
 ------------------------------------------------------------
 local function doBindStart()
-  if not api then return end
+  if not api or not loadedParams then return end
   setErr(nil)
   setStatus("Starting bind…")
   api:bindStart(function(res)
@@ -208,6 +221,9 @@ local function updateBindWidgets()
   if bindActive then
     local left = math.max(0, bindEndAt - now())
     safeCall(ui.bindStatus, "value", "ACTIVE (auto-stop in " .. string.format("%.0f", left) .. "s)")
+  elseif info and info.has_status == 1 and info.binding == 1 then
+    -- module reports it is binding (e.g. started from its button)
+    safeCall(ui.bindStatus, "value", "ACTIVE (module)")
   else
     safeCall(ui.bindStatus, "value", "Idle")
   end
@@ -216,6 +232,42 @@ end
 ------------------------------------------------------------
 -- MLRS request chain
 ------------------------------------------------------------
+local requestAllParams -- defined below, used by the basics chain
+
+-- Firmware version gate and Tx/Rx layout check, mirroring the EdgeTX script
+local function checkDeviceVersions()
+  layoutWarn = nil
+  local tx = dev and dev.tx
+  local rx = dev and dev.rx
+  if tx and tx.version_int and tx.version_int < REQUIRED_TX_VERSION_INT then
+    setErr("Tx version not supported by this script")
+    return false
+  end
+  if rx and isRxPresent() and rx.version_int and rx.version_int < REQUIRED_RX_VERSION_INT then
+    setErr("Rx version not supported by this script")
+    return false
+  end
+  if tx and rx and isRxPresent() and (tx.setuplayout_int > 515 or rx.setuplayout_int > 515) then
+    if tx.setuplayout_int < rx.setuplayout_int then
+      layoutWarn = "Tx param version older than Rx, update Tx firmware"
+    elseif rx.setuplayout_int < tx.setuplayout_int then
+      layoutWarn = "Rx param version older than Tx, update Rx firmware"
+    end
+  end
+  return true
+end
+
+local function onBasicsReady()
+  updateHeaderWidgets()
+  bindActive = false
+  bindEndAt = 0
+  if not checkDeviceVersions() then
+    setStatus("Error")
+    return
+  end
+  requestAllParams()
+end
+
 local function requestBasics()
   if requested or not api then return end
   requested = true
@@ -228,27 +280,12 @@ local function requestBasics()
       return
     end
     dev = res.data
-    if dev and dev.info then info = dev.info end
-
-    setStatus("Requesting INFO…")
-    api:getInfo(function(res2)
-      if not res2.ok then
-        setErr("Info: " .. fmt(res2.err))
-        setStatus("Error")
-        return
-      end
-
-      info = res2.data and res2.data.info or info
-
-      setStatus("Ready")
-
-      -- Update header in-place if form already exists
-      updateHeaderWidgets()
-    end)
+    info = dev and dev.info -- REQUEST_INFO delivers INFO together with the device items
+    onBasicsReady()
   end)
 end
 
-local function requestAllParams()
+requestAllParams = function()
   if not api then return end
   setStatus("Loading params…")
   setErr(nil)
@@ -329,7 +366,7 @@ end
 -- Actions
 ------------------------------------------------------------
 local function doSave()
-  if not api then return end
+  if not api or not loadedParams then return end
   if not hasUnsavedChanges then
     setStatus("No pending changes")
     return
@@ -349,23 +386,35 @@ local function doSave()
   end)
 end
 
-local function doReload()
-  if not api then return end
-  api:reset()
+-- Tools panel command: send it, then report the module's new mode
+local function sendToolCmd(method, errLabel, doneMsg)
+  if not api or not loadedParams then return end
+  setErr(nil)
+  api[method](api, function(res)
+    if not res.ok then
+      setErr(errLabel .. ": " .. fmt(res.err))
+      setStatus("Error")
+      return
+    end
+    setStatus(doneMsg)
+  end)
+end
 
+local function doBoot() sendToolCmd("bootloader", "Boot", "In System Bootloader") end
+local function doFlashEsp() sendToolCmd("flashEsp", "FlashEsp", "In Flash ESP") end
+
+-- Forget everything known about the module and force a rebuild back to the loading view
+local function resetState(msg)
   requested = false
   loadedParams = false
-  paramsRequested = false
   hasUnsavedChanges = false
 
   dev, info, params = nil, nil, nil
   errMsg = nil
-  statusMsg = "Reloading…"
+  statusMsg = msg
   bindActive = false
   bindEndAt = 0
-  rxPresent = nil
 
-  -- force structural rebuild back to loading view
   ui.built = false
   ui.builtLoading = false
   ui.param = {}
@@ -373,45 +422,30 @@ local function doReload()
   ui.bindStatus, ui.bindButton = nil, nil
   ui.saveHint, ui.saveButton = nil, nil
   dirtyForm = true
-
-  requestBasics()
 end
 
 -- When link comes back, force a re-query from the module so RX/TX/device/params are fresh.
-local function reloadFromModuleOnLinkUp()
+local function reloadFromModuleOnLinkUp(msg)
   if not api then return end
-
   api:reset()
-
-  requested = false
-  loadedParams = false
-  paramsRequested = false
-  hasUnsavedChanges = false
-
-  dev, info, params = nil, nil, nil
-  errMsg = nil
-  statusMsg = "Link active — refreshing…"
-  bindActive = false
-  bindEndAt = 0
-  rxPresent = nil
-
-  -- force structural rebuild back to loading view (then params view after re-load)
-  ui.built = false
-  ui.builtLoading = false
-  ui.param = {}
-  ui.status, ui.tx, ui.rx = nil, nil, nil
-  ui.bindStatus, ui.bindButton = nil, nil
-  ui.saveHint, ui.saveButton = nil, nil
-  dirtyForm = true
-
+  resetState(msg or "Link active — refreshing…")
   requestBasics()
 end
+
+local function doReload() reloadFromModuleOnLinkUp("Reloading…") end
 
 ------------------------------------------------------------
 -- Form building (structure)
 ------------------------------------------------------------
-local function addButtonLine(label, buttonText, pressFn)
-  local line = form.addLine(label or "")
+local function addLineTo(parent, label)
+  if parent and parent.addLine then
+    return parent:addLine(label)
+  end
+  return form.addLine(label)
+end
+
+local function addButtonLine(label, buttonText, pressFn, parent)
+  local line = addLineTo(parent, label or "")
   if form.addButton then
     return form.addButton(line, nil, { text = buttonText, press = pressFn })
   end
@@ -464,13 +498,6 @@ local function paramGroupByPrefix(name)
   return "general"
 end
 
-local function addLineTo(parent, label)
-  if parent and parent.addLine then
-    return parent:addLine(label)
-  end
-  return form.addLine(label)
-end
-
 local function buildParamsForm()
   form.clear()
   ui.param = {}
@@ -493,7 +520,7 @@ local function buildParamsForm()
   end
 
   local rx_panel = nil
-  if linkActive then
+  if rxPanelShown then
     rx_panel = form.addExpansionPanel("Receiver")
     rx_panel:open(false)
 
@@ -597,7 +624,6 @@ local function buildParamsForm()
               local f = form.addNumberField(line, nil, min, max, getter, setter)
               ui.param[p.idx0] = f
               ui.paramGroup[p.idx0] = grp
-              f:enable(grp ~= "rx" or rxPresent == true)              
 
               safeCall(f, "minimum", min)
               safeCall(f, "maximum", max)
@@ -606,6 +632,14 @@ local function buildParamsForm()
         end 
       end
     end
+  end
+
+  -- Tools panel (System Bootloader / Flash ESP), as on the EdgeTX Tools page
+  do
+    local tools_panel = form.addExpansionPanel("Tools")
+    tools_panel:open(false)
+    addButtonLine("", "System Bootloader", doBoot, tools_panel)
+    addButtonLine("", "Flash ESP", doFlashEsp, tools_panel)
   end
 
   -- Save / Reload footer
@@ -649,29 +683,15 @@ end
 ------------------------------------------------------------
 local function create()
   if not api then
-    api = mlrs.new({ settleS = 1.5, strategy = "by_index", saveDeadS = 3.0 })
+    api = mlrs.new({ settleS = 0.2, strategy = "by_index", saveDeadS = 3.0 })
     setmetatable(api, { __index = mlrs })
   end
 
-  requested = false
-  loadedParams = false
-  paramsRequested = false
-  hasUnsavedChanges = false
+  resetState("Starting…")
 
-  dev, info, params = nil, nil, nil
-  errMsg = nil
-  statusMsg = "Starting…"
-  bindActive = false
-  bindEndAt = 0
-
-  ui.built = false
-  ui.builtLoading = false
-  ui.param = {}
-  ui.status, ui.tx, ui.rx = nil, nil, nil
-  ui.bindStatus, ui.bindButton = nil, nil
-  ui.saveHint, ui.saveButton = nil, nil
-
-  dirtyForm = true
+  -- Edge trackers outlive close(); clear them so the first wakeup() doesn't see a stale edge
+  lastTlmActive = nil
+  rxPanelShown = false
 
   requestBasics()
   ensureForm()
@@ -682,22 +702,24 @@ local function wakeup(_)
   if not api then return end
   api:processQueue(24)
 
-  linkActive = crsfLinkPresent() and true or false
-
-  -- If link state toggled, rebuild entire form (structure changes: RX panel/fields)
-  if lastLinkActive == nil then
-    lastLinkActive = linkActive
-  elseif lastLinkActive ~= linkActive then
-    local becameTrue = (not lastLinkActive) and linkActive
-    lastLinkActive = linkActive
-    -- Always rebuild structure on any toggle
-    dirtyForm = true
-    -- But if link just became active, re-query everything from the module
+  -- Ethos telemetry going active means the module (re)appeared: re-query everything
+  local tlmActive = crsfLinkPresent() and true or false
+  if lastTlmActive == nil then
+    lastTlmActive = tlmActive
+  elseif lastTlmActive ~= tlmActive then
+    local becameTrue = (not lastTlmActive) and tlmActive
+    lastTlmActive = tlmActive
     if becameTrue then
       reloadFromModuleOnLinkUp()
     end
   end
 
+  -- Receiver panel visibility follows what mLRS reports, not the Ethos telemetry state
+  local showRx = isRxPresent()
+  if showRx ~= rxPanelShown then
+    rxPanelShown = showRx
+    dirtyForm = true
+  end
 
   -- Build structure if needed
   ensureForm()
@@ -706,14 +728,6 @@ local function wakeup(_)
   -- auto-stop bind after timeout
   if bindActive and bindEndAt and now() >= bindEndAt then
     doBindStop()
-  end
-
-  -- Start param load exactly once after basics are ready
-  if requested and not paramsRequested and not loadedParams and not errMsg and statusMsg == "Ready" then
-    paramsRequested = true
-    requestAllParams()
-    bindActive = false
-    bindEndAt = 0
   end
 
   -- In-place “dynamic” UI updates (no rebuild)
@@ -731,16 +745,7 @@ local function close(_)
     api:reset()
   end
 
-  requested = false
-  loadedParams = false
-  paramsRequested = false
-  hasUnsavedChanges = false
-
-  dev, info, params = nil, nil, nil
-  errMsg = nil
-  statusMsg = "Closed"
-  bindActive = false
-  bindEndAt = 0
+  resetState("Closed")
 
   api = nil
   collectgarbage("collect")
