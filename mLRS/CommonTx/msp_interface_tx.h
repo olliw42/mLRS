@@ -36,10 +36,10 @@ class tTxMsp
     void Do(void);
     void FrameLost(void);
 
-    void putc(char c);
-    bool available(void);
-    uint8_t getc(void);
-    void flush(void);
+    void PutBuf(uint8_t* const buf, uint16_t len);
+    bool Available(void);
+    uint8_t Getc(void);
+    void Flush(void);
 
   private:
 
@@ -170,16 +170,16 @@ dbg.puts(u8toHEX_s(crc8));
 }
 
 
-void tTxMsp::putc(char c)
+void tTxMsp::PutBuf(uint8_t* const buf, uint16_t len)
 {
     if (!ser) return;
 
     // parse link in -> serial out
-    parse_link_in_serial_out(c);
+    for (uint16_t i = 0; i < len; i++) parse_link_in_serial_out(buf[i]);
 }
 
 
-bool tTxMsp::available(void)
+bool tTxMsp::Available(void)
 {
     if (!ser) return false;
 
@@ -188,7 +188,7 @@ bool tTxMsp::available(void)
 }
 
 
-uint8_t tTxMsp::getc(void)
+uint8_t tTxMsp::Getc(void)
 {
     if (!ser) return 0;
 
@@ -197,7 +197,7 @@ uint8_t tTxMsp::getc(void)
 }
 
 
-void tTxMsp::flush(void)
+void tTxMsp::Flush(void)
 {
     if (!ser) return;
 

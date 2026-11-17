@@ -822,11 +822,9 @@ uint8_t len;
         if (crsf_envelop_use_mb) {
             crsf_envelope_out.mb.cmd = CRSF_MB_ENVELOPE_CMD;
             crsf_envelope_out.mb.seq = crsf_envelop_out_sequence;
-            crsf_envelope_out.mb.data_size = 0;
-            for (uint8_t i = 0; i < CRSF_MB_ENVELOPE_DATA_LEN_MAX; i++) { // 57
-                if (!put_fifo.Available()) break;
+            crsf_envelope_out.mb.data_size = (available < CRSF_MB_ENVELOPE_DATA_LEN_MAX) ? available : CRSF_MB_ENVELOPE_DATA_LEN_MAX;
+            for (uint8_t i = 0; i < crsf_envelope_out.mb.data_size; i++) { // 57
                 crsf_envelope_out.mb.data[i] = put_fifo.Get();
-                crsf_envelope_out.mb.data_size++;
             }
             send_frame(
                 CRSF_FRAME_ID_MBRIDGE_TO_RADIO, // 0xEA, len, 0x82, 0x66
@@ -835,11 +833,9 @@ uint8_t len;
         } else {
             crsf_envelope_out.mavlink.total_chunks = 0;
             crsf_envelope_out.mavlink.current_chunk = crsf_envelop_out_sequence;
-            crsf_envelope_out.mavlink.data_size = 0;
-            for (uint8_t i = 0; i < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX; i++) { // 58
-                if (!put_fifo.Available()) break;
-                crsf_envelope_out.mavlink.data[i] = put_fifo.Get();
-                crsf_envelope_out.mavlink.data_size++;
+            crsf_envelope_out.mb.data_size = (available < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX) ? available : CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX;
+            for (uint8_t i = 0; i < crsf_envelope_out.mb.data_size; i++) { // 57
+                crsf_envelope_out.mb.data[i] = put_fifo.Get();
             }
             send_frame(
                 CRSF_FRAME_ID_MAVLINK_ENVELOPE, // 0xEA, len, 0xAA

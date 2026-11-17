@@ -80,10 +80,10 @@ class tTxMavlink
     uint8_t VehicleState(void);
     void FrameLost(void);
 
-    void putc(char c);
-    bool available(void);
-    uint8_t getc(void);
-    void flush(void);
+    void PutBuf(uint8_t* const buf, uint16_t len);
+    bool Available(void);
+    uint8_t Getc(void);
+    void Flush(void);
 
   private:
     void send_msg_fifo_link_out(fmav_message_t* const msg);
@@ -458,31 +458,31 @@ void tTxMavlink::send_msg_serial_out(void)
 
     uint16_t len = fmav_msg_to_frame_buf(_buf, &msg_buf);
 
+    // always has ids RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, so go out to both serials
     ser->putbuf(_buf, len);
-
     if (ser2) ser2->putbuf(_buf, len);
 }
 
 
-void tTxMavlink::putc(char c)
+void tTxMavlink::PutBuf(uint8_t* const buf, uint16_t len)
 {
-    fifo_link_in.Put(c);
+    fifo_link_in.PutBuf(buf, len);
 }
 
 
-bool tTxMavlink::available(void)
+bool tTxMavlink::Available(void)
 {
     return fifo_link_out.Available();
 }
 
 
-uint8_t tTxMavlink::getc(void)
+uint8_t tTxMavlink::Getc(void)
 {
     return fifo_link_out.Get();
 }
 
 
-void tTxMavlink::flush(void)
+void tTxMavlink::Flush(void)
 {
     fifo_link_out.Flush();
     ser->flush();
@@ -551,8 +551,7 @@ uint8_t rssi, remrssi, txbuf, noise;
 
     fmav_msg_radio_status_pack(
         &msg_buf,
-        RADIO_LINK_SYSTEM_ID, // sysid, SiK uses 51, 68
-        MAV_COMP_ID_TELEMETRY_RADIO,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         rssi, remrssi, txbuf, noise, UINT8_MAX, 0, 0,
         //uint8_t rssi, uint8_t remrssi, uint8_t txbuf, uint8_t noise, uint8_t remnoise, uint16_t rxerrors, uint16_t fixed,
         &status_serial_out);
@@ -643,7 +642,7 @@ void tTxMavlink::send_heartbeat(void)
 {
     fmav_msg_heartbeat_pack(
         &msg_buf,
-        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         MAV_TYPE_GENERIC, // type ???
         MAV_AUTOPILOT_INVALID,
         MAV_MODE_FLAG_SAFETY_ARMED,
@@ -681,7 +680,7 @@ void tTxMavlink::send_cmd_ack(uint16_t cmd, uint8_t res, uint8_t tsysid, uint8_t
 {
     fmav_msg_command_ack_pack(
         &msg_buf,
-        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         cmd, res, 0, 0,
         tsysid, tcompid,
         //uint16_t command, uint8_t result, uint8_t progress, int32_t result_param2,
@@ -704,7 +703,7 @@ void tTxMavlink::send_param_value(uint16_t param_idx)
 
     fmav_msg_param_value_encode(
         &msg_buf,
-        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO,  // sysid, compid, SiK uses 51, 68
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         &payload,
         &status_serial_out);
 
@@ -1059,24 +1058,28 @@ void tTxVehicle::handle_extended_sys_state(fmav_extended_sys_state_t* const payl
 #endif // MAVLINK_INTERFACE_TX_H
 
 /*
+mlrs-tx: calls only sx_serial
+  prepare_transmit_frame() -> sx_serial.available(), sx_serial.getc(), sx_serial.flush()
+  process_received_frame() -> sx_serial.putbuf()
+
 sx_serial:
 
-            TxSerialPort
-  serial  o --\ :                  RxLinkMode
-  serial2 o ---\:                      :
-  wbridge o --- o <=====> transp. o --\:
-  com     o ---/          msp     o -- o  sx_serial  ---> sx_serial.available() ---> transmit ~~~>
-  mbridge o --/           mavlink o --/                   sx_serial.putc()
-                                                     <--- sx_serial.getc()      <--- receive <~~~
+               TxSerialPort
+  serial     o --\ :                  RxLinkMode
+  serial2    o ---\:                      :
+  wbridge    o --- o <=====> transp. o --\:
+  com        o ---/          msp     o -- o  sx_serial  ---> sx_serial.available() ---> transmit ~~~>
+  crsfbridge o --/           mavlink o --/                   sx_serial.putc()
+                                                        <--- sx_serial.getc()      <--- receive <~~~
 
 mavlink (without router):
 
-            TxSerialPort
-  serial  o --\ :
-  serial2 o ---\:
-  wbridge o --- o <====> o mavlink  ---> fifo_link_out ---> available(), getc() ---> sx_serial
-  com     o ---/                    <--- fifo_link_in  <--- getc()              <---
-  mbridge o --/
+               TxSerialPort
+  serial     o --\ :
+  serial2    o ---\:
+  wbridge    o --- o <====> o mavlink  ---> fifo_link_out ---> available(), getc() ---> sx_serial
+  com        o ---/                    <--- fifo_link_in  <--- getc()              <---
+  crsfbridge o --/
 
   Do:
     ser->available()  --->  parse&check  --->  msg_to_buf(X)

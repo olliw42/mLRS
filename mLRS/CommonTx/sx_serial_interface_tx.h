@@ -61,10 +61,10 @@ bool tTxSxSerial::available(void)
     if (!connected_and_rx_setup_available()) return 0;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        return mavlink.available(); // get from serial via MAVLink parser
+        return mavlink.Available(); // get from serial via MAVLink parser
     }
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
-        return msp.available(); // get from serial via MSP parser
+        return msp.Available(); // get from serial via MSP parser
     }
     return ser->available(); // get from serial
 }
@@ -75,10 +75,10 @@ char tTxSxSerial::getc(void)
     if (!connected_and_rx_setup_available()) return 0; // not needed as done already by available()
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) {
-        return mavlink.getc(); // get from serial via MAVLink parser
+        return mavlink.Getc(); // get from serial via MAVLink parser
     }
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) {
-        return msp.getc(); // get from serial via MSP parser
+        return msp.Getc(); // get from serial via MSP parser
     }
     return ser->getc(); // get from serial
 }
@@ -89,11 +89,11 @@ void tTxSxSerial::putbuf(uint8_t* const buf, uint16_t len)
     if (!connected_and_rx_setup_available()) return;
 
     if (SERIAL_LINK_MODE_IS_MAVLINK(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
-        for (uint16_t i = 0; i < len; i++) mavlink.putc(buf[i]);
+        mavlink.PutBuf(buf, len);
         return;
     }
     if (SERIAL_LINK_MODE_IS_MSP(Setup.Rx.SerialLinkMode)) { // this has to go via the parser
-        for (uint16_t i = 0; i < len; i++) msp.putc(buf[i]);
+        msp.PutBuf(buf, len);
         return;
     }
     ser->putbuf(buf, len);
@@ -102,8 +102,8 @@ void tTxSxSerial::putbuf(uint8_t* const buf, uint16_t len)
 
 void tTxSxSerial::flush(void)
 {
-    mavlink.flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
-    msp.flush(); // we don't distinguish here, can't harm to always flush MSP handler
+    mavlink.Flush(); // we don't distinguish here, can't harm to always flush MAVLink handler
+    msp.Flush(); // we don't distinguish here, can't harm to always flush MSP handler
     ser->flush();
 }
 
