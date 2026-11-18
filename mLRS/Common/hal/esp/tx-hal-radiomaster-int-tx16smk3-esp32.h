@@ -241,7 +241,7 @@ void lr11xx_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actua
             *actual_power_dbm = 14;
         } else {
             dac = 132;
-            *sx_power = -18;
+            *sx_power = -17; // -17 is minimum for RFO_LP_LF on LR1121
             *actual_power_dbm = 10;
         }
         dacWrite(SX_PA_DAC_IO, dac);  // power_apc_2
