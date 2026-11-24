@@ -136,8 +136,11 @@ void tBindBase::ConfigForBind(void)
 
     sx.SetToIdle();
     sx2.SetToIdle();
-    sx.SetRfPower_dbm(rfpower_list[0].dbm);
-    sx2.SetRfPower_dbm(rfpower_list[0].dbm);
+
+    uint8_t power_idx;
+    for (power_idx = 0; power_idx < 3; power_idx++) if (rfpower_list[power_idx].dbm >= POWER_0_DBM) break;
+    sx.SetRfPower_dbm(rfpower_list[power_idx].dbm);
+    sx2.SetRfPower_dbm(rfpower_list[power_idx].dbm);
 
     config_rf();
 }
