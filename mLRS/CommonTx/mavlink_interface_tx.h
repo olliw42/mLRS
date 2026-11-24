@@ -570,8 +570,7 @@ char param_id[16+1];
 
     fmav_msg_param_request_read_pack(
         &msg_buf,
-        RADIO_LINK_SYSTEM_ID,
-        MAV_COMP_ID_TELEMETRY_RADIO,
+        RADIO_LINK_SYSTEM_ID, MAV_COMP_ID_TELEMETRY_RADIO, // sysid, compid, SiK uses 51, 68
         vehicle.sysid, MAV_COMP_ID_AUTOPILOT1,
         param_id,
         -1,

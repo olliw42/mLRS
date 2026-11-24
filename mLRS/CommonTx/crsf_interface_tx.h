@@ -585,7 +585,6 @@ void tTxCrsf::Do(void)
     }
 #endif
 
-
     if (!rx_frame_received) return;
     rx_frame_received = false;
 

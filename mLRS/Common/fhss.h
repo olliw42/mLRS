@@ -124,7 +124,7 @@ const uint8_t fhss_bind_channel_70_cm_ham = 10;
 
 #endif
 #ifdef FHSS_HAS_CONFIG_868_MHZ
-// 863.275 ... 869.575  in 0.525 MHz steps
+// 863.275 ... 869.575 in 0.525 MHz steps
 
 const uint32_t fhss_freq_list_868[] = {
     SX12XX_FREQ_MHZ_TO_REG(863.275),
@@ -221,7 +221,6 @@ const uint8_t fhss_bind_channel_866_in = 0; // just pick some
 // = 80 channels
 
 const uint32_t fhss_freq_list_2p4[] = {
-
     SX12XX_FREQ_GHZ_TO_REG(2.401), // channel 0
     SX12XX_FREQ_GHZ_TO_REG(2.402),
     SX12XX_FREQ_GHZ_TO_REG(2.403),

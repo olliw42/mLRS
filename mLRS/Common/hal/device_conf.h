@@ -95,7 +95,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_R9M_868_F103C8
@@ -104,7 +103,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_R9MM_868_F103RB
@@ -113,7 +111,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_R9MLITEPRO_F303CC
@@ -122,7 +119,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -132,7 +128,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX127x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -144,7 +139,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef RX_WIO_E5_MINI_WLE5JC
@@ -153,7 +147,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -163,7 +156,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -239,7 +231,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_DIY_E22_G431KB
@@ -248,7 +239,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_DIY_E22DUAL_MODULE02_G491RE
@@ -257,7 +247,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
@@ -267,7 +256,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 #ifdef TX_DIY_WIOE5_E22_WLE5JC
@@ -276,7 +264,6 @@ The default selection of frequency bands can be overruled by feature defines.
   #define DEVICE_HAS_SX126x
   #define FREQUENCY_BAND_868_MHZ
   #define FREQUENCY_BAND_915_MHZ_FCC
-  //#define FREQUENCY_BAND_866_MHZ_IN
 #endif
 
 
