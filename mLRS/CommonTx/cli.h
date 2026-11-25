@@ -15,6 +15,7 @@
 #include <ctype.h>
 #include <string.h>
 #include "../Common/hal/hal.h"
+#include "../Common/ota/ota_protocol.h"
 #include "tasks.h"
 #include "setup_tx.h"
 
@@ -778,11 +779,14 @@ void tTxCli::print_help_do(void)
         case 13: putsn("  reload          -> reload all parameter settings"); break;
         case 14: putsn("  stats           -> starts streaming statistics"); break;
         case 15: putsn("  listfreqs       -> lists frequencies used in fhss scheme"); break;
+        case 16:
 #if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot
-        case 16: putsn("  systemboot      -> call system bootloader"); break;
-#else
-        case 16: break;
+            putsn("  systemboot      -> call system bootloader");
 #endif
+#ifdef USE_RX_OTA
+            putsn("  rxota           -> update receiver over the air, needs host tool");
+#endif
+            break;
 #ifdef USE_ESP_WIFI_BRIDGE
         case 17: putsn("  esppt           -> enter serial passthrough"); break;
         case 18: putsn("  espboot         -> reboot ESP and enter serial passthrough"); break;
@@ -932,6 +936,19 @@ bool rx_param_changed;
         } else
         if (is_cmd("listfreqs")) {
             print_it(CLI_STATE_PRINT_LISTFREQS);
+
+        //-- Rx OTA
+#ifdef USE_RX_OTA
+        } else
+        if (is_cmd("rxota")) {
+            // ends when the host says so or goes silent
+            if (Setup.Common[Config.ConfigId].Privacy != PRIVACY_NONE) {
+                putsn("  rx ota needs privacy off");
+            } else {
+                putsn("  rx ota relay starts in 1 s");
+                tasks.SetCliTask(TASK_RX_OTA);
+            }
+#endif
 
         //-- System Bootloader
 #if !(defined ESP8266 || defined ESP32) // ESP cannot be put into boot

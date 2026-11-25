@@ -1,0 +1,4 @@
+# CubeIDE includes this into its makefile, it builds the OTA loader, see CommonRx/ota_loader.mk
+TARGET_D = RX_MATEK_MR24_30_G431KB
+MCU_D = STM32G431xx
+include ../../CommonRx/ota_loader.mk

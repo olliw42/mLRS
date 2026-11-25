@@ -33,6 +33,11 @@
 #define DEVICE_HAS_NO_DEBUG
 
 
+// change these defaults
+#undef SETUP_TX_SERIAL_PORT
+#define SETUP_TX_SERIAL_PORT  1 // wbridge, this leaves the serial pins to the com (CLI)
+
+
 //-- UARTS
 // UARTB = serial port
 // UARTC (or USB) = com (CLI) port
