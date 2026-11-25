@@ -1,5 +1,27 @@
 # mLRS - Release Notes #
 
+## v1.5.00 (official release) (24.11.2026) ##
+
+This version brings (as compared to v1.4.04):
+
+- critical bug: ESP devices (ELRS) which have two sx/lr chips can crash
+- CRSF: ALT telemetry sensor added
+- CRSF: RPWR telemetry sensor added by simulating rx power settings
+- ETHOS Lua: few improvements
+- EdgeTx Lua Stats Widget: shows tx and rx power settings
+- Lua general: few more tidies in several places
+- allow receiver to get new session key if lvl0/1
+- bug: ESP dio bootloader fix
+
+Compared to the previous official release v1.4, main additions are:
+
+- 32 channels support, with Lua scripts for EdgeTx radios, Frsky/ETHOS radios supports it natively
+- CRSF Tx side autobauding, supports 400k, 921k, 1.87M and 416666 non-inverted
+- DroneCAN: CANFD support (4 Mbps)
+- entirely new serial handling, Serial_Dest renamed to Ser_Port, Ser_Port2 added
+- USB port usable through setting for serial data
+- MAVLink: routing capability when two serials are used
+
 ## v1.4.04 (pre-release) (11.10.2026) ##
 
 This version brings (as compared to v1.4.02):
