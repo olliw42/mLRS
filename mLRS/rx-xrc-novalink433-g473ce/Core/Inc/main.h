@@ -55,11 +55,6 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-/* FDCAN should be clocked with 80 MHz, which implies 160 MHz SYSCLK/PCLK1 and 80 MHz PLLQ.
- * In order to ensure correct clock settings, we do this nonsense:
- * We define PLLN and PLLQ here, such that if they are missing we can throw a
- * compile error in the CAN lib.
- * (the usual config would be PLLN 85 and RCC_PLLQ_DIV2, which gives 170 MHz) */
 #define PLL_PLLN  80
 #define PLL_PLLQ  RCC_PLLQ_DIV4
 /* USER CODE END EM */

@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 28.08.2026
+ version 25.11.2026
 ********************************************************
 '''
 import os
@@ -895,6 +895,14 @@ class cTargetG491RE(cTargetG4):
             'STM32G491xx', 'startup_stm32g491re'+package.lower()+'.s', 'STM32G491RE'+package.upper()+'_FLASH.ld',
             extra_D_list, build_dir, elf_name)
 
+class cTargetG473CE(cTargetG4):
+    def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
+        if package == '': package = 'ux'
+        super().__init__(
+            target, target_D,
+            'STM32G473xx', 'startup_stm32g473ce'+package.lower()+'.s', 'STM32G473CE'+package.upper()+'_FLASH.ld',
+            extra_D_list, build_dir, elf_name)
+
 class cTargetG474CE(cTargetG4):
     def __init__(self, target, target_D, extra_D_list, build_dir, elf_name, package):
         if package == '': package = 'ux'
@@ -962,35 +970,22 @@ TLIST = [
         'target' : 'rx-matek-mr900-30c-g431kb',         'target_D' : 'RX_MATEK_MR900_30C_G431KB',
         'extra_D_list' : [], 'appendix' : '',
     },{
-#        'target' : 'rx-matek-mr900-30td-g474ce',        'target_D' : 'RX_MATEK_MR900_30TD_G474CE',
-#        'extra_D_list' : [], 'appendix' : '',
-#    },{
 
         'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '',
     },{
-#        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem',
-#    },{
-#        'target' : 'tx-matek-mr24-30-g431kb',           'target_D' : 'TX_MATEK_MR24_30_G431KB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'],
-#        'appendix' : '-oled',
-#    },{
-
         'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '',
     },{
-#        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_SIKTELEM'], 'appendix' : '-siktelem',
-#    },{
-#        'target' : 'tx-matek-mr900-30-g431kb',          'target_D' : 'TX_MATEK_MR900_30_G431KB',
-#        'extra_D_list' : ['STDSTM32_USE_USB','MLRS_FEATURE_MATEK_TXMODULE_MOD','MLRS_FEATURE_HC04_MODULE','MLRS_FEATURE_COM_ON_USB','MLRS_FEATURE_OLED'],
-#        'appendix' : '-oled',
-#    },{
 
-#        'target' : 'tx-matek-mtx-db30-g474ce',          'target_D' : 'TX_MATEK_MTX_DB30_G474CE',
-#        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '-default',
-#    },{
+#-- XRC Technologies
+        'target' : 'rx-xrc-novalink433-g473ce',          'target_D' : 'RX_XRC_NOVALINK433_G473CE',
+        'extra_D_list' : [], 'appendix' : '',
+    },{
+    
+        'target' : 'tx-xrc-novalink433-g473ce',          'target_D' : 'TX_XRC_NOVALINK433_G473CE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '',
+    },{
   
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
@@ -1204,6 +1199,8 @@ def mlrs_create_targetlist(appendix, extra_D_list):
             tlist.append( cTargetG431CB(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g491re' in t['target']:
             tlist.append( cTargetG491RE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
+        elif 'g473ce' in t['target']:
+            tlist.append( cTargetG473CE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'g474ce' in t['target']:
             tlist.append( cTargetG474CE(t['target'], t['target_D'], t['extra_D_list'], build_dir, elf_name, package) )
         elif 'wle5cc' in t['target']:

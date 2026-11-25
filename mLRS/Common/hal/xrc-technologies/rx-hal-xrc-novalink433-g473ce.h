@@ -9,7 +9,6 @@
 //-------------------------------------------------------
 // XRC Technologies NOVALINK 433MHz Receiver, STM32G473CE
 //-------------------------------------------------------
-
 /*
 Pinout
 
@@ -26,8 +25,12 @@ D-       PA11     USB DM       SPI2_MOSI/I2S2_SD, TIM1_CH1N, USART1_CTS, COMP1_O
 D+       PA12     USB DP       TIM16_CH1, I2SCKIN, TIM1_CH2N, USART1_RTS_DE, COMP2_OUT, FDCAN1_TX, TIM4_CH2, TIM1_ETR, EVENTOUT
 SWD      PA13     SWDIO        SWDIO-JTMS, TIM16_CH1N, I2C4_SCL, I2C1_SCL, IR_OUT, USART3_CTS, TIM4_CH3, SAI1_SD_B, EVENTOUT
 SWC      PA14     SWDCLK       SWCLK-JTCK, LPTIM1_OUT, I2C4_SMBA, I2C1_SDA, TIM8_CH2, TIM1_BKIN, USART2_TX, SAI1_FS_B, EVENTOUT
-
 */
+
+
+#define DEVICE_HAS_OUT
+#define DEVICE_HAS_DRONECAN_FD
+
 
 //-- Timers, Timing, EEPROM, and such stuff
 
@@ -38,21 +41,16 @@ SWC      PA14     SWDCLK       SWCLK-JTCK, LPTIM1_OUT, I2C4_SMBA, I2C1_SDA, TIM8
 #define MICROS_TIMx               TIM3
 #define MICROS_TIM_NAMEPREFIX     TIM3_
 
-#define DEVICE_HAS_OUT
-#define DEVICE_HAS_DRONECAN_FD
-
 #define CLOCK_TIMx                TIM2
 #define CLOCK_IRQn                TIM2_IRQn
 #define CLOCK_IRQHandler          TIM2_IRQHandler
+//#define CLOCK_IRQ_PRIORITY        10
+
 
 //-- UARTS
-// UARTB = serial port/Mavlink
-// UART = CRSF, etc
-// UARTF = debug port/CLI
-
-// Default to serial
-#undef SETUP_RX_SERIAL_PORT
-#define SETUP_RX_SERIAL_PORT  0 // 0: serial, 1: can, 2: canfd
+// UARTB = serial port
+// UART = output port, SBus or whatever
+// UARTF = debug port
 
 #define UARTB_USE_UART1_PA9PA10 // serial
 #define UARTB_BAUD                RX_SERIAL_BAUDRATE
@@ -74,9 +72,11 @@ SWC      PA14     SWDCLK       SWCLK-JTCK, LPTIM1_OUT, I2C4_SMBA, I2C1_SDA, TIM8
 #define UARTF_TXBUFSIZE           1024 // for CAN debug
 #define UARTF_USE_TX_ISR
 
+
 //-- CAN
 
 #define CAN_USE_FDCAN2_PB12PB13
+
 
 //-- SX1: SX127x & SPI
 
@@ -86,49 +86,31 @@ SWC      PA14     SWDCLK       SWCLK-JTCK, LPTIM1_OUT, I2C4_SMBA, I2C1_SDA, TIM8
 #define SPI_USE_CLOCKSPEED_9MHZ
 
 #define SX_RESET                  IO_PB6
-#define SX_DIO0                   IO_PA15
-#define SX_DIO1                   IO_PB7
+#define SX_DIO                    IO_PA15
 
-#define SX_DIO_SYSCFG_EXTI_PORTx      LL_SYSCFG_EXTI_PORTA
-#define SX_DIO_SYSCFG_EXTI_LINEx      LL_SYSCFG_EXTI_LINE15
-#define SX_DIO_EXTI_LINE_x            LL_EXTI_LINE_15
-#define SX_DIO_EXTI_IRQn              EXTI15_10_IRQn
-#define SX_DIO_EXTI_IRQHandler        EXTI15_10_IRQHandler
-
-// TODO for FSK
-#define SX_DIO1_SYSCFG_EXTI_PORTx     LL_SYSCFG_EXTI_PORTB
-#define SX_DIO1_SYSCFG_EXTI_LINEx     LL_SYSCFG_EXTI_LINE7
-#define SX_DIO1_EXTI_LINE_x           LL_EXTI_LINE_7
-#define SX_DIO1_EXTI_IRQn             EXTI9_5_IRQn
-#define SX_DIO1_EXTI_IRQHandler       EXTI9_5_IRQHandler
+#define SX_DIO_EXTI               EXTI_IO_PA15
+#define SX_DIO_EXTI_IRQn          EXTI15_10_IRQn
+#define SX_DIO_EXTI_IRQHandler    EXTI15_10_IRQHandler
+//#define SX_DIO_EXTI_IRQ_PRIORITY    13
 
 void sx_init_gpio(void)
 {
     gpio_init(SX_RESET, IO_MODE_OUTPUT_PP_HIGH, IO_SPEED_VERYFAST);
-    gpio_init(SX_DIO0, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
-    gpio_init(SX_DIO1, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
+    gpio_init(SX_DIO, IO_MODE_INPUT_PD, IO_SPEED_VERYFAST);
 
 }
 
 void sx_amp_transmit(void)
 {
-
 }
 
 void sx_amp_receive(void)
 {
-
 }
 
 void sx_dio_init_exti_isroff(void)
 {
-    LL_SYSCFG_SetEXTISource(SX_DIO_SYSCFG_EXTI_PORTx, SX_DIO_SYSCFG_EXTI_LINEx);
-
-    // let's not use LL_EXTI_Init(), but let's do it by hand, is easier to allow enabling isr later
-    LL_EXTI_DisableEvent_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableIT_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_DisableFallingTrig_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableRisingTrig_0_31(SX_DIO_EXTI_LINE_x);
+    exti_init_isroff(SX_DIO_EXTI, EXTI_TRIG_RISING);
 
     NVIC_SetPriority(SX_DIO_EXTI_IRQn, SX_DIO_EXTI_IRQ_PRIORITY);
     NVIC_EnableIRQ(SX_DIO_EXTI_IRQn);
@@ -136,49 +118,14 @@ void sx_dio_init_exti_isroff(void)
 
 void sx_dio_enable_exti_isr(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
-    LL_EXTI_EnableIT_0_31(SX_DIO_EXTI_LINE_x);
+    exti_enableisr(SX_DIO_EXTI);
 }
 
 void sx_dio_exti_isr_clearflag(void)
 {
-    LL_EXTI_ClearFlag_0_31(SX_DIO_EXTI_LINE_x);
+    exti_clearisrflag(SX_DIO_EXTI);
 }
 
-//-- Button
-
-#define BUTTON                    IO_PB0
-
-void button_init(void)
-{
-    gpio_init(BUTTON, IO_MODE_INPUT_PD, IO_SPEED_DEFAULT);
-}
-
-bool button_pressed(void)
-{
-    return gpio_read_activehigh(BUTTON);
-}
-
-//-- LEDs
-
-#define LED_GREEN                 IO_PA1
-#define LED_RED                   IO_PA0
-
-void leds_init(void)
-{
-    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
-    gpio_low(LED_GREEN); // LED_GREEN_OFF
-    gpio_low(LED_RED); // LED_RED_OFF
-}
-
-void led_green_off(void) { gpio_low(LED_GREEN); }
-void led_green_on(void) { gpio_high(LED_GREEN); }
-void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
-
-void led_red_off(void) { gpio_low(LED_RED); }
-void led_red_on(void) { gpio_high(LED_RED); }
-void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- Out port
 // this is nasty, UART defines not yet known, but cumbersome to add, so we include the lib
@@ -202,15 +149,51 @@ void out_set_inverted(void)
     LL_USART_Enable(UART_UARTx);
 }
 
-//-- POWER
 
-#define POWER_PA_DEFINED
+//-- Button
+
+#define BUTTON                    IO_PB0
+
+void button_init(void)
+{
+    gpio_init(BUTTON, IO_MODE_INPUT_PD, IO_SPEED_DEFAULT);
+}
+
+bool button_pressed(void)
+{
+    return gpio_read_activehigh(BUTTON);
+}
+
+
+//-- LEDs
+
+#define LED_GREEN                 IO_PA1
+#define LED_RED                   IO_PA0
+
+void leds_init(void)
+{
+    gpio_init(LED_GREEN, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_init(LED_RED, IO_MODE_OUTPUT_PP_LOW, IO_SPEED_DEFAULT);
+    gpio_low(LED_GREEN); // LED_GREEN_OFF
+    gpio_low(LED_RED); // LED_RED_OFF
+}
+
+void led_green_off(void) { gpio_low(LED_GREEN); }
+void led_green_on(void) { gpio_high(LED_GREEN); }
+void led_green_toggle(void) { gpio_toggle(LED_GREEN); }
+
+void led_red_off(void) { gpio_low(LED_RED); }
+void led_red_on(void) { gpio_high(LED_RED); }
+void led_red_toggle(void) { gpio_toggle(LED_RED); }
+
+
+//-- POWER
 
 #define POWER_GAIN_DBM            0 // gain of a PA stage if present
 #define POWER_SX1276_MAX          SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
 #define POWER_USE_DEFAULT_RFPOWER_CALC
 
-#define RFPOWER_DEFAULT           3 // index into rfpower_list array
+#define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
     { .dbm = POWER_0_DBM, .mW = 100 },
@@ -218,6 +201,7 @@ const rfpower_t rfpower_list[] = {
     { .dbm = POWER_14_DBM, .mW = 500 },
     { .dbm = POWER_17_DBM, .mW = 1000 },
 };
+
 
 //-- TEST
 
