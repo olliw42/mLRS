@@ -832,9 +832,9 @@ uint8_t len;
         } else {
             crsf_envelope_out.mavlink.total_chunks = 0;
             crsf_envelope_out.mavlink.current_chunk = crsf_envelop_out_sequence;
-            crsf_envelope_out.mb.data_size = (available < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX) ? available : CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX;
-            for (uint8_t i = 0; i < crsf_envelope_out.mb.data_size; i++) { // 57
-                crsf_envelope_out.mb.data[i] = put_fifo.Get();
+            crsf_envelope_out.mavlink.data_size = (available < CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX) ? available : CRSF_MAVLINK_ENVELOPE_DATA_LEN_MAX;
+            for (uint8_t i = 0; i < crsf_envelope_out.mavlink.data_size; i++) { // 57
+                crsf_envelope_out.mavlink.data[i] = put_fifo.Get();
             }
             send_frame(
                 CRSF_FRAME_ID_MAVLINK_ENVELOPE, // 0xEA, len, 0xAA
