@@ -63,7 +63,7 @@ Troubleshooting:
 // (you also need to set the board in the Arduino IDE accordingly)
 //#define MODULE_MATEK_MTX_DB30                 // board: ESP32 PICO-D4
 //#define MODULE_ESP82XX_ELRS_TX                // board: Generic ESP8266 Module or Generic ESP8285 Module
-//#define MODULE_ESP32C3_ELRS_TX                // board: ESP32C3 Dev Module
+#define MODULE_ESP32C3_ELRS_TX                // board: ESP32C3 Dev Module
 //#define MODULE_ESP32_DEVKITC_V4               // board: ESP32 Dev Module
 //#define MODULE_NODEMCU_ESP32_WROOM32          // board: ESP32 Dev Module
 //#define MODULE_ESP32_PICO_KIT                 // board: ESP32 PICO-D4
@@ -213,12 +213,16 @@ String ble_device_name = ""; // name of your BLE device as it will be seen by yo
 #if defined CONFIG_IDF_TARGET_ESP32 
   #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
     #error Version of your ESP Arduino Core below 3.0.0 !
+  #elif ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(4, 0, 0) // added 27.Nov.2026, BLE API has changed
+    #error ESP32 Arduino Core 4.0.0 or newer is not supported yet!    
   #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 3, 7) // 19.Mar.2026
     #pragma message "Warning: Consider upgrading your ESP Arduino Core !" // #warning doesn't show if not verbose, hence #pgrama message
   #endif
 #elif defined CONFIG_IDF_TARGET_ESP32C3
   #if ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 0, 0)
     #error Version of your ESP Arduino Core below 3.0.0 !
+  #elif ESP_ARDUINO_VERSION >= ESP_ARDUINO_VERSION_VAL(4, 0, 0) // added 27.Nov.2026, BLE API has changed
+    #error ESP32 Arduino Core 4.0.0 or newer is not supported yet!    
   #elif ESP_ARDUINO_VERSION < ESP_ARDUINO_VERSION_VAL(3, 3, 7) // 21.Mar.2026
     #pragma message "Warning: Consider upgrading your ESP Arduino Core !" // #warning doesn't show if not verbose, hence #pragma message
   #endif
