@@ -9,7 +9,7 @@
  run_make_firmwares.py
  3rd version, doesn't use make but calls gnu directly
  gave up on cmake, hence naive by hand
- version 25.11.2026
+ version 27.11.2026
 ********************************************************
 '''
 import os
@@ -982,11 +982,17 @@ TLIST = [
         'target' : 'rx-xrc-novalink433-g473ce',          'target_D' : 'RX_XRC_NOVALINK433_G473CE',
         'extra_D_list' : [], 'appendix' : '',
     },{
-    
+        'target' : 'rx-xrc-novalink924-g473ce',          'target_D' : 'RX_XRC_NOVALINK924_G473CE',
+        'extra_D_list' : [], 'appendix' : '',
+    },{
+
         'target' : 'tx-xrc-novalink433-g473ce',          'target_D' : 'TX_XRC_NOVALINK433_G473CE',
         'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '',
     },{
-  
+        'target' : 'tx-xrc-novalink924-g473ce',          'target_D' : 'TX_XRC_NOVALINK924_G473CE',
+        'extra_D_list' : ['STDSTM32_USE_USB'], 'appendix' : '',
+    },{
+
 #-- FrSky R9
         'target' : 'rx-R9M-f103c8',                     'target_D' : 'RX_R9M_868_F103C8',
         'extra_D_list' : [], 'appendix' : '',

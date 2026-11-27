@@ -145,6 +145,14 @@ extern "C" { void delay_ms(uint16_t ms); }
 #include "xrc-technologies/rx-hal-xrc-novalink433-g473ce.h"
 #endif
 
+#ifdef TX_XRC_NOVALINK924_G473CE
+#include "xrc-technologies/tx-hal-xrc-novalink924-g473ce.h"
+#endif
+
+#ifdef RX_XRC_NOVALINK924_G473CE
+#include "xrc-technologies/rx-hal-xrc-novalink924-g473ce.h"
+#endif
+
 //-- FrsKy R9 system
 
 #ifdef RX_R9MX_868_L433CB
