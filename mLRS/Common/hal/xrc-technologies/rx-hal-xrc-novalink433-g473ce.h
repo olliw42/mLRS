@@ -11,7 +11,6 @@
 //-------------------------------------------------------
 /*
 Pinout
-
 label    pin      functions    alternative functions
 TX1      PA9      U1_TX        I2C3_SMBA, I2C2_SCL, I2S3_MCK, TIM1_CH2, USART1_TX, OMP5_OUT, TIM15_BKIN, TIM2_CH3, SAI1_FS_A, EVENTOUT
 RX1      PA10     U1_RX        TIM17_BKIN, USB_CRS_SYNC, I2C2_SMBA, SPI2_MISO, TIM1_CH3, USART1_RX, COMP6_OUT, TIM2_CH4, TIM8_BKIN, SAI1_D1, SAI1_SD_A, EVENTOUT
@@ -189,17 +188,31 @@ void led_red_toggle(void) { gpio_toggle(LED_RED); }
 
 //-- POWER
 
-#define POWER_GAIN_DBM            0 // gain of a PA stage if present
-#define POWER_SX1276_MAX          SX1276_OUTPUT_POWER_MAX // maximum allowed sx power
-#define POWER_USE_DEFAULT_RFPOWER_CALC
+void sx1276_rfpower_calc(const int8_t power_dbm, int8_t* sx_power, int8_t* actual_power_dbm)
+{
+    // tested with power meter: 0 -> 22 dBm, 2 -> 24 dBm, 5 -> 26.8 dBm, 6 -> 27.4 dBm, 14 -> 30.3 dBm, 15 -> 30.5 dBm
+    if (power_dbm > 28) { // -> 30
+        *sx_power = 14; // SX1276_OUTPUT_POWER_MAX is 15
+        *actual_power_dbm = 30;
+    } else if (power_dbm > 25) { // -> 27
+        *sx_power = 6;
+        *actual_power_dbm = 27;
+    } else if (power_dbm > 23) { // -> 24
+        *sx_power = 2;
+        *actual_power_dbm = 24;
+    } else {
+        *sx_power = 0; // equals SX1276_OUTPUT_POWER_MIN
+        *actual_power_dbm = 22;
+    }
+}
 
 #define RFPOWER_DEFAULT           0 // index into rfpower_list array
 
 const rfpower_t rfpower_list[] = {
-    { .dbm = POWER_0_DBM, .mW = 100 },
-    { .dbm = POWER_10_DBM, .mW = 250 },
-    { .dbm = POWER_14_DBM, .mW = 500 },
-    { .dbm = POWER_17_DBM, .mW = 1000 },
+    { .dbm = POWER_22_DBM, .mW = 158 },
+    { .dbm = POWER_24_DBM, .mW = 250 },
+    { .dbm = POWER_27_DBM, .mW = 500 },
+    { .dbm = POWER_30_DBM, .mW = 1000 },
 };
 
 
