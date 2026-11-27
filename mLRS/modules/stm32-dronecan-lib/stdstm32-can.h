@@ -9,10 +9,9 @@
 // Interface:
 // CAN_USE_FDCAN1_PA11PA12
 // CAN_USE_FDCAN2_PB5PB6
+// CAN_USE_FDCAN2_PB12PB13
 // CAN_USE_FDCAN_CLOCK_PCLK1
 // CAN_USE_FDCAN_CLOCK_PLL
-// TODO:
-// CAN_USE_FDCAN2_PB12PB13
 //*******************************************************
 #ifndef STDSTM32_CAN_H
 #define STDSTM32_CAN_H
