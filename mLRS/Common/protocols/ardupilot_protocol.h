@@ -73,6 +73,8 @@ typedef enum {
     AP_PLANE_FLIGHTMODE_QACRO         = 23,
     AP_PLANE_FLIGHTMODE_THERMAL       = 24,
     AP_PLANE_FLIGHTMODE_LOITER_ALT_QLAND = 25,
+    AP_PLANE_FLIGHTMODE_AUTOLAND      = 26,
+    AP_PLANE_FLIGHTMODE_GLIDE         = 27,
 } AP_PLANE_FLIGHTMODE_ENUM;
 
 
@@ -86,6 +88,9 @@ typedef enum {
     AP_ROVER_FLIGHTMODE_FOLLOW       = 6,
     AP_ROVER_FLIGHTMODE_SIMPLE       = 7,
     AP_ROVER_FLIGHTMODE_DOCK         = 8,
+
+    AP_ROVER_FLIGHTMODE_CIRCLE       = 9,
+
     AP_ROVER_FLIGHTMODE_AUTO         = 10,
     AP_ROVER_FLIGHTMODE_RTL          = 11,
     AP_ROVER_FLIGHTMODE_SMART_RTL    = 12,
@@ -105,7 +110,8 @@ typedef enum {
     AP_SUB_FLIGHTMODE_SURFACE =       9,  // automatically return to surface, pilot maintains horizontal control
     AP_SUB_FLIGHTMODE_POSHOLD =      16,  // automatic position hold with manual override, with automatic throttle
     AP_SUB_FLIGHTMODE_MANUAL =       19,  // Pass-through input with no stabilization
-    AP_SUB_FLIGHTMODE_MOTOR_DETECT = 20   // Automatically detect motors orientation
+    AP_SUB_FLIGHTMODE_MOTOR_DETECT = 20,  // Automatically detect motors orientation
+    AP_SUB_FLIGHTMODE_SURFTRAK =     21,  // Track distance above seafloor (hold range)
 } AP_SUB_FLIGHTMODE_ENUM;
 
 
@@ -174,6 +180,8 @@ void ap_plane_flight_mode_name4(char* const name4, uint8_t flight_mode)
     case AP_PLANE_FLIGHTMODE_QACRO:         strcpy(name4, "QACO"); break;
     case AP_PLANE_FLIGHTMODE_THERMAL:       strcpy(name4, "THML"); break;
     case AP_PLANE_FLIGHTMODE_LOITER_ALT_QLAND: strcpy(name4, "L2QL"); break;
+    case AP_PLANE_FLIGHTMODE_AUTOLAND:      strcpy(name4, "ALND"); break;
+    case AP_PLANE_FLIGHTMODE_GLIDE:         strcpy(name4, "GLID"); break;
     default:
         strcpy(name4, "");
     }
@@ -192,6 +200,7 @@ void ap_rover_flight_mode_name4(char* const name4, uint8_t flight_mode)
     case AP_ROVER_FLIGHTMODE_FOLLOW:        strcpy(name4, "FOLL"); break;
     case AP_ROVER_FLIGHTMODE_SIMPLE:        strcpy(name4, "SMPL"); break;
     case AP_ROVER_FLIGHTMODE_DOCK:          strcpy(name4, "DOCK"); break;
+    case AP_ROVER_FLIGHTMODE_CIRCLE:        strcpy(name4, "CIRC"); break;
     case AP_ROVER_FLIGHTMODE_AUTO:          strcpy(name4, "AUTO"); break;
     case AP_ROVER_FLIGHTMODE_RTL:           strcpy(name4, "RTL "); break;
     case AP_ROVER_FLIGHTMODE_SMART_RTL:     strcpy(name4, "SRTL"); break;
@@ -209,14 +218,15 @@ void ap_sub_flight_mode_name4(char* const name4, uint8_t flight_mode)
     switch (flight_mode) {
     case AP_SUB_FLIGHTMODE_STABILIZE:       strcpy(name4, "STAB"); break;
     case AP_SUB_FLIGHTMODE_ACRO:            strcpy(name4, "ACRO"); break;
-    case AP_SUB_FLIGHTMODE_ALT_HOLD:        strcpy(name4, "AHLD"); break;
+    case AP_SUB_FLIGHTMODE_ALT_HOLD:        strcpy(name4, "ALTH"); break;
     case AP_SUB_FLIGHTMODE_AUTO:            strcpy(name4, "AUTO"); break;
     case AP_SUB_FLIGHTMODE_GUIDED:          strcpy(name4, "GUID"); break;
     case AP_SUB_FLIGHTMODE_CIRCLE:          strcpy(name4, "CIRC"); break;
-    case AP_SUB_FLIGHTMODE_SURFACE:         strcpy(name4, "SURF"); break; // ?
-    case AP_SUB_FLIGHTMODE_POSHOLD:         strcpy(name4, "PHLD"); break;
+    case AP_SUB_FLIGHTMODE_SURFACE:         strcpy(name4, "SURF"); break;
+    case AP_SUB_FLIGHTMODE_POSHOLD:         strcpy(name4, "POSH"); break;
     case AP_SUB_FLIGHTMODE_MANUAL:          strcpy(name4, "MANU"); break;
-    case AP_SUB_FLIGHTMODE_MOTOR_DETECT:    strcpy(name4, "MDET"); break; // ?
+    case AP_SUB_FLIGHTMODE_MOTOR_DETECT:    strcpy(name4, "DETE"); break;
+    case AP_SUB_FLIGHTMODE_SURFTRAK:        strcpy(name4, "STRK"); break;
     default:
         strcpy(name4, "");
     }
