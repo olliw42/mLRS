@@ -70,10 +70,6 @@ void tTxMsp::Init(tSerialBase* const _crsfbridge)
         ser = Serials.serial; // already sorted out in serialports.Init()
         break;
     case TX_SERIAL_PORT_CRSF_BRIDGE:
-        // MSP over the CRSF bridge: the radio sends and gets raw MSP frames in CRSF MAVLink envelope
-        // frames, as MAVLink does (e.g. an INAV parameter editor on the radio). Replies to the
-        // receiver's own telemetry polls are not forwarded (see parse_link_in_serial_out), and the
-        // CRSF telemetry sensors keep being made from them, which with ser = nullptr they were not
         ser = _crsfbridge;
         break;
     default:

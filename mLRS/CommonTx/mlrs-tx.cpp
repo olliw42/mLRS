@@ -813,7 +813,7 @@ RESTARTCONTROLLER
     rcData.Init();
     in.Configure(Setup.Tx[Config.ConfigId].InMode);
     mavlink.Init(&crsf); // serial ports selected by SerialPort, SerialPort2, ChannelsSource
-    msp.Init(&crsf); // serial port selected by SerialPort (CRSF bridge too)
+    msp.Init(&crsf); // serial port selected by SerialPort, ChannelsSource
     sx_serial.Init(&crsf); // serial port selected by SerialPort, ChannelsSource
     cli.Init();
     espbridge.Init();
