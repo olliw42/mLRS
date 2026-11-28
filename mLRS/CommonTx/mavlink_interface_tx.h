@@ -50,7 +50,6 @@ class tTxVehicle
     void Do(void);
 
     uint8_t State(void);
-    bool RequestParamBattMonitor(void); // to tell parent class to send respective message
     bool RequestParamBattCapacity(void);
 
     bool is_seen_and_msg_is_for_autopilot(fmav_message_t* const msg);
@@ -62,8 +61,6 @@ class tTxVehicle
   private:
     uint8_t is_armed;
     uint8_t is_flying;
-    uint8_t type;
-    uint8_t flight_mode;
 
     // to request BATT_CAPACITY
     int8_t param_request_cnt; // <= 0 means off
@@ -941,8 +938,6 @@ void tTxVehicle::Init(void)
     sysid = 0;
     is_armed = UINT8_MAX;
     is_flying = UINT8_MAX;
-    type = UINT8_MAX;
-    flight_mode = UINT8_MAX;
 
     param_request_cnt = 10; // <= 0 means off
     param_request_tlast_ms = 0;
@@ -1041,9 +1036,6 @@ void tTxVehicle::handle_heartbeat(fmav_message_t* const msg, fmav_heartbeat_t* c
         sysid = msg->sysid;
 
         is_armed = (payload->base_mode & MAV_MODE_FLAG_SAFETY_ARMED) ? 1 : 0;
-        type = ap_vehicle_from_mavtype(payload->type);
-        // ArduPilot provides flight mode number in custom mode
-        flight_mode = payload->custom_mode;
     }
 }
 
