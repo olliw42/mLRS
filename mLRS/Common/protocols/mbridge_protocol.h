@@ -34,6 +34,10 @@
 // m->r: no stx, will sync only based on timing
 // has no crc, this should be a most reliable connection, so superfluous
 
+// 28.Nov.2026
+// only cmds used anymore, serial and channel data deprecated
+// len/cmd byte thus is only cmd
+
 #define MBRIDGE_STX1                          'O'
 #define MBRIDGE_STX2                          'W'
 
@@ -76,7 +80,7 @@ typedef enum {
     MBRIDGE_CMD_MODELID_SET           = 16,
     MBRIDGE_CMD_SYSTEM_BOOTLOADER     = 17, // len = 0
     MBRIDGE_CMD_FLASH_ESPBRIDGE       = 18, // len = 0
-    MBRIDGE_CMD_MAX                   = 99, // to enforce that mbridge cmds are smaller than TXCRSF_CMD_xxx
+    MBRIDGE_CMD_MAX                   = 31, // to enforce that mbridge cmds are smaller than TXCRSF_CMD_xxx
 } MBRIDGE_CMD_ENUM;
 
 

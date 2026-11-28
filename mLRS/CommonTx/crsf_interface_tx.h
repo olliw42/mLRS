@@ -750,9 +750,8 @@ bool tTxCrsf::CommandReceived(uint8_t* const cmd)
     if (mbridge_cmd_received) {
         mbridge_cmd_received = false;
         // TODO: we could check crc if we wanted to
-        mbridge.ParseCrsfFrame(frame.payload, frame.len - 2);
         uint8_t mbcmd;
-        if (!mbridge.CommandReceived(&mbcmd)) return false; // this should not happen, right
+        if (!mbridge.HandleCrsfPayload(&mbcmd, frame.payload, frame.len - 2)) return false; // this should not happen, right
         *cmd = mbcmd;
         return true;
     }

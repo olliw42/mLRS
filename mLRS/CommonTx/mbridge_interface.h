@@ -50,102 +50,22 @@ class tMBridge
     void start_ParamRequestByIndex(uint8_t idx);
     bool command_in_fifo(void);
 
-    void ParseCrsfFrame(uint8_t* const crsf, uint8_t len);
-    bool CommandReceived(uint8_t* const cmd);
-    void parse_nextchar(uint8_t c);
+    bool HandleCrsfPayload(uint8_t* const cmd, uint8_t* const crsf, uint8_t len);
+
     uint8_t* payload_ptr(void) { return &(cmd_r2m_frame[1]); }
 
     bool enabled;
 
-    typedef enum {
-        STATE_IDLE = 0,
-        STATE_RECEIVE_STX2,
-        STATE_RECEIVE_LEN,
-        STATE_RECEIVE_SERIALPACKET,
-        STATE_RECEIVE_CHANNELPACKET,
-        STATE_RECEIVE_COMMANDPACKET,
-        STATE_RECEIVE_COMPLETED,
-        STATE_RECEIVE_ERROR,
-    } STATE_ENUM;
-
-    uint8_t state;
-    uint8_t len;
-    uint8_t cnt;
-
     uint8_t cmd_r2m_frame[MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX];
-    volatile bool cmd_received;
 
     uint8_t cmd_m2r_frame[MBRIDGE_M2R_COMMAND_FRAME_LEN_MAX];
-    volatile uint8_t cmd_m2r_available;
+    uint8_t cmd_m2r_available;
 
     // for communication
     tFifo<uint8_t,128> cmd_fifo; // TODO: how large does it really need to be?
     uint8_t cmd_in_process;
     uint32_t cmd_processed_tlast_ms;
 };
-
-
-//-------------------------------------------------------
-// MBridge parser
-
-#define MBRIDGE_TMO_US  250
-
-
-// called in ParseCrsfFrame()
-void tMBridge::parse_nextchar(uint8_t c)
-{
-    switch (state) {
-    case STATE_IDLE:
-        if (c == MBRIDGE_STX1) state = STATE_RECEIVE_STX2;
-        break;
-    case STATE_RECEIVE_STX2:
-        if (c == MBRIDGE_STX2) state = STATE_RECEIVE_LEN; else state = STATE_RECEIVE_ERROR; // error
-        break;
-    case STATE_RECEIVE_LEN:
-        cnt = 0;
-        if (c == MBRIDGE_CHANNELPACKET_STX) {
-            len = MBRIDGE_CHANNELPACKET_SIZE;
-            state = STATE_RECEIVE_CHANNELPACKET;
-        } else
-        if (c >= MBRIDGE_COMMANDPACKET_STX) {
-            uint8_t cmd = c & (~MBRIDGE_COMMANDPACKET_MASK);
-            cmd_r2m_frame[cnt++] = cmd;
-            len = mbridge_cmd_payload_len(cmd);
-            if (len == 0) {
-                cmd_received = true;
-                state = STATE_RECEIVE_COMPLETED;
-            } else {
-                state = STATE_RECEIVE_COMMANDPACKET;
-            }
-        } else
-        if (c > MBRIDGE_R2M_SERIAL_PAYLOAD_LEN_MAX) {
-            state = STATE_RECEIVE_ERROR; // error
-        } else
-        if (c > 0) {
-            len = c;
-            state = STATE_RECEIVE_SERIALPACKET;
-        } else {
-            state = STATE_RECEIVE_COMPLETED; // tx_len = 0, no payload
-        }
-        break;
-    case STATE_RECEIVE_SERIALPACKET:
-        cnt++;
-        if (cnt >= len) state = STATE_RECEIVE_COMPLETED;
-        break;
-    case STATE_RECEIVE_CHANNELPACKET:
-        if (cnt >= len) {
-            state = STATE_RECEIVE_COMPLETED;
-        }
-        break;
-    case STATE_RECEIVE_COMMANDPACKET:
-        cmd_r2m_frame[cnt++] = c;
-        if (cnt >= len + 1) {
-            cmd_received = true;
-            state = STATE_RECEIVE_COMPLETED;
-        }
-        break;
-    }
-}
 
 
 //-------------------------------------------------------
@@ -157,7 +77,6 @@ void tMBridge::Init(bool enable_flag)
 
     if (!enabled) return;
 
-    cmd_received = false;
     cmd_m2r_available = 0;
 
     cmd_fifo.Init();
@@ -167,29 +86,30 @@ void tMBridge::Init(bool enable_flag)
 
 
 // called in tTxCrsf::CommandReceived(), which is polled in main loop
-void tMBridge::ParseCrsfFrame(uint8_t* const crsf, uint8_t len)
-{
-    if (!enabled) return;
-
-    state = STATE_IDLE; // start the parser
-    for (uint8_t i = 0; i < len; i++) parse_nextchar(crsf[i]);
-
-    // we should have now a good cmd in cmd_r2m_frame[]
-}
-
-
-// called in tTxCrsf::CommandReceived(), which is polled in main loop
-bool tMBridge::CommandReceived(uint8_t* const cmd)
+bool tMBridge::HandleCrsfPayload(uint8_t* const cmd, uint8_t* const crsf, uint8_t len)
 {
     if (!enabled) return false;
-    if (!cmd_received) return false;
 
-    cmd_received = false;
+    if (len < 3) return false; // should not happen
+    if (crsf[0] != MBRIDGE_STX1) return false; // should not happen
+    if (crsf[1] != MBRIDGE_STX2) return false; // should not happen
+    if ((crsf[2] & MBRIDGE_COMMANDPACKET_MASK) != MBRIDGE_COMMANDPACKET_STX) return false; // should not happen
 
-    *cmd = cmd_r2m_frame[0] & (~MBRIDGE_COMMANDPACKET_MASK);
+    *cmd = crsf[2] & (~MBRIDGE_COMMANDPACKET_MASK);
 
-    if (*cmd > MBRIDGE_CMD_MAX) return false; // something went wrong, reject it
+    if (*cmd > MBRIDGE_CMD_MAX) return false; // should not happen
 
+    cmd_r2m_frame[0] = *cmd;
+
+    uint8_t cmd_len = mbridge_cmd_payload_len(*cmd);
+    if (cmd_len + 1 > MBRIDGE_R2M_COMMAND_FRAME_LEN_MAX) return false; // must not happen, play it safe
+
+    if (cmd_len > 0) {
+        if (cmd_len + 3 > len) return false; // should not happen
+        for (uint8_t i = 0; i < cmd_len; i++) cmd_r2m_frame[1+i] = crsf[3+i];
+    }
+
+    // we should now have a good cmd in cmd_r2m_frame[]
     return true;
 }
 
